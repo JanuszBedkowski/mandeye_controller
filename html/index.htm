@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
+    <title>Status</title>
+<!--    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>-->
+    <script src="/jquery.js"></script>
+    <script >
+        //var host_global = "http://127.0.0.1:8001"
+        var host_global = window.location.protocol + "//" + window.location.host;
+
+        var start = new Date;
+        function populate(){
+            //var host = window.location.protocol + "//" + window.location.host;
+
+            $.ajax({
+                url: host_global+"/json/status"
+            }).then(function(data) {
+                var obj = jQuery.parseJSON(data);
+
+                $('.msgs_camera').text( obj.status.image.count);
+                $('.msgs_livox').text( obj.status.livox.count);
+                $('.msgs_ublox').text( obj.status.ublox.count);
+                $('.bag_info').text(obj.status.bag.file_list);
+                $('.disk').text(obj.status.system.disk+" Gb") ;
+                $('.dir_name').text("Recording to : " + obj.status.bag.directory);
+                $('.diagnostic').text(obj.status.ublox.status +"\n" +obj.status.ublox.accuracy) ;
+
+            });
+        };
+        function populateImg(){
+
+            var node = document.getElementById('camera');
+            node.src = host_global+"/data/img_thumb?time="+new Date().getTime();
+            var node2 = document.getElementById('livox');
+            node2.src = host_global+"/data/img_livox?time="+new Date().getTime();
+
+        };
+        setInterval(function() {populate();}, 100);
+        setInterval(function() {populateImg();}, 100);
+        
+
+        $(document).ready(function() {populate();populateImg();});
+
+        function start_bag() {
+            $.ajax({
+                url: host_global+"/trig/start_bag"
+            })
+        }
+
+        function stop_bag() {
+            $.ajax({
+                url: host_global+"/trig/stop_bag"
+            })
+        }
+
+    </script>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even){background-color: #f2f2f2}
+
+        th {
+            background-color: #04AA6D;
+            color: white;
+        }
+        pre.bag_info {
+            display: block;
+            font-family: monospace;
+            white-space: pre;
+            font-size: 15px;
+            color : #e1e1e1;
+            background-color: #1b1d1c;
+            margin: 1em 0;
+        }
+        pre.diagnostic {
+            display: block;
+            font-family: monospace;
+            white-space: pre;
+            font-size: 15px;
+            color : #e1e1e1;
+            background-color: #332233;
+            margin: 1em 0;
+        }
+
+        .block {
+            display: block;
+            width: 100%;
+            background-color: #04AA6D;
+            padding: 14px 28px;
+            font-size: 16px;
+            margin: 0.2em 0;
+            cursor: pointer;
+            text-align: center;
+        }
+        .block:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        .block:active {
+            background-color: #da2121;
+            color: black;
+        }
+
+        .nonblock {
+            display: block;
+            background-color: #04AA6D;
+            padding: 14px 28px;
+            font-size: 16px;
+            margin: 0.2em 0;
+            cursor: pointer;
+            text-align: center;
+        }
+        .nonblock:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        .nonblock:active {
+            background-color: #da2121;
+            color: black;
+        }
+
+    </style>
+</head>
+
+<body>
+<button type="button" id="btn_trigg1" onclick="start_bag()" style="display:inline;" class="block">Start Bag</button>
+<button type="button" id="btn_trigg2" onclick="stop_bag()" style="display:inline;"class="block" >Stop Bag</button>
+<div>
+
+    <table>
+        <tr>
+            <th>Camera</th>
+            <th>Livox</th>
+            <th>Ublox</th>
+            <th>Disk</th>
+            
+        </tr>
+        <tr>
+            <td class="msgs_camera">-1</td>
+            <td class="msgs_livox">-1</td>
+            <td class="msgs_ublox">-1</td>
+            <td class="disk">-1</td>
+            
+        </tr>
+    </table>
+    <p class="dir_name"></p>
+    <pre class="bag_info"></pre>
+    <pre class="diagnostic"></pre>
+    <img id="camera" ></img>
+    <img id="livox" ></img>
+</body>
+</html>

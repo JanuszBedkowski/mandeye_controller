@@ -1,0 +1,12 @@
+[submodule "3rd/incbin"]
+	path = 3rd/incbin
+	url = https://github.com/graphitemaster/incbin.git
+[submodule "3rd/LASzip"]
+	path = 3rd/LASzip
+	url = https://github.com/LASzip/LASzip.git
+[submodule "3rd/Livox-SDK2"]
+	path = 3rd/Livox-SDK2
+	url = https://github.com/Livox-SDK/Livox-SDK2.git
+[submodule "3rd/mongoose"]
+	path = 3rd/mongoose
+	url = https://github.com/cesanta/mongoose.git
