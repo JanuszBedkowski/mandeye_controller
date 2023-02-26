@@ -16,10 +16,12 @@ include_directories(3rd/incbin)
 #JSON
 include_directories(3rd/json)
 
+# Livox SDK2
+add_subdirectory(3rd/Livox-SDK2)
 
 include_directories(code/)
 
 #executable
-add_executable(control_program code/main.cpp code/web_server.cpp code/web_page.h)
+add_executable(control_program code/main.cpp code/web_server.cpp code/web_page.h code/LivoxClient.cpp)
 
-target_link_libraries(control_program mongoose pthread)
+target_link_libraries(control_program mongoose pthread livox_lidar_sdk_static)
