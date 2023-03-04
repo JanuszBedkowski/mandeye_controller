@@ -90,7 +90,7 @@ void health_server::server_worker() {
     struct mg_mgr mgr;                            // Event manager
     mg_mgr_init(&mgr);                            // Initialise event manager
     mg_http_listen(&mgr, s_listen_on, fn, NULL);  // Create HTTP listener
-    for (;;) mg_mgr_poll(&mgr, 1000);             // Infinite event loop
+    for (;!done;) mg_mgr_poll(&mgr, 1000);             // Infinite event loop
     mg_mgr_free(&mgr);
 }
 

@@ -11,6 +11,7 @@ namespace health_server {
 
     static std::map<std::string, std::function<std::string(const std::string &)>> trig_handlers;
     static std::map<std::string, std::function<std::vector<uint8_t>()>> data_handlers;
+    static bool done = false;
 
     void setStatusHandler(std::function<std::string()> hndl);
 
@@ -23,6 +24,7 @@ namespace health_server {
     void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data);
 
     void server_worker();
+
 };
 namespace file_server {
     const std::string repo{"data_root/"};

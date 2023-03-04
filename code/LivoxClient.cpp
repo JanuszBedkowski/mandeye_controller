@@ -13,7 +13,6 @@ nlohmann::json LivoxClient::produceStatus(){
   data["LivoxLidarInfo"]["sn"] = m_LivoxLidarInfo.sn;
   data["counters"]["imu"] = m_recivedImuMsgs;
   data["counters"]["lidar"] = m_recivedPointMessages;
-
   return data;
 }
 

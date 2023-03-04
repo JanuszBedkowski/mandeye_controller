@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
+set(CMAKE_CXX_STANDARD 17)
 
 project (mandeye_multisensor)
 
@@ -21,7 +22,12 @@ add_subdirectory(3rd/Livox-SDK2)
 
 include_directories(code/)
 
-#executable
-add_executable(control_program code/main.cpp code/web_server.cpp code/web_page.h code/LivoxClient.cpp)
+# GPIOs
+add_subdirectory(3rd/CppGPIO)
+include_directories(3rd/CppGPIO/include/)
 
-target_link_libraries(control_program mongoose pthread livox_lidar_sdk_static)
+
+#executable
+add_executable(control_program code/main.cpp code/web_server.cpp code/web_page.h code/LivoxClient.cpp code/gpios.cpp)
+
+target_link_libraries(control_program mongoose pthread livox_lidar_sdk_static cppgpio-static)
