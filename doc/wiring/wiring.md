@@ -1,11 +1,6 @@
+# Wiring 
 
-# BIM
-## M12 Cable
-
-### Order details
-
- - M12A12FL12AFLSD001 [link](https://www.tme.eu/en/details/m12a12fl12aflsd001/m12-connectors-with-cable/amphenol/m12a12fl-12afl-sd001/)
-
+## Wiring connection to Livox MID360
 ### Pinout of M12A12FL12AFLSD001
 Pins numbers, in plug, from documentation : [link](https://eu.mouser.com/datasheet/2/18/Amphenol_02112019_M12AXXFL-12AFL-SXXXX(A)-1531779.pdf)
 
@@ -40,6 +35,3 @@ Pins numbers, in plug, from documentation : [link](https://eu.mouser.com/datashe
 Correct wiring in the photo below:
 
 ![](rj45.jpg)
-
-# DC converer
- - DF-DFR0571 [link](https://www.tme.eu/en/details/df-dfr0571/converter-modules/dfrobot/dfr0571/)
