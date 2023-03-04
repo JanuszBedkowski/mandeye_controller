@@ -8,7 +8,9 @@ class LivoxClient {
 public:
   nlohmann::json produceStatus();
 
-  void startListener();
+  //! starts LivoxSDK2, interface is IP of listen interface (IP of network cards with Livox connected
+  void startListener(const std::string& interfaceIp);
+
   void startLog();
   void stopLog();
 
@@ -32,15 +34,15 @@ private:
       "\t\t\t\"log_data_port\": 56500\n"
       "\t\t},\n"
       "\t\t\"host_net_info\" : {\n"
-      "\t\t\t\"cmd_data_ip\" : \"192.168.1.5\",\n"
+      "\t\t\t\"cmd_data_ip\" : \"${HOSTIP}\",\n"
       "\t\t\t\"cmd_data_port\": 56101,\n"
-      "\t\t\t\"push_msg_ip\": \"192.168.1.5\",\n"
+      "\t\t\t\"push_msg_ip\": \"${HOSTIP}\",\n"
       "\t\t\t\"push_msg_port\": 56201,\n"
-      "\t\t\t\"point_data_ip\": \"192.168.1.5\",\n"
+      "\t\t\t\"point_data_ip\": \"${HOSTIP}\",\n"
       "\t\t\t\"point_data_port\": 56301,\n"
-      "\t\t\t\"imu_data_ip\" : \"192.168.1.5\",\n"
+      "\t\t\t\"imu_data_ip\" : \"${HOSTIP}\",\n"
       "\t\t\t\"imu_data_port\": 56401,\n"
-      "\t\t\t\"log_data_ip\" : \"192.168.1.5\",\n"
+      "\t\t\t\"log_data_ip\" : \"${HOSTIP}\",\n"
       "\t\t\t\"log_data_port\": 56501\n"
       "\t\t}\n"
       "\t}\n"
