@@ -1,12 +1,14 @@
-#include "web_server.h"
+
 #include <chrono>
 #include <json.hpp>
 #include <ostream>
 #include <thread>
 
 #include <LivoxClient.h>
+#include <FileSystemClient.h>
 #include <gpios.h>
 #include <iostream>
+#include <fstream>
 #include <string>
 
 namespace mandeye {
@@ -33,6 +35,8 @@ namespace mandeye {
     std::shared_ptr<LivoxClient> livoxCLientPtr;
     std::mutex gpioClientPtrLock;
     std::shared_ptr<GpioClient> gpioClientPtr;
+    std::shared_ptr<FileSystemClient> fileSystemClientPtr;
+
     mandeye::States app_state{mandeye::States::WAIT_FOR_RESOURCES};
 
     using json = nlohmann::json;
@@ -50,6 +54,11 @@ namespace mandeye {
         if (gpioClientPtr) {
             j["gpio"] = gpioClientPtr->produceStatus();
         }
+
+        if (fileSystemClientPtr){
+            j["fs"] = fileSystemClientPtr->produceStatus();
+        }
+
         std::ostringstream s;
         s << std::setw(4) << j;
         return s.str();
@@ -73,16 +82,38 @@ namespace mandeye {
         return false;
     }
 
-    void savePointcloudData(LivoxPointsBufferPtr buffer){
+    void savePointcloudData(LivoxPointsBufferPtr buffer, const std::string& directory, int chunk)
+    {
         using namespace std::chrono_literals;
-        std::cout << "Savig buffer of size " << buffer->size() << std::endl;
-        std::this_thread::sleep_for(2s);
+        char lidarName[256];
+        snprintf(lidarName,256, "lidar%04d.txt", chunk);
+        std::filesystem::path lidarFilePath = std::filesystem::path(directory)/std::filesystem::path(lidarName);
+        std::cout << "Savig lidar buffer of size " << buffer->size() <<" to " << lidarFilePath << std::endl;
+        std::ofstream lidarStream(lidarFilePath.c_str());
+        for (const auto &p : *buffer){
+            lidarStream<<p.point.x << " "<<p.point.y <<"  "<<p.point.z << " "<< p.point.tag << " " << p.timestamp << "\n";
+        }
     }
 
+    void saveImuData(LivoxIMUBufferPtr buffer,  const std::string& directory, int chunk)
+    {
+        using namespace std::chrono_literals;
+        char lidarName[256];
+        snprintf(lidarName,256, "imu%04d.csv", chunk);
+        std::filesystem::path lidarFilePath = std::filesystem::path(directory)/std::filesystem::path(lidarName);
+        std::cout << "Savig imu buffer of size " << buffer->size() <<" to " << lidarFilePath << std::endl;
+        std::ofstream lidarStream(lidarFilePath.c_str());
+        for (const auto &p : *buffer){
+            lidarStream<<p.timestamp<<" "<<p.point.gyro_x << " "<<p.point.gyro_y <<"  "<<p.point.gyro_z <<" "<<
+                p.point.acc_x << " "<<p.point.acc_y <<"  "<<p.point.acc_z << "\n";
+        }
+    }
     void stateWatcher(){
         using namespace std::chrono_literals;
         auto chunkStart = std::chrono::steady_clock::now();
         States oldState = States::IDLE;
+        std::string experimentDirectory;
+        int chunksInExperiment{0};
         while (isRunning){
             if (oldState!=app_state){
                 std::cout <<"State transtion from " << StatesToString.at(oldState) <<" to "<< StatesToString.at(app_state) << std::endl;
@@ -92,7 +123,7 @@ namespace mandeye {
                 std::this_thread::sleep_for(100ms);
                 std::lock_guard<std::mutex> l1(livoxClientPtrLock);
                 std::lock_guard<std::mutex> l2(gpioClientPtrLock);
-                if (mandeye::gpioClientPtr && mandeye::gpioClientPtr){
+                if (mandeye::gpioClientPtr && mandeye::gpioClientPtr && mandeye::fileSystemClientPtr){
                     app_state = States::IDLE;
                 }
             }else if(app_state == States::IDLE){
@@ -105,7 +136,7 @@ namespace mandeye {
             }
             else if(app_state == States::STARTING_SCAN)
             {
-
+                chunksInExperiment = 0;
                 mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_GREEN, false);
                 mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, false);
                 mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, false);
@@ -114,6 +145,8 @@ namespace mandeye {
                     livoxCLientPtr->startLog();
                     app_state = States::SCANNING;
                 }
+                // create directory
+                experimentDirectory = fileSystemClientPtr->CreateDirectoryForExperiment();
                 chunkStart = std::chrono::steady_clock::now();
             }
             else if(app_state == States::SCANNING){
@@ -124,25 +157,31 @@ namespace mandeye {
                 if (now - chunkStart > std::chrono::seconds(15) ){
                     mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, true);
                     chunkStart = std::chrono::steady_clock::now();
-                    auto lidarBuffer = livoxCLientPtr->retrieveCollectedLidarData();
-                    savePointcloudData(lidarBuffer);
+
+                    auto [lidarBuffer,imuBuffer] = livoxCLientPtr->retrieveData();
+                    savePointcloudData(lidarBuffer,experimentDirectory, chunksInExperiment);
+                    saveImuData(imuBuffer,experimentDirectory, chunksInExperiment);
+
                     mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, false);
+                    chunksInExperiment++;
                 }
                 std::this_thread::sleep_for(100ms);
             }
             else if(app_state == States::STOPPING){
                 mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, true);
-                auto lidarBuffer = livoxCLientPtr->retrieveCollectedLidarData();
+
+                auto [lidarBuffer,imuBuffer] = livoxCLientPtr->retrieveData();
                 livoxCLientPtr->stopLog();
-                savePointcloudData(lidarBuffer);
+
+                savePointcloudData(lidarBuffer,experimentDirectory, chunksInExperiment);
+                saveImuData(imuBuffer,experimentDirectory, chunksInExperiment);
+
                 mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, false);
                 app_state = States::IDLE;
             }
 
         }
     }
-
-
 } // namespace mandeye
 
 namespace utils {
@@ -166,13 +205,43 @@ namespace utils {
     }
 }
 
+#include <pistache/endpoint.h>
+#include "web_page.h"
+using namespace Pistache;
+
+struct PistacheServerHandler : public Http::Handler {
+HTTP_PROTOTYPE(PistacheServerHandler)
+    void onRequest(const Http::Request& request, Http::ResponseWriter writer) override {
+        if (request.resource() == "/status" || request.resource() == "/json/status")
+        {
+            std::string p =  mandeye::produceReport();
+            writer.send(Http::Code::Ok, p);
+            return;
+        }
+        if (request.resource() == "/jquery.js")
+        {
+            writer.send(Http::Code::Ok, gJQUERYData);
+            return;
+        }
+
+        writer.send(Http::Code::Ok, gINDEX_HTMData);
+    }
+};
+
 
 int main(int argc, char **argv) {
+    Address addr(Ipv4::any(), 8003);
 
+    auto server = std::make_shared<Http::Endpoint>(addr);
+    std::thread http_thread1([&](){
+        auto opts = Http::Endpoint::options()
+                .threads(2);
+        server->init(opts);
+        server->setHandler(Http::make_handler<PistacheServerHandler>());
+        server->serve();
+    });
 
-
-    health_server::setStatusHandler(mandeye::produceReport);
-    std::thread http_thread1(health_server::server_worker);
+    mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", "/tmp/"));
 
     std::thread thLivox([&]() {
         {
@@ -235,6 +304,8 @@ int main(int argc, char **argv) {
         }
     }
 
+    server->shutdown();
+    http_thread1.join();
     std::cout << "joining thStateMachine" << std::endl;
     thStateMachine.join();
 
@@ -243,7 +314,6 @@ int main(int argc, char **argv) {
 
     std::cout << "joining thGpio" << std::endl;
     thGpio.join();
-    health_server::done = true;
     std::cout << "Done" << std::endl;
     return 0;
 }

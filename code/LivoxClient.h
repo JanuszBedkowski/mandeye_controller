@@ -11,9 +11,19 @@ namespace mandeye {
         uint64_t timestamp;
         uint8_t line_id;
     };
+
+    struct LivoxIMU {
+        LivoxLidarImuRawPoint point;
+        uint64_t timestamp;
+    };
+
     using LivoxPointsBuffer = std::deque<LivoxPoint>;
     using LivoxPointsBufferPtr = std::shared_ptr<std::deque<LivoxPoint>>;
     using LivoxPointsBufferConstPtr = std::shared_ptr<const std::deque<LivoxPoint>>;
+
+    using LivoxIMUBuffer = std::deque<LivoxIMU>;
+    using LivoxIMUBufferPtr = std::shared_ptr<std::deque<LivoxIMU>>;
+    using LivoxIMUBufferConstPtr = std::shared_ptr<const std::deque<LivoxIMU>>;
 
     class LivoxClient {
     public:
@@ -29,15 +39,16 @@ namespace mandeye {
         //! Stops log to memory data from Lidar and IMU
         void stopLog();
 
-        //! Retreieve pointer to log from memory, and creates new one.
-        //! @returns shared pointer to data buffer
-        LivoxPointsBufferPtr retrieveCollectedLidarData();
-
+        std::pair<LivoxPointsBufferPtr, LivoxIMUBufferPtr> retrieveData();
 
     private:
 
-        std::mutex m_bufferMutex;
-        LivoxPointsBufferPtr m_bufferPtr{nullptr};
+        std::mutex m_bufferImuMutex;
+        std::mutex m_bufferLidarMutex;
+
+        LivoxPointsBufferPtr m_bufferLivoxPtr{nullptr};
+        LivoxIMUBufferPtr m_bufferIMUPtr{nullptr};
+
         uint64_t m_timestamp;
         uint64_t m_recivedImuMsgs{0};
         uint64_t m_recivedPointMessages{0};

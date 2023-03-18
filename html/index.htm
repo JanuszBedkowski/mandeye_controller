@@ -4,11 +4,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta charset="UTF-8">
     <title>Status</title>
-<!--    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>-->
-    <script src="/jquery.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<!--    <script src="jquery.js"></script>-->
     <script >
-        //var host_global = "http://127.0.0.1:8001"
-        var host_global = window.location.protocol + "//" + window.location.host;
+        var host_global = "http://127.0.0.1:8003"
+        //var host_global = window.location.protocol + "//" + window.location.host;
 
         var start = new Date;
         function populate(){
@@ -19,29 +19,21 @@
             }).then(function(data) {
                 var obj = jQuery.parseJSON(data);
 
-                $('.msgs_camera').text( obj.status.image.count);
-                $('.msgs_livox').text( obj.status.livox.count);
-                $('.msgs_ublox').text( obj.status.ublox.count);
-                $('.bag_info').text(obj.status.bag.file_list);
-                $('.disk').text(obj.status.system.disk+" Gb") ;
-                $('.dir_name').text("Recording to : " + obj.status.bag.directory);
-                $('.diagnostic').text(obj.status.ublox.status +"\n" +obj.status.ublox.accuracy) ;
-
+                $('.msgs_livox').text( obj.livox.counters.lidar);
+                $('.msgs_imu').text( obj.livox.counters.imu);
+                $('.disk').text( obj.fs.FileSystemClient.free_str);
+                $('.state').text( obj.state);
+                list = document.getElementById("dirs");
+                list.innerHTML = ""
+                for (let i =0; i <  obj.fs.FileSystemClient.dirs.length; i++ )
+                {
+                    list.innerHTML += "<li>"+obj.fs.FileSystemClient.dirs[i] +"</li>";
+                }
             });
         };
-        function populateImg(){
 
-            var node = document.getElementById('camera');
-            node.src = host_global+"/data/img_thumb?time="+new Date().getTime();
-            var node2 = document.getElementById('livox');
-            node2.src = host_global+"/data/img_livox?time="+new Date().getTime();
-
-        };
         setInterval(function() {populate();}, 100);
-        setInterval(function() {populateImg();}, 100);
-        
 
-        $(document).ready(function() {populate();populateImg();});
 
         function start_bag() {
             $.ajax({
@@ -133,30 +125,26 @@
 </head>
 
 <body>
-<button type="button" id="btn_trigg1" onclick="start_bag()" style="display:inline;" class="block">Start Bag</button>
-<button type="button" id="btn_trigg2" onclick="stop_bag()" style="display:inline;"class="block" >Stop Bag</button>
+<button type="button" id="btn_trigg1" onclick="start_bag()" style="display:inline;" class="block">Start Record</button>
+<button type="button" id="btn_trigg2" onclick="stop_bag()" style="display:inline;"class="block" >Stop Record</button>
 <div>
 
     <table>
         <tr>
-            <th>Camera</th>
             <th>Livox</th>
-            <th>Ublox</th>
+            <th>IMU</th>
             <th>Disk</th>
-            
+            <th>State</th>
         </tr>
         <tr>
-            <td class="msgs_camera">-1</td>
             <td class="msgs_livox">-1</td>
-            <td class="msgs_ublox">-1</td>
+            <td class="msgs_imu">-1</td>
             <td class="disk">-1</td>
-            
+            <td class="state">-1</td>
         </tr>
     </table>
-    <p class="dir_name"></p>
-    <pre class="bag_info"></pre>
-    <pre class="diagnostic"></pre>
-    <img id="camera" ></img>
-    <img id="livox" ></img>
+    <ul id="dirs">
+        <li><a href="#">Item 1</a></li>
+    </ul>
 </body>
 </html>

@@ -3,9 +3,13 @@ set(CMAKE_CXX_STANDARD 17)
 
 project (mandeye_multisensor)
 
-# mongoose library
-include_directories(3rd/mongoose)
-add_library(mongoose STATIC 3rd/mongoose/mongoose.c)
+## mongoose library
+#include_directories(3rd/mongoose)
+#add_library(mongoose STATIC 3rd/mongoose/mongoose.c)
+
+#pistache
+add_subdirectory(3rd/pistache)
+
 
 # LASzip library
 add_subdirectory(3rd/LASzip)
@@ -28,6 +32,6 @@ include_directories(3rd/CppGPIO/include/)
 
 
 #executable
-add_executable(control_program code/main.cpp code/web_server.cpp code/web_page.h code/LivoxClient.cpp code/gpios.cpp)
+add_executable(control_program code/main.cpp  code/web_page.h code/LivoxClient.cpp code/gpios.cpp code/FileSystemClient.cpp)
 
-target_link_libraries(control_program mongoose pthread livox_lidar_sdk_static cppgpio-static)
+target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache)
