@@ -73,15 +73,16 @@ namespace mandeye {
     {
         std::filesystem::path manifest = std::filesystem::path(m_repository)/std::filesystem::path(manifestFilename);
         int32_t id = GetIdFromManifest();
-
+        id++;
+        m_nextId = id;
         std::ofstream manifestOFstream;
         manifestOFstream.open(manifest.c_str());
         if (manifestOFstream.good() && manifestOFstream.is_open())
         {
-            uint32_t id {0};
             manifestOFstream << id << std::endl;
-            return m_nextId++;
+            return id;
         }
+        return id;
     }
 
     std::string FileSystemClient::CreateDirectoryForExperiment(){
@@ -110,6 +111,7 @@ namespace mandeye {
         for (const auto & entry : std::filesystem::directory_iterator(m_repository)) {
             fn.push_back(entry.path());
         }
+        std::sort(fn.begin(), fn.end());
         return fn;
     }
 

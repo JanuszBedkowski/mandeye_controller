@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "save_laz.h"
 
 namespace mandeye {
     enum class States {
@@ -19,6 +20,8 @@ namespace mandeye {
         SCANNING = 20,
         STOPPING = 30,
         STOPPED = 40,
+        STARTING_STOP_SCAN = 100,
+        STARTING_STOPING_STOP_SCAN = 120,
     };
 
     const std::map<States, std::string> StatesToString{
@@ -28,6 +31,8 @@ namespace mandeye {
             {States::SCANNING, "SCANNING"},
             {States::STOPPING, "STOPPING"},
             {States::STOPPED, "STOPPED"},
+            {States::STARTING_STOP_SCAN, "STARTING_STOPSCAN"},
+            {States::STARTING_STOPING_STOP_SCAN, "STARTING_STOPING_STOPSCAN"},
     };
 
     std::atomic<bool> isRunning{true};
@@ -86,13 +91,14 @@ namespace mandeye {
     {
         using namespace std::chrono_literals;
         char lidarName[256];
-        snprintf(lidarName,256, "lidar%04d.txt", chunk);
+        snprintf(lidarName,256, "lidar%04d.laz", chunk);
         std::filesystem::path lidarFilePath = std::filesystem::path(directory)/std::filesystem::path(lidarName);
         std::cout << "Savig lidar buffer of size " << buffer->size() <<" to " << lidarFilePath << std::endl;
-        std::ofstream lidarStream(lidarFilePath.c_str());
-        for (const auto &p : *buffer){
-            lidarStream<<p.point.x << " "<<p.point.y <<"  "<<p.point.z << " "<< p.point.tag << " " << p.timestamp << "\n";
-        }
+        saveLaz(lidarFilePath.string(), buffer);
+//        std::ofstream lidarStream(lidarFilePath.c_str());
+//        for (const auto &p : *buffer){
+//            lidarStream<<p.point.x << " "<<p.point.y <<"  "<<p.point.z << " "<< p.point.tag << " " << p.timestamp << "\n";
+//        }
     }
 
     void saveImuData(LivoxIMUBufferPtr buffer,  const std::string& directory, int chunk)
@@ -154,7 +160,7 @@ namespace mandeye {
                     mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_GREEN, true);
                 }
                 const auto now = std::chrono::steady_clock::now();
-                if (now - chunkStart > std::chrono::seconds(15) ){
+                if (now - chunkStart > std::chrono::seconds(5) ){
                     mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, true);
                     chunkStart = std::chrono::steady_clock::now();
 
@@ -218,12 +224,21 @@ HTTP_PROTOTYPE(PistacheServerHandler)
             writer.send(Http::Code::Ok, p);
             return;
         }
-        if (request.resource() == "/jquery.js")
+        else if (request.resource() == "/jquery.js")
         {
             writer.send(Http::Code::Ok, gJQUERYData);
             return;
         }
-
+        else if (request.resource() == "/trig/start_bag") {
+            mandeye::StartScan();
+            writer.send(Http::Code::Ok, "");
+            return;
+        }
+        else if (request.resource() == "/trig/stop_bag") {
+            mandeye::StopScan();
+            writer.send(Http::Code::Ok, "");
+            return;
+        }
         writer.send(Http::Code::Ok, gINDEX_HTMData);
     }
 };
