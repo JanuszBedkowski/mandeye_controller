@@ -1,5 +1,7 @@
 # BIM
 
+## Electronic components
+
 |No | ROLE                 |Quantitity   | SYMBOL               | Link     |
 |---|----------------------|-------------|----------------------|----------|
 | 1 |  M12 Cable           | 1  | M12A12FL12AFLSD001   |  [link](https://www.tme.eu/en/details/m12a12fl12aflsd001/m12-connectors-with-cable/amphenol/m12a12fl-12afl-sd001/)  |
@@ -14,5 +16,26 @@
 
 
 
+## Bolts and fasteners
+
+|No | ROLE                 |Quantitity   | Link     |
+|---|----------------------|-------------|----------|
+| 1 |  DIN934 M3 nut       | 4 |  e.g. [link](https://bejmet.com.pl/sklep/din-934-a2-szesciokatna/85-nakretka-szesciokatna-m3-din-934-a2-nierdzewna-4043377098641.html)  |
+| 2 |  DIN 912 M3x45 screw | 4 |  e.g. [link](https://bejmet-nierdzewne.pl/pl/p/Sruba-imbusowa-nierdzewna-DIN-912-A2-M3x45/2068)  |
+| 3 |  Philips M2.5x6      | 4 |  e.g. [link](https://botland.com.pl/srubki-i-nakretki/769-srubki-m25-dlugosc-6mm-10szt-5904422307424.html?cd=18298825651&ad=&kd=&gclid=Cj0KCQjw2v-gBhC1ARIsAOQdKY3F7FveiCLJ2tQ9FIWQRJG0cbe3pjYdIPglw5K2nLbCzHHPFrlcE3AaAumqEALw_wcB)  |
+| 4 |  M2.5x10 long nut    | 4 |  e.g. [link](https://www.tme.eu/pl/details/tff-m2.5x10_dr142/elementy-dystansowe-metalowe/dremec/142x10/)  |
 
 
+## Materials
+
+|No | ROLE                 |Quantitity   | Link     |
+|---|----------------------|-------------|----------|
+| 1 | Cripmed cables       | 4 |  e.g. [link](https://botland.store/przewody-polaczeniowe-zensko-zenskie/3056-connecting-female-female-cables-20cm-colored-50pcs-5904422373559.html)  |
+| 2 | PLA Filament         | 4 |  e.g. black Prusament [link](https://botland.store/pla-filaments/20452-filament-prusa-pla-175mm-1kg-jet-black-8594173675193.html)  |
+| 3 | USB3 Pendrive, FAT32 | 4 |  e.g. [link](https://botland.store/usb-memory-pendrive/10583-sandisk-ultra-fit-memery-usb-30-pendrive-32gb-619659163402.html) |
+
+
+
+## Equipment
+ - Solder iron
+ - 3D FDM printer
