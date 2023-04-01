@@ -23,6 +23,7 @@
                 $('.msgs_imu').text( obj.livox.counters.imu);
                 $('.disk').text( obj.fs.FileSystemClient.free_str);
                 $('.state').text( obj.state);
+                $('.filesystem').text(obj.fs.FileSystemClient.error);
                 list = document.getElementById("dirs");
                 list.innerHTML = ""
                 for (let i =0; i <  obj.fs.FileSystemClient.dirs.length; i++ )
@@ -135,12 +136,15 @@
             <th>IMU</th>
             <th>Disk</th>
             <th>State</th>
+            <th>Filesystem</th>
+
         </tr>
         <tr>
             <td class="msgs_livox">-1</td>
             <td class="msgs_imu">-1</td>
             <td class="disk">-1</td>
             <td class="state">-1</td>
+            <td class="filesystem"></td>
         </tr>
     </table>
     <ul id="dirs">

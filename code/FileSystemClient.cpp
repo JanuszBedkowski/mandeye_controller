@@ -15,13 +15,33 @@ namespace mandeye {
     {
         nlohmann::json data;
         data["FileSystemClient"]["repository"] = m_repository;
-        float free_mb = CheckAvailableSpace();
+        float free_mb =0;
+
+        try {
+          free_mb = CheckAvailableSpace();
+        }catch(std::filesystem::filesystem_error& e) {
+          data["FileSystemClient"]["error"] =e.what();
+        }
         data["FileSystemClient"]["free_megabytes"] = free_mb;
         data["FileSystemClient"]["free_str"] = ConvertToText(free_mb);
-        data["FileSystemClient"]["error"] = m_error;
-        data["FileSystemClient"]["m_nextId"] = m_nextId;
-        data["FileSystemClient"]["writable"] = GetIsWritable();
-        data["FileSystemClient"]["dirs"] = GetDirectories();
+
+
+        try {
+          data["FileSystemClient"]["m_nextId"] = m_nextId;
+        }catch(std::filesystem::filesystem_error& e) {
+          data["FileSystemClient"]["error"] =e.what();
+        }
+        try {
+          data["FileSystemClient"]["writable"] = GetIsWritable();
+        }catch(std::filesystem::filesystem_error& e) {
+          data["FileSystemClient"]["error"] =e.what();
+        }
+
+        try {
+          data["FileSystemClient"]["dirs"] = GetDirectories();
+        }catch(std::filesystem::filesystem_error& e) {
+          data["FileSystemClient"]["error"] =e.what();
+        }
         return data;
     }
 
@@ -108,14 +128,16 @@ namespace mandeye {
     {
         std::unique_lock<std::mutex> lck(m_mutex);
         std::vector<std::string> fn;
-        if(std::filesystem::exists(m_repository)) {
+
           for (const auto &entry :
                std::filesystem::directory_iterator(m_repository)) {
-            fn.push_back(entry.path());
+            auto size = std::filesystem::file_size(entry);
+            size = size / (1024*1204);
+            fn.push_back(entry.path().string()+" "+std::to_string(size)+" Mb");
           }
           std::sort(fn.begin(), fn.end());
           return fn;
-        }
+
         return {"Repo do not exists"};
     }
 
