@@ -108,11 +108,15 @@ namespace mandeye {
     {
         std::unique_lock<std::mutex> lck(m_mutex);
         std::vector<std::string> fn;
-        for (const auto & entry : std::filesystem::directory_iterator(m_repository)) {
+        if(std::filesystem::exists(m_repository)) {
+          for (const auto &entry :
+               std::filesystem::directory_iterator(m_repository)) {
             fn.push_back(entry.path());
+          }
+          std::sort(fn.begin(), fn.end());
+          return fn;
         }
-        std::sort(fn.begin(), fn.end());
-        return fn;
+        return {"Repo do not exists"};
     }
 
     bool FileSystemClient::GetIsWritable(){
