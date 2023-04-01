@@ -99,15 +99,24 @@ bool StopScan()
 	return false;
 }
 
+bool TriggerStopScan()
+{
+	if(app_state == States::IDLE || app_state == States::STOPPED)
+	{
+		app_state = States::STARTING_STOP_SCAN;
+		return true;
+	}
+	return false;
+}
+
+
 void savePointcloudData(LivoxPointsBufferPtr buffer, const std::string& directory, int chunk)
 {
 	using namespace std::chrono_literals;
 	char lidarName[256];
 	snprintf(lidarName, 256, "lidar%04d.laz", chunk);
-	std::filesystem::path lidarFilePath =
-		std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig lidar buffer of size " << buffer->size() << " to " << lidarFilePath
-			  << std::endl;
+	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
+	std::cout << "Savig lidar buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
 	saveLaz(lidarFilePath.string(), buffer);
 	//        std::ofstream lidarStream(lidarFilePath.c_str());
 	//        for (const auto &p : *buffer){
@@ -120,32 +129,30 @@ void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chu
 	using namespace std::chrono_literals;
 	char lidarName[256];
 	snprintf(lidarName, 256, "imu%04d.csv", chunk);
-	std::filesystem::path lidarFilePath =
-		std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig imu buffer of size " << buffer->size() << " to " << lidarFilePath
-			  << std::endl;
+	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
+	std::cout << "Savig imu buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
 	std::ofstream lidarStream(lidarFilePath.c_str());
 	for(const auto& p : *buffer)
 	{
-		lidarStream << p.timestamp << " " << p.point.gyro_x << " " << p.point.gyro_y << "  "
-					<< p.point.gyro_z << " " << p.point.acc_x << " " << p.point.acc_y << "  "
-					<< p.point.acc_z << "\n";
+		lidarStream << p.timestamp << " " << p.point.gyro_x << " " << p.point.gyro_y << "  " << p.point.gyro_z << " " << p.point.acc_x << " "
+					<< p.point.acc_y << "  " << p.point.acc_z << "\n";
 	}
 }
 void stateWatcher()
 {
 	using namespace std::chrono_literals;
-	auto chunkStart = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point chunkStart = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point stopScanDeadline = std::chrono::steady_clock::now();
 	States oldState = States::IDLE;
 	std::string experimentDirectory;
+	std::string stopScanDirectory;
 	int chunksInExperiment{0};
-	std::chrono::system_clock::time_point stopScanDeadline = std::chrono::system_clock::now();
+
 	while(isRunning)
 	{
 		if(oldState != app_state)
 		{
-			std::cout << "State transtion from " << StatesToString.at(oldState) << " to "
-					  << StatesToString.at(app_state) << std::endl;
+			std::cout << "State transtion from " << StatesToString.at(oldState) << " to " << StatesToString.at(app_state) << std::endl;
 		}
 		oldState = app_state;
 		if(app_state == States::WAIT_FOR_RESOURCES)
@@ -223,24 +230,51 @@ void stateWatcher()
 		}
 		else if(app_state == States::STARTING_STOP_SCAN)
 		{
-			chunksInExperiment = 0;
 			if(gpioClientPtr)
 			{
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_GREEN, true);
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, false);
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, false);
 			}
-
-			std::chrono::system_clock::time_point stopScanDeadline if(livoxCLientPtr)
+			if (stopScanDirectory.empty() && fileSystemClientPtr)
+			{
+				stopScanDirectory = fileSystemClientPtr->CreateDirectoryForStopScans();
+			}
+			stopScanDeadline = std::chrono::steady_clock::now();
+			stopScanDeadline += std::chrono::milliseconds(5000);
+			if(livoxCLientPtr)
 			{
 				livoxCLientPtr->startLog();
-				app_state = States::SCANNING;
+				app_state = States::STOP_SCAN_IN_PROGRESS;
 			}
 		}
 		else if(app_state == States::STOP_SCAN_IN_PROGRESS)
-		{ }
-		else if(app_state == States::STOP_SCAN_IN_PROGRESS)
-		{ }
+		{
+			const auto now = std::chrono::steady_clock::now();
+			if(now > stopScanDeadline)
+			{
+				if(gpioClientPtr)
+				{
+					mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_GREEN, false);
+					mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, false);
+					mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, true);
+				}
+				app_state = States::STOPING_STOP_SCAN;
+			}
+		}
+		else if(app_state == States::STOPING_STOP_SCAN)
+		{
+			auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
+			livoxCLientPtr->stopLog();
+			chunksInExperiment ++;
+			savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperiment);
+			saveImuData(imuBuffer, stopScanDirectory, chunksInExperiment);
+			if(gpioClientPtr)
+			{
+				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, false);
+			}
+			app_state = States::IDLE;
+		}
 	}
 }
 } // namespace mandeye
@@ -304,6 +338,12 @@ struct PistacheServerHandler : public Http::Handler
 			writer.send(Http::Code::Ok, "");
 			return;
 		}
+		else if(request.resource() == "/trig/stopscan")
+		{
+			mandeye::TriggerStopScan();
+			writer.send(Http::Code::Ok, "");
+			return;
+		}
 		writer.send(Http::Code::Ok, gINDEX_HTMData);
 	}
 };
@@ -320,16 +360,14 @@ int main(int argc, char** argv)
 		server->serve();
 	});
 
-	mandeye::fileSystemClientPtr =
-		std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", "/tmp/"));
+	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", "/tmp/"));
 
 	std::thread thLivox([&]() {
 		{
 			std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
 			mandeye::livoxCLientPtr = std::make_shared<mandeye::LivoxClient>();
 		}
-		mandeye::livoxCLientPtr->startListener(
-			utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", "192.168.1.50"));
+		mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", "192.168.1.50"));
 	});
 
 	std::thread thStateMachine([&]() { mandeye::stateWatcher(); });
@@ -356,10 +394,8 @@ int main(int argc, char** argv)
 		}
 		std::cout << "GPIO Init done" << std::endl;
 
-		mandeye::gpioClientPtr->addButtonCallback(
-			mandeye::GpioClient::BUTTON::BUTTON_1, "START_SCAN", [&]() { mandeye::StartScan(); });
-		mandeye::gpioClientPtr->addButtonCallback(
-			mandeye::GpioClient::BUTTON::BUTTON_2, "STOP_SCAN", [&]() { mandeye::StopScan(); });
+		mandeye::gpioClientPtr->addButtonCallback(mandeye::GpioClient::BUTTON::BUTTON_1, "START_SCAN", [&]() { mandeye::StartScan(); });
+		mandeye::gpioClientPtr->addButtonCallback(mandeye::GpioClient::BUTTON::BUTTON_2, "STOP_SCAN", [&]() { mandeye::StopScan(); });
 	});
 
 	while(mandeye::isRunning)

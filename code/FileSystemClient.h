@@ -33,6 +33,9 @@ public:
 
 	std::string CreateDirectoryForExperiment();
 
+	std::string CreateDirectoryForStopScans();
+
+
 private:
 	int32_t m_nextId{0};
 	std::string ConvertToText(float mb);

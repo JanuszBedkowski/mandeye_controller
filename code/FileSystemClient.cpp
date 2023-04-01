@@ -143,6 +143,28 @@ std::string FileSystemClient::CreateDirectoryForExperiment()
 	return "";
 }
 
+std::string FileSystemClient::CreateDirectoryForStopScans(){
+	std::string ret;
+
+	if(GetIsWritable())
+	{
+		auto id = GetNextIdFromManifest();
+		char dirName[256];
+		snprintf(dirName, 256, "stopScans", id);
+		std::filesystem::path newDirPath =
+			std::filesystem::path(m_repository) / std::filesystem::path(dirName);
+		std::cout << "Creating directory " << newDirPath.string() << std::endl;
+		std::error_code ec;
+		std::filesystem::create_directories(newDirPath, ec);
+		m_error = ec.message();
+		if(ec.value() == 0)
+		{
+			return newDirPath.string();
+		}
+	}
+	return "";
+}
+
 std::vector<std::string> FileSystemClient::GetDirectories()
 {
 	std::unique_lock<std::mutex> lck(m_mutex);
