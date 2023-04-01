@@ -1,43 +1,43 @@
 #pragma once
 
 #include "livox_lidar_def.h"
+#include <deque>
 #include <json.hpp>
 #include <mutex>
-#include <deque>
 #include <string>
 
-namespace mandeye {
+namespace mandeye
+{
 
-    class FileSystemClient {
-        constexpr static char manifestFilename[] {"mandala_manifest.txt"};
-    public:
-        FileSystemClient(const std::string& repository);
-        nlohmann::json produceStatus();
+class FileSystemClient
+{
+	constexpr static char manifestFilename[]{"mandala_manifest.txt"};
 
-        //! Test is writable
-        float CheckAvailableSpace();
+public:
+	FileSystemClient(const std::string& repository);
+	nlohmann::json produceStatus();
 
-        //! Create Counter file
-        int32_t GetIdFromManifest();
+	//! Test is writable
+	float CheckAvailableSpace();
 
-        //! Create Counter file
-        int32_t GetNextIdFromManifest();
+	//! Create Counter file
+	int32_t GetIdFromManifest();
 
+	//! Create Counter file
+	int32_t GetNextIdFromManifest();
 
-        //! Get is writable
-        bool GetIsWritable();
+	//! Get is writable
+	bool GetIsWritable();
 
-        std::vector<std::string> GetDirectories();
+	std::vector<std::string> GetDirectories();
 
-        std::string CreateDirectoryForExperiment();
+	std::string CreateDirectoryForExperiment();
 
-
-    private:
-        int32_t  m_nextId {0};
-        std::string ConvertToText(float mb);
-        std::string m_repository;
-        std::string m_error;
-        std::mutex m_mutex;
-
-    };
+private:
+	int32_t m_nextId{0};
+	std::string ConvertToText(float mb);
+	std::string m_repository;
+	std::string m_error;
+	std::mutex m_mutex;
+};
 } // namespace mandeye

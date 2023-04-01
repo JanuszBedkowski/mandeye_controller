@@ -48,6 +48,12 @@
             })
         }
 
+        function stopscan(){
+            $.ajax({
+                url: host_global+"/trig/stopscan"
+            })
+        }
+
     </script>
     <style>
         table {
@@ -95,6 +101,25 @@
             cursor: pointer;
             text-align: center;
         }
+        .block_stopscan {
+            display: block;
+            width: 100%;
+            background-color: #7577dc;
+            padding: 14px 28px;
+            font-size: 16px;
+            margin: 0.2em 0;
+            cursor: pointer;
+            text-align: center;
+        }
+        .block_stopscan:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        .block_stopscan:active {
+            background-color: #da2121;
+            color: black;
+        }
+
         .block:hover {
             background-color: #ddd;
             color: black;
@@ -128,6 +153,7 @@
 <body>
 <button type="button" id="btn_trigg1" onclick="start_bag()" style="display:inline;" class="block">Start Record</button>
 <button type="button" id="btn_trigg2" onclick="stop_bag()" style="display:inline;"class="block" >Stop Record</button>
+<button type="button" id="btn_stopscan" onclick="stopscan()" style="display:inline;"class="block_stopscan" >StopScan</button>
 <div>
 
     <table>
