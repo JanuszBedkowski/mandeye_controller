@@ -23,6 +23,7 @@
                 $('.msgs_imu').text( obj.livox.counters.imu);
                 $('.disk').text( obj.fs.FileSystemClient.free_str);
                 $('.state').text( obj.state);
+                $('.filesystem').text(obj.fs.FileSystemClient.error);
                 list = document.getElementById("dirs");
                 list.innerHTML = ""
                 for (let i =0; i <  obj.fs.FileSystemClient.dirs.length; i++ )
@@ -44,6 +45,12 @@
         function stop_bag() {
             $.ajax({
                 url: host_global+"/trig/stop_bag"
+            })
+        }
+
+        function stopscan(){
+            $.ajax({
+                url: host_global+"/trig/stopscan"
             })
         }
 
@@ -94,6 +101,25 @@
             cursor: pointer;
             text-align: center;
         }
+        .block_stopscan {
+            display: block;
+            width: 100%;
+            background-color: #7577dc;
+            padding: 14px 28px;
+            font-size: 16px;
+            margin: 0.2em 0;
+            cursor: pointer;
+            text-align: center;
+        }
+        .block_stopscan:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        .block_stopscan:active {
+            background-color: #da2121;
+            color: black;
+        }
+
         .block:hover {
             background-color: #ddd;
             color: black;
@@ -127,6 +153,7 @@
 <body>
 <button type="button" id="btn_trigg1" onclick="start_bag()" style="display:inline;" class="block">Start Record</button>
 <button type="button" id="btn_trigg2" onclick="stop_bag()" style="display:inline;"class="block" >Stop Record</button>
+<button type="button" id="btn_stopscan" onclick="stopscan()" style="display:inline;"class="block_stopscan" >StopScan</button>
 <div>
 
     <table>
@@ -135,12 +162,15 @@
             <th>IMU</th>
             <th>Disk</th>
             <th>State</th>
+            <th>Filesystem</th>
+
         </tr>
         <tr>
             <td class="msgs_livox">-1</td>
             <td class="msgs_imu">-1</td>
             <td class="disk">-1</td>
             <td class="state">-1</td>
+            <td class="filesystem"></td>
         </tr>
     </table>
     <ul id="dirs">
