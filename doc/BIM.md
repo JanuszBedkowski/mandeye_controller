@@ -24,7 +24,7 @@
 | 2 |  DIN 912 M3x45 screw | 4 |  e.g. [link](https://bejmet-nierdzewne.pl/pl/p/Sruba-imbusowa-nierdzewna-DIN-912-A2-M3x45/2068)  |
 | 3 |  Philips M2.5x6      | 4 |  e.g. [link](https://botland.com.pl/srubki-i-nakretki/769-srubki-m25-dlugosc-6mm-10szt-5904422307424.html?cd=18298825651&ad=&kd=&gclid=Cj0KCQjw2v-gBhC1ARIsAOQdKY3F7FveiCLJ2tQ9FIWQRJG0cbe3pjYdIPglw5K2nLbCzHHPFrlcE3AaAumqEALw_wcB)  |
 | 4 |  M2.5x10 long nut    | 4 |  e.g. [link](https://www.tme.eu/pl/details/tff-m2.5x10_dr142/elementy-dystansowe-metalowe/dremec/142x10/)  |
-
+| 5 |  Philips M3x8        | 4 |                     |
 
 ## Materials
 
