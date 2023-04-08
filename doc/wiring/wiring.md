@@ -64,5 +64,10 @@ Correct wiring in the photo below:
 
 ![](raspberryGPIO.jpg)
 
+and schematic:
+
+![](connections_bb.png)
+
+
 
 
