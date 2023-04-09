@@ -37,5 +37,9 @@ set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
 target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip)
 
 add_executable(led_demo code/led_demo.cpp code/gpios.cpp)
-set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
+set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
 target_link_libraries(led_demo cppgpio-static)
+
+add_executable(button_demo code/button_demo.cpp code/gpios.cpp)
+set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
+target_link_libraries(button_demo cppgpio-static)

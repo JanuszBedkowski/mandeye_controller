@@ -38,20 +38,7 @@ int main(int arc, char *argv[]){
         std::cout << "yellow OFF" << std::endl;
         gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, false);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        
-
-        /*std::this_thread::sleep_for(100ms);
-        mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, true);
-        std::this_thread::sleep_for(100ms);
-        mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, true);
-        std::this_thread::sleep_for(1000ms);
-        mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_GREEN, false);
-        std::this_thread::sleep_for(100ms);
-        mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, false);
-        std::this_thread::sleep_for(100ms);
-        mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, false);*/
     }
-    std::cout << "GPIO Init done" << std::endl;
-
+    
     return 0;
 }
