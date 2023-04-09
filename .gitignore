@@ -3,3 +3,5 @@
 cmake-*/
 build/
 build*/
+BUILD/
+BUILD*/

@@ -12,6 +12,11 @@
 #include <iostream>
 #include <string>
 
+//configuration for alienware
+#define MANDEYE_LIVOX_LISTEN_IP "192.168.1.100"
+#define MANDEYE_REPO "/tmp/"
+#define MANDEYE_GPIO_SIM true
+
 namespace mandeye
 {
 enum class States
@@ -360,14 +365,14 @@ int main(int argc, char** argv)
 		server->serve();
 	});
 
-	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", "/tmp/"));
+	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", MANDEYE_REPO));
 
 	std::thread thLivox([&]() {
 		{
 			std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
 			mandeye::livoxCLientPtr = std::make_shared<mandeye::LivoxClient>();
 		}
-		mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", "192.168.1.50"));
+		mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", MANDEYE_LIVOX_LISTEN_IP));
 	});
 
 	std::thread thStateMachine([&]() { mandeye::stateWatcher(); });
@@ -375,7 +380,7 @@ int main(int argc, char** argv)
 	std::thread thGpio([&]() {
 		std::lock_guard<std::mutex> l2(mandeye::gpioClientPtrLock);
 		using namespace std::chrono_literals;
-		const bool simMode = utils::getEnvBool("MANDEYE_GPIO_SIM", false);
+		const bool simMode = utils::getEnvBool("MANDEYE_GPIO_SIM", MANDEYE_GPIO_SIM);
 		std::cout << "MANDEYE_GPIO_SIM : " << simMode << std::endl;
 		mandeye::gpioClientPtr = std::make_shared<mandeye::GpioClient>(simMode);
 		for(int i = 0; i < 3; i++)
