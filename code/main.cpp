@@ -41,8 +41,7 @@ const std::map<States, std::string> StatesToString{
 	{States::STOPPED, "STOPPED"},
 	{States::STARTING_STOP_SCAN, "STARTING_STOP_SCAN"},
 	{States::STOP_SCAN_IN_PROGRESS, "STOP_SCAN_IN_PROGRESS"},
-	{States::STOPING_STOP_SCAN, "STOPING_STOP_SCAN"},
-
+	{States::STOPING_STOP_SCAN, "STOPING_STOP_SCAN"}
 };
 
 std::atomic<bool> isRunning{true};

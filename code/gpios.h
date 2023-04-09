@@ -16,7 +16,8 @@ public:
 	{
 		LED_GPIO_RED,
 		LED_GPIO_GREEN,
-		LED_GPIO_YELLOW
+		LED_GPIO_YELLOW,
+		LED_GPIO_BLUE
 	};
 
 	enum class BUTTON
@@ -50,7 +51,9 @@ private:
 	std::unordered_map<LED, bool> m_ledState{
 		{LED::LED_GPIO_RED, false},
 		{LED::LED_GPIO_GREEN, false},
+		{LED::LED_GPIO_BLUE, false},
 		{LED::LED_GPIO_YELLOW, false},
+		
 	};
 
 	//! available LEDs
@@ -65,12 +68,14 @@ private:
 	const std::unordered_map<LED, std::string> LedToName{
 		{LED::LED_GPIO_RED, "LED_GPIO_RED"},
 		{LED::LED_GPIO_GREEN, "LED_GPIO_GREEN"},
+		{LED::LED_GPIO_BLUE, "LED_GPIO_BLUE"},
 		{LED::LED_GPIO_YELLOW, "LED_GPIO_YELLOW"},
 	};
 
 	const std::unordered_map<std::string, LED> NameToLed{
 		{"LED_GPIO_RED", LED::LED_GPIO_RED},
 		{"LED_GPIO_GREEN", LED::LED_GPIO_GREEN},
+		{"LED_GPIO_BLUE", LED::LED_GPIO_BLUE},
 		{"LED_GPIO_YELLOW", LED::LED_GPIO_YELLOW},
 	};
 
