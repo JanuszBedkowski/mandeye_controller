@@ -3,40 +3,35 @@
 #include <thread>
 #include <chrono>
 
+std::mutex gpioClientPtrLock;
+std::shared_ptr<mandeye::GpioClient> gpioClientPtr;
 bool StartScan()
 {
-	std::cout << "BUTTON 1" << std::endl;
-    exit(1);
+	gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, true);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
+    gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, false);
 	return false;
 }
 
 bool StopScan()
 {
-	std::cout << "BUTTON 2" << std::endl;
-    exit(2);
-	return false;
+	gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, true);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
+    gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, false);
+	
+    return false;
 }
 
-std::mutex gpioClientPtrLock;
-std::shared_ptr<mandeye::GpioClient> gpioClientPtr;
 
 int main(int arc, char *argv[]){
     std::cout << "button_demo" << std::endl;
 
-    std::thread thGpio([&]() {
-		std::lock_guard<std::mutex> l2(gpioClientPtrLock);
-		using namespace std::chrono_literals;
-		
-		gpioClientPtr = std::make_shared<mandeye::GpioClient>(1);
-		gpioClientPtr->addButtonCallback(mandeye::GpioClient::BUTTON::BUTTON_1, "START_SCAN", [&]() { StartScan(); });
-		gpioClientPtr->addButtonCallback(mandeye::GpioClient::BUTTON::BUTTON_2, "STOP_SCAN", [&]() { StopScan(); });
-	});
 
-    while(1){
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    }
-
-    thGpio.join();
+    gpioClientPtr = std::make_shared<mandeye::GpioClient>(0);
+    gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_BLUE, true);
+    gpioClientPtr->addButtonCallback(mandeye::GpioClient::BUTTON::BUTTON_1, "START_SCAN", [&]() { StartScan(); });
+    gpioClientPtr->addButtonCallback(mandeye::GpioClient::BUTTON::BUTTON_2, "STOP_SCAN", [&]() { StopScan(); });
+    std::this_thread::sleep_for(std::chrono::milliseconds(100000)); 
 
     return 0;
 }

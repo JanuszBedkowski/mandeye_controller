@@ -52,9 +52,9 @@ Correct wiring in the photo below:
 | 21   | GPI009 |            |   |   |             | GPIO25   | 22  |
 | 23   | GPI011 |            |   |   |             | GPIO28   | 24  |
 | 25   | GND    | 0V         | X |   |             | GPIO07   | 26  |
-| 27   | GPI000 |            |   |   |             | ID_SC    | 28  |
-| 29   | GPIO05 | Button1    | X |   |             | GND      | 30  |
-| 31   | GPIO06 | Button2    | X |   |             | GPIO12   | 32  |
+| 27   | GPI000 | Button1    | X |   |             | ID_SC    | 28  |
+| 29   | GPIO05 | Button2    | X |   |             | GND      | 30  |
+| 31   | GPIO06 | BlueLed    | X |   |             | GPIO12   | 32  |
 | 33   | GPIO13 | GreenLed   | X |   |             | GND      | 34  |
 | 35   | GPIO19 | RedLed     | X |   |             | GPIO16   | 36  |
 | 37   | GPIO26 | YellowLed  | X |   |             | GPIO20   | 38  |

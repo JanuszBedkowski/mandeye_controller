@@ -24,8 +24,8 @@ GpioClient::GpioClient(bool sim)
 		m_ledGpio[LED::LED_GPIO_BLUE] = std::make_unique<DigitalOut>(13);
 		m_ledGpio[LED::LED_GPIO_YELLOW] = std::make_unique<DigitalOut>(6);
 		
-		m_buttons[BUTTON::BUTTON_1] = std::make_unique<PushButton>(5, GPIO::GPIO_PULL::UP);
-		//m_buttons[BUTTON::BUTTON_2] = std::make_unique<PushButton>(27, GPIO::GPIO_PULL::UP);
+		m_buttons[BUTTON::BUTTON_1] = std::make_unique<PushButton>(0, GPIO::GPIO_PULL::UP);
+		m_buttons[BUTTON::BUTTON_2] = std::make_unique<PushButton>(5, GPIO::GPIO_PULL::UP);
 
 		for(auto& [buttonID, ptr] : m_buttons)
 		{
