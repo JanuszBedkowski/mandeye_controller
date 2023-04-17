@@ -16,6 +16,7 @@
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
 #define MANDEYE_REPO "/tmp/"
 #define MANDEYE_GPIO_SIM true
+#define SERVER_PORT 8003
 
 namespace mandeye
 {
@@ -311,7 +312,7 @@ bool getEnvBool(const std::string& env, bool def)
 } // namespace utils
 
 
-#if 0
+#if 1
 #include "web_page.h"
 #include <pistache/endpoint.h>
 using namespace Pistache;
@@ -357,7 +358,7 @@ struct PistacheServerHandler : public Http::Handler
 
 int main(int argc, char** argv)
 {
-	/*Address addr(Ipv4::any(), 8003);
+	Address addr(Ipv4::any(), SERVER_PORT);
 
 	auto server = std::make_shared<Http::Endpoint>(addr);
 	std::thread http_thread1([&]() {
@@ -365,7 +366,7 @@ int main(int argc, char** argv)
 		server->init(opts);
 		server->setHandler(Http::make_handler<PistacheServerHandler>());
 		server->serve();
-	});*/
+	});
 
 	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", MANDEYE_REPO));
 
@@ -431,8 +432,8 @@ int main(int argc, char** argv)
 		}
 	}
 
-	//server->shutdown();
-	//http_thread1.join();
+	server->shutdown();
+	http_thread1.join();
 	std::cout << "joining thStateMachine" << std::endl;
 	thStateMachine.join();
 
