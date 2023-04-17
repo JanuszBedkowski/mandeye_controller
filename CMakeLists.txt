@@ -3,24 +3,29 @@ set(CMAKE_CXX_STANDARD 17)
 
 project (mandeye_multisensor)
 
+message("mongoose library")
 ## mongoose library
-#include_directories(3rd/mongoose)
-#add_library(mongoose STATIC 3rd/mongoose/mongoose.c)
+include_directories(3rd/mongoose)
+add_library(mongoose STATIC 3rd/mongoose/mongoose.c)
 
+message("pistache")
 #pistache
-add_subdirectory(3rd/pistache)
+#add_subdirectory(3rd/pistache)
 
-
+message("LASzip library")
 # LASzip library
 add_subdirectory(3rd/LASzip)
 include_directories(3rd/LASzip/include)
 
+message("INCBIN")
 # INCBIN
 include_directories(3rd/incbin)
 
+message("JSON")
 #JSON
 include_directories(3rd/json)
 
+message("Livox SDK2")
 # Livox SDK2
 add_subdirectory(3rd/Livox-SDK2)
 
@@ -34,7 +39,9 @@ include_directories(3rd/CppGPIO/include/)
 #executable
 add_executable(control_program code/main.cpp  code/web_page.h code/LivoxClient.cpp code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
-target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip)
+#target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip)
+target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static atomic laszip)
+
 
 add_executable(led_demo code/led_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
