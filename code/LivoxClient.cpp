@@ -77,7 +77,7 @@ std::pair<LivoxPointsBufferPtr, LivoxIMUBufferPtr> LivoxClient::retrieveData()
 	return std::pair<LivoxPointsBufferPtr, LivoxIMUBufferPtr>(returnPointerLidar, returnPointerImu);
 }
 
-void LivoxClient::startListener(const std::string& interfaceIp)
+bool LivoxClient::startListener(const std::string& interfaceIp)
 {
 	constexpr char configFn[] = "/tmp/config.json";
 
@@ -90,11 +90,13 @@ void LivoxClient::startListener(const std::string& interfaceIp)
 	init_succes = LivoxLidarSdkInit(configFn);
 	if(!init_succes)
 	{
-		return;
+		return false;
 	}
 	SetLivoxLidarPointCloudCallBack(PointCloudCallback, (void*)this);
 	SetLivoxLidarImuDataCallback(ImuDataCallback, (void*)this);
 	SetLivoxLidarInfoChangeCallback(LidarInfoChangeCallback, (void*)this);
+
+	return true;
 }
 
 union ToUint64

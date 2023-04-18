@@ -120,7 +120,7 @@ int32_t FileSystemClient::GetNextIdFromManifest()
 	return id;
 }
 
-std::string FileSystemClient::CreateDirectoryForExperiment()
+bool FileSystemClient::CreateDirectoryForExperiment(std::string &writable_dir)
 {
 	std::string ret;
 
@@ -137,13 +137,21 @@ std::string FileSystemClient::CreateDirectoryForExperiment()
 		m_error = ec.message();
 		if(ec.value() == 0)
 		{
-			return newDirPath.string();
+			if(!newDirPath.string().empty()){
+				writable_dir = newDirPath.string();
+				return true;
+			}else{
+				return false;
+			}
+		}else{
+			return false;
 		}
+	}else{
+		return false;
 	}
-	return "";
 }
 
-std::string FileSystemClient::CreateDirectoryForStopScans(){
+bool FileSystemClient::CreateDirectoryForStopScans(std::string &writable_dir){
 	std::string ret;
 
 	if(GetIsWritable())
@@ -159,10 +167,18 @@ std::string FileSystemClient::CreateDirectoryForStopScans(){
 		m_error = ec.message();
 		if(ec.value() == 0)
 		{
-			return newDirPath.string();
+			if(!newDirPath.string().empty()){
+				writable_dir = newDirPath.string();
+				return true;
+			}else{
+				return false;
+			}
+		}else{
+			return false;
 		}
+	}else{
+		return false;
 	}
-	return "";
 }
 
 std::vector<std::string> FileSystemClient::GetDirectories()

@@ -34,7 +34,7 @@ public:
 	nlohmann::json produceStatus();
 
 	//! starts LivoxSDK2, interface is IP of listen interface (IP of network cards with Livox connected
-	void startListener(const std::string& interfaceIp);
+	bool startListener(const std::string& interfaceIp);
 
 	//! Start log to memory data from Lidar and IMU
 	void startLog();
