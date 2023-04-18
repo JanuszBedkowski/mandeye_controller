@@ -11,6 +11,7 @@
 #include <gpios.h>
 #include <iostream>
 #include <string>
+#include <chrono>
 
 //configuration for alienware
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
@@ -106,8 +107,21 @@ bool StopScan()
 	return false;
 }
 
+using namespace std::chrono_literals;
+
 bool TriggerStopScan()
 {
+	/*if(gpioClientPtr){
+		mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, true);
+		std::this_thread::sleep_for(100ms);
+		mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, false);
+		std::this_thread::sleep_for(100ms);
+		mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, true);
+		std::this_thread::sleep_for(100ms);
+		mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, false);
+		std::this_thread::sleep_for(100ms);
+	}*/
+
 	if(app_state == States::IDLE || app_state == States::STOPPED)
 	{
 		app_state = States::STARTING_STOP_SCAN;
@@ -117,6 +131,17 @@ bool TriggerStopScan()
 }
 
 bool TriggerContinousScanning(){
+	/*if(gpioClientPtr){
+		mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
+		std::this_thread::sleep_for(100ms);
+		mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, false);
+		std::this_thread::sleep_for(100ms);
+		mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
+		std::this_thread::sleep_for(100ms);
+		mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, false);
+		std::this_thread::sleep_for(100ms);
+	}*/
+
 	if(app_state == States::IDLE || app_state == States::STOPPED){
 		app_state = States::STARTING_SCAN;
 		return true;
@@ -426,28 +451,22 @@ int main(int argc, char** argv)
 		mandeye::gpioClientPtr = std::make_shared<mandeye::GpioClient>(simMode);
 		for(int i = 0; i < 3; i++)
 		{
-			/*mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_GREEN, true);
-			std::this_thread::sleep_for(100ms);
-			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, true);
-			std::this_thread::sleep_for(100ms);
-			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, true);
-			std::this_thread::sleep_for(1000ms);
-			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_GREEN, false);
-			std::this_thread::sleep_for(100ms);
-			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, false);
-			std::this_thread::sleep_for(100ms);
-			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, false);*/
-
 			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, true);
 			std::this_thread::sleep_for(100ms);
 			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, false);
 			std::this_thread::sleep_for(100ms);
+
+			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
+			std::this_thread::sleep_for(100ms);
+			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, false);
+			std::this_thread::sleep_for(100ms);
+
+			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, true);
+			std::this_thread::sleep_for(100ms);
+			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, false);
+			std::this_thread::sleep_for(100ms);
 		}
 		std::cout << "GPIO Init done" << std::endl;
-		//TriggerStopScan
-
-		//mandeye::gpioClientPtr->addButtonCallback(mandeye::GpioClient::BUTTON::BUTTON_1, "START_SCAN", [&]() { mandeye::StartScan(); });
-		//mandeye::gpioClientPtr->addButtonCallback(mandeye::GpioClient::BUTTON::BUTTON_2, "STOP_SCAN", [&]() { mandeye::StopScan(); });
 		mandeye::gpioClientPtr->addButtonCallback(mandeye::GpioClient::BUTTON::BUTTON_STOP_SCAN, "BUTTON_STOP_SCAN", [&]() { mandeye::TriggerStopScan(); });
 		mandeye::gpioClientPtr->addButtonCallback(mandeye::GpioClient::BUTTON::BUTTON_CONTINOUS_SCANNING, "BUTTON_CONTINOUS_SCANNING", [&]() { mandeye::TriggerContinousScanning(); });
 	});

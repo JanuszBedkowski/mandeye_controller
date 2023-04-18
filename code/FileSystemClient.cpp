@@ -150,7 +150,7 @@ std::string FileSystemClient::CreateDirectoryForStopScans(){
 	{
 		auto id = GetNextIdFromManifest();
 		char dirName[256];
-		snprintf(dirName, 256, "stopScans", id);
+		snprintf(dirName, 256, "stopScans_%04d", id);
 		std::filesystem::path newDirPath =
 			std::filesystem::path(m_repository) / std::filesystem::path(dirName);
 		std::cout << "Creating directory " << newDirPath.string() << std::endl;
