@@ -16,3 +16,6 @@ sudo systemctl stop mandeye_controllel.service
 sudo systemctl start mandeye_controllel.service
 sudo systemctl restart mandeye_controllel.service
 sudo systemctl status mandeye_controllel.service
+
+hotspot
+https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/157-raspberry-pi-auto-wifi-hotspot-switch-internet
