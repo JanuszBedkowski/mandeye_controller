@@ -13,30 +13,24 @@ int main(int arc, char *argv[]){
     for(int i = 0; i < 10; i++)
     {
         std::cout << "iteration " << i + 1  << " of 10" << std::endl;
-        std::cout << "red ON" << std::endl;
-        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, true);
+        std::cout << "LED_GPIO_STOP_SCAN ON" << std::endl;
+        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, true);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "green ON" << std::endl;
-        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_GREEN, true);
+        std::cout << "LED_GPIO_COPY_DATA ON" << std::endl;
+        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, true);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "blue ON" << std::endl;
-        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_BLUE, true);
+        std::cout << "LED_GPIO_CONTINOUS_SCANNING ON" << std::endl;
+        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "yellow ON" << std::endl;
-        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, true);
+       
+        std::cout << "LED_GPIO_STOP_SCAN OFF" << std::endl;
+        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, false);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        
-        std::cout << "red OFF" << std::endl;
-        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_RED, false);
+        std::cout << "LED_GPIO_COPY_DATA OFF" << std::endl;
+        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, false);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "green OFF" << std::endl;
-        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_GREEN, false);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "blue OFF" << std::endl;
-        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_BLUE, false);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "yellow OFF" << std::endl;
-        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_YELLOW, false);
+        std::cout << "LED_GPIO_CONTINOUS_SCANNING OFF" << std::endl;
+        gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, false);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
     

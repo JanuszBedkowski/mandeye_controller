@@ -14,16 +14,15 @@ class GpioClient
 public:
 	enum class LED
 	{
-		LED_GPIO_RED,
-		LED_GPIO_GREEN,
-		LED_GPIO_YELLOW,
-		LED_GPIO_BLUE
+		LED_GPIO_STOP_SCAN,
+		LED_GPIO_COPY_DATA,
+		LED_GPIO_CONTINOUS_SCANNING
 	};
 
 	enum class BUTTON
 	{
-		BUTTON_1,
-		BUTTON_2
+		BUTTON_STOP_SCAN,
+		BUTTON_CONTINOUS_SCANNING
 	};
 
 public:
@@ -49,10 +48,9 @@ private:
 	bool m_useSimulatedGPIO{true};
 
 	std::unordered_map<LED, bool> m_ledState{
-		{LED::LED_GPIO_RED, false},
-		{LED::LED_GPIO_GREEN, false},
-		{LED::LED_GPIO_BLUE, false},
-		{LED::LED_GPIO_YELLOW, false},
+		{LED::LED_GPIO_STOP_SCAN, false},
+		{LED::LED_GPIO_COPY_DATA, false},
+		{LED::LED_GPIO_CONTINOUS_SCANNING, false},
 		
 	};
 
@@ -66,27 +64,25 @@ private:
 
 	//! useful translations
 	const std::unordered_map<LED, std::string> LedToName{
-		{LED::LED_GPIO_RED, "LED_GPIO_RED"},
-		{LED::LED_GPIO_GREEN, "LED_GPIO_GREEN"},
-		{LED::LED_GPIO_BLUE, "LED_GPIO_BLUE"},
-		{LED::LED_GPIO_YELLOW, "LED_GPIO_YELLOW"},
+		{LED::LED_GPIO_STOP_SCAN, "LED_GPIO_STOP_SCAN"},
+		{LED::LED_GPIO_COPY_DATA, "LED_GPIO_COPY_DATA"},
+		{LED::LED_GPIO_CONTINOUS_SCANNING, "LED_GPIO_CONTINOUS_SCANNING"},
 	};
 
 	const std::unordered_map<std::string, LED> NameToLed{
-		{"LED_GPIO_RED", LED::LED_GPIO_RED},
-		{"LED_GPIO_GREEN", LED::LED_GPIO_GREEN},
-		{"LED_GPIO_BLUE", LED::LED_GPIO_BLUE},
-		{"LED_GPIO_YELLOW", LED::LED_GPIO_YELLOW},
+		{"LED_GPIO_STOP_SCAN", LED::LED_GPIO_STOP_SCAN},
+		{"LED_GPIO_COPY_DATA", LED::LED_GPIO_COPY_DATA},
+		{"LED_GPIO_CONTINOUS_SCANNING", LED::LED_GPIO_CONTINOUS_SCANNING},
 	};
 
 	const std::unordered_map<BUTTON, std::string> ButtonToName{
-		{BUTTON::BUTTON_1, "BUTTON_1"},
-		{BUTTON::BUTTON_2, "BUTTON_2"},
+		{BUTTON::BUTTON_STOP_SCAN, "BUTTON_STOP_SCAN"},
+		{BUTTON::BUTTON_CONTINOUS_SCANNING, "BUTTON_CONTINOUS_SCANNING"},
 	};
 
 	const std::unordered_map<std::string, BUTTON> NameToButton{
-		{"BUTTON_1", BUTTON::BUTTON_1},
-		{"BUTTON_2", BUTTON::BUTTON_2},
+		{"BUTTON_STOP_SCAN", BUTTON::BUTTON_STOP_SCAN},
+		{"BUTTON_CONTINOUS_SCANNING", BUTTON::BUTTON_CONTINOUS_SCANNING},
 	};
 
 	std::mutex m_lock;

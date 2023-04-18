@@ -19,13 +19,12 @@ GpioClient::GpioClient(bool sim)
 	if(!sim)
 	{
 		std::lock_guard<std::mutex> lck{m_lock};
-		m_ledGpio[LED::LED_GPIO_RED] = std::make_unique<DigitalOut>(26);
-		m_ledGpio[LED::LED_GPIO_GREEN] = std::make_unique<DigitalOut>(19);
-		m_ledGpio[LED::LED_GPIO_BLUE] = std::make_unique<DigitalOut>(13);
-		m_ledGpio[LED::LED_GPIO_YELLOW] = std::make_unique<DigitalOut>(6);
-		
-		m_buttons[BUTTON::BUTTON_1] = std::make_unique<PushButton>(0, GPIO::GPIO_PULL::UP);
-		m_buttons[BUTTON::BUTTON_2] = std::make_unique<PushButton>(5, GPIO::GPIO_PULL::UP);
+		m_ledGpio[LED::LED_GPIO_STOP_SCAN] = std::make_unique<DigitalOut>(26);
+		m_ledGpio[LED::LED_GPIO_COPY_DATA] = std::make_unique<DigitalOut>(19);
+		m_ledGpio[LED::LED_GPIO_CONTINOUS_SCANNING] = std::make_unique<DigitalOut>(13);
+			
+		m_buttons[BUTTON::BUTTON_STOP_SCAN] = std::make_unique<PushButton>(5, GPIO::GPIO_PULL::UP);
+		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING] = std::make_unique<PushButton>(6, GPIO::GPIO_PULL::UP);
 
 		for(auto& [buttonID, ptr] : m_buttons)
 		{
