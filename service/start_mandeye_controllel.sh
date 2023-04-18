@@ -1,5 +1,5 @@
 #!/bin/bash
 
-sleep 10
+sleep 20
 
 /home/mandeye/mandeye_controller/build/control_program
