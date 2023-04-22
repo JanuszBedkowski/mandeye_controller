@@ -31,9 +31,9 @@ public:
 
 	std::vector<std::string> GetDirectories();
 
-	bool CreateDirectoryForExperiment(std::string &);
+	bool CreateDirectoryForContinousScanning(std::string &, const int &);
 
-	bool CreateDirectoryForStopScans(std::string &);
+	bool CreateDirectoryForStopScans(std::string &, int &id_manifest);
 
 
 private:

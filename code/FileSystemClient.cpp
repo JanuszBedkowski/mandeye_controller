@@ -90,7 +90,7 @@ int32_t FileSystemClient::GetIdFromManifest()
 	{
 		uint32_t id{0};
 		manifestFstream >> id;
-		return id++;
+		return (id++);
 	}
 	std::ofstream manifestOFstream;
 	manifestOFstream.open(manifest.c_str());
@@ -98,7 +98,7 @@ int32_t FileSystemClient::GetIdFromManifest()
 	{
 		uint32_t id{0};
 		manifestOFstream << id << std::endl;
-		return id++;
+		return (id++);
 	}
 	return -1;
 }
@@ -120,15 +120,16 @@ int32_t FileSystemClient::GetNextIdFromManifest()
 	return id;
 }
 
-bool FileSystemClient::CreateDirectoryForExperiment(std::string &writable_dir)
+bool FileSystemClient::CreateDirectoryForContinousScanning(std::string &writable_dir, const int &id_manifest)
 {
 	std::string ret;
 
 	if(GetIsWritable())
 	{
-		auto id = GetNextIdFromManifest();
+		//auto id = GetNextIdFromManifest();
+		auto id = id_manifest;
 		char dirName[256];
-		snprintf(dirName, 256, "dataset_%04d", id);
+		snprintf(dirName, 256, "continousScanning_%04d", id);
 		std::filesystem::path newDirPath =
 			std::filesystem::path(m_repository) / std::filesystem::path(dirName);
 		std::cout << "Creating directory " << newDirPath.string() << std::endl;
@@ -151,14 +152,14 @@ bool FileSystemClient::CreateDirectoryForExperiment(std::string &writable_dir)
 	}
 }
 
-bool FileSystemClient::CreateDirectoryForStopScans(std::string &writable_dir){
+bool FileSystemClient::CreateDirectoryForStopScans(std::string &writable_dir, int &id_manifest){
 	std::string ret;
 
 	if(GetIsWritable())
 	{
-		auto id = GetNextIdFromManifest();
+		id_manifest = GetNextIdFromManifest() - 1;
 		char dirName[256];
-		snprintf(dirName, 256, "stopScans_%04d", id);
+		snprintf(dirName, 256, "stopScans_%04d", id_manifest);
 		std::filesystem::path newDirPath =
 			std::filesystem::path(m_repository) / std::filesystem::path(dirName);
 		std::cout << "Creating directory " << newDirPath.string() << std::endl;

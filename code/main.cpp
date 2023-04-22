@@ -147,6 +147,7 @@ void savePointcloudData(LivoxPointsBufferPtr buffer, const std::string& director
 	//        for (const auto &p : *buffer){
 	//            lidarStream<<p.point.x << " "<<p.point.y <<"  "<<p.point.z << " "<< p.point.tag << " " << p.timestamp << "\n";
 	//        }
+	system("sync");
 	return;
 }
 
@@ -158,11 +159,19 @@ void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chu
 	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
 	std::cout << "Savig imu buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
 	std::ofstream lidarStream(lidarFilePath.c_str());
+	std::stringstream ss;
+	
 	for(const auto& p : *buffer)
 	{
-		lidarStream << p.timestamp << " " << p.point.gyro_x << " " << p.point.gyro_y << "  " << p.point.gyro_z << " " << p.point.acc_x << " "
-					<< p.point.acc_y << "  " << p.point.acc_z << "\n";
+		if(p.timestamp > 0){
+			ss << p.timestamp << " " << p.point.gyro_x << " " << p.point.gyro_y << " " << p.point.gyro_z << " " << p.point.acc_x << " "
+					<< p.point.acc_y << " " << p.point.acc_z << "\n";
+		}
 	}
+	lidarStream << ss.rdbuf();
+	
+	lidarStream.close();
+	system("sync");
 	return;
 }
 void stateWatcher()
@@ -172,9 +181,26 @@ void stateWatcher()
 	std::chrono::steady_clock::time_point stopScanDeadline = std::chrono::steady_clock::now();
 	std::chrono::steady_clock::time_point stopScanInitialDeadline = std::chrono::steady_clock::now();
 	States oldState = States::IDLE;
-	std::string experimentDirectory;
+	std::string continousScanDirectory;
 	std::string stopScanDirectory;
-	int chunksInExperiment{0};
+	int chunksInExperimentCS{0};
+	int chunksInExperimentSS{0};
+
+	int id_manifest = 0;
+	if (stopScanDirectory.empty() && fileSystemClientPtr)
+	{
+		if(!fileSystemClientPtr->CreateDirectoryForStopScans(stopScanDirectory, id_manifest)){
+			app_state = States::USB_IO_ERROR;
+		}
+	}
+	if(stopScanDirectory.empty()){
+		app_state = States::USB_IO_ERROR;
+	}
+
+	if(!fileSystemClientPtr->CreateDirectoryForContinousScanning(continousScanDirectory, id_manifest)){
+		app_state = States::USB_IO_ERROR;
+	}
+
 
 	while(isRunning)
 	{
@@ -231,7 +257,7 @@ void stateWatcher()
 		}
 		else if(app_state == States::STARTING_SCAN)
 		{
-			chunksInExperiment = 0;
+			//chunksInExperiment = 0;
 			if(gpioClientPtr)
 			{
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, false);
@@ -252,9 +278,9 @@ void stateWatcher()
 				app_state = States::SCANNING;
 			}
 			// create directory
-			if(!fileSystemClientPtr->CreateDirectoryForExperiment(experimentDirectory)){
-				app_state = States::USB_IO_ERROR;
-			}
+			//if(!fileSystemClientPtr->CreateDirectoryForExperiment(continousScanDirectory)){
+			//	app_state = States::USB_IO_ERROR;
+			//}
 			chunkStart = std::chrono::steady_clock::now();
 		}
 		else if(app_state == States::SCANNING)
@@ -263,8 +289,24 @@ void stateWatcher()
 			{
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
 			}
+			
 			const auto now = std::chrono::steady_clock::now();
-			if(now - chunkStart > std::chrono::seconds(5))
+			if(now - chunkStart > std::chrono::seconds(60))
+			{
+				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, false);
+				std::this_thread::sleep_for(1000ms);
+				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
+				std::this_thread::sleep_for(1000ms);
+			}
+			if(now - chunkStart > std::chrono::seconds(600))
+			{
+				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, false);
+				std::this_thread::sleep_for(100ms);
+				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
+				std::this_thread::sleep_for(100ms);
+			}
+			/*const auto now = std::chrono::steady_clock::now();
+			if(now - chunkStart > std::chrono::seconds(10))
 			{
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, true);
 				
@@ -280,21 +322,22 @@ void stateWatcher()
 					mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, false);
 					chunksInExperiment++;
 				}
-			}
+			}*/
 			std::this_thread::sleep_for(100ms);
 		}
 		else if(app_state == States::STOPPING)
 		{
+			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
 			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, true);
 
 			auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
 			livoxCLientPtr->stopLog();
-			if(experimentDirectory.empty()){
+			if(continousScanDirectory.empty()){
 				app_state = States::USB_IO_ERROR;
 			}else{
-				savePointcloudData(lidarBuffer, experimentDirectory, chunksInExperiment);
-				saveImuData(imuBuffer, experimentDirectory, chunksInExperiment);
-
+				savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				chunksInExperimentCS++;
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, false);
 				app_state = States::IDLE;
 			}
@@ -307,15 +350,15 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, false);
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, false);
 			}
-			if (stopScanDirectory.empty() && fileSystemClientPtr)
-			{
-				if(!fileSystemClientPtr->CreateDirectoryForStopScans(stopScanDirectory)){
-					app_state = States::USB_IO_ERROR;
-				}
-			}
-			if(stopScanDirectory.empty()){
-				app_state = States::USB_IO_ERROR;
-			}
+			//if (stopScanDirectory.empty() && fileSystemClientPtr)
+			//{
+			//	if(!fileSystemClientPtr->CreateDirectoryForStopScans(stopScanDirectory)){
+			//		app_state = States::USB_IO_ERROR;
+			//	}
+			//}
+			//if(stopScanDirectory.empty()){
+			//	app_state = States::USB_IO_ERROR;
+			//}
 
 			stopScanInitialDeadline = std::chrono::steady_clock::now();
 			stopScanInitialDeadline += std::chrono::milliseconds(5000);
@@ -356,13 +399,13 @@ void stateWatcher()
 			}
 			auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
 			livoxCLientPtr->stopLog();
-			chunksInExperiment ++;
-
+			
 			if(stopScanDirectory.empty()){
 				app_state = States::USB_IO_ERROR;
 			}else{
-				savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperiment);
-				saveImuData(imuBuffer, stopScanDirectory, chunksInExperiment);
+				savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				saveImuData(imuBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				chunksInExperimentSS++;
 				
 				if(gpioClientPtr)
 				{
