@@ -19,3 +19,6 @@ sudo systemctl status mandeye_controllel.service
 
 hotspot
 https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/157-raspberry-pi-auto-wifi-hotspot-switch-internet
+
+usb
+https://gist.github.com/zebrajaeger/168341df88abb6caaea5a029a2117925
