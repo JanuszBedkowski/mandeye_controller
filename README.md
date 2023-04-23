@@ -41,6 +41,15 @@ mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j4
 ```
+Install :
+```shell
+sudo make install
+sudo ldconfig
+```
+Test:
+```shell
+control_program
+```
 
 ## Set USB mount
 Follow manual for build and configuration of USB mount

@@ -1,12 +1,12 @@
 [Unit]
-Description=mandeye_controllel
+Description=mandeye_controller
 
 [Service]
 User=mandeye
 StandardOutput=null
 StandardError=null
-WorkingDirectory=/home/mandeye/mandeye_controller/build
-ExecStart=/home/mandeye/mandeye_controller/service/start_mandeye_controllel.sh
+WorkingDirectory=/tmp/
+ExecStart=mandeye_controller.sh
 Restart=always
 
 [Install]
