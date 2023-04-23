@@ -7,9 +7,6 @@
 [submodule "3rd/Livox-SDK2"]
 	path = 3rd/Livox-SDK2
 	url = https://github.com/Livox-SDK/Livox-SDK2.git
-[submodule "3rd/mongoose"]
-	path = 3rd/mongoose
-	url = https://github.com/cesanta/mongoose.git
 [submodule "3rd/pistache"]
 	path = 3rd/pistache
 	url = https://github.com/pistacheio/pistache.git
