@@ -3,10 +3,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 project (mandeye_multisensor)
 
-message("mongoose library")
-## mongoose library
-include_directories(3rd/mongoose)
-add_library(mongoose STATIC 3rd/mongoose/mongoose.c)
 
 message("pistache")
 #pistache

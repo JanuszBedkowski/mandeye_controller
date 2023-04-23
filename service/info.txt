@@ -21,4 +21,4 @@ hotspot
 https://www.raspberryconnect.com/projects/65-raspberrypi-hotspot-accesspoints/157-raspberry-pi-auto-wifi-hotspot-switch-internet
 
 usb
-https://gist.github.com/zebrajaeger/168341df88abb6caaea5a029a2117925
+https://gist.github.com/michalpelka/82d44a21c29f34ee5320c349f8bbf683
