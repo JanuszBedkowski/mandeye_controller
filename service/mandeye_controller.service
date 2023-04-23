@@ -6,8 +6,9 @@ User=mandeye
 StandardOutput=null
 StandardError=null
 WorkingDirectory=/tmp/
-ExecStart=mandeye_controller.sh
+ExecStart=/usr/local/bin/start_mandeye_controller.sh
 Restart=always
+RestartSec=1
 
 [Install]
 WantedBy=multi-user.target

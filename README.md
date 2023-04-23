@@ -95,3 +95,13 @@ touch /media/usb/test
 ```shell
 tail -f /var/log/syslog
 ```
+
+
+# Service mode
+
+You need to have user `mandeye` and make sure it belongs to `gpio` group. Please create user or change its name.
+
+Next install service
+```shell
+./service/mandeye_controller.service
+```
