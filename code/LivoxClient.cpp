@@ -141,7 +141,9 @@ void LivoxClient::PointCloudCallback(uint32_t handle,
 			LivoxPoint point;
 			point.point = p_point_data[i];
 			point.timestamp = toUint64.data + i * data->time_interval;
-			buffer->push_back(point);
+			if(point.timestamp > 0){
+				buffer->push_back(point);
+			}
 		}
 	}
 	else if(data->data_type == kLivoxLidarCartesianCoordinateLowData)
@@ -182,7 +184,9 @@ void LivoxClient::ImuDataCallback(uint32_t handle,
 		LivoxIMU point;
 		point.point = *p_imu_data;
 		point.timestamp = toUint64.data;
-		buffer->push_back(point);
+		if(point.timestamp > 0){
+			buffer->push_back(point);
+		}
 	}
 }
 
