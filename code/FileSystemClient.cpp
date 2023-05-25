@@ -80,6 +80,12 @@ std::string FileSystemClient::ConvertToText(float mb)
 
 int32_t FileSystemClient::GetIdFromManifest()
 {
+	std::filesystem::path versionfn =
+		std::filesystem::path(m_repository) / std::filesystem::path(versionFilename);
+	std::ofstream versionOFstream;
+	versionOFstream.open(versionfn.c_str());
+	versionOFstream << "Version 0.1" << std::endl;
+	
 	std::filesystem::path manifest =
 		std::filesystem::path(m_repository) / std::filesystem::path(manifestFilename);
 	std::unique_lock<std::mutex> lck(m_mutex);
@@ -100,6 +106,9 @@ int32_t FileSystemClient::GetIdFromManifest()
 		manifestOFstream << id << std::endl;
 		return (id++);
 	}
+	//
+	
+
 	return -1;
 }
 

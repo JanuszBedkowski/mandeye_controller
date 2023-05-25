@@ -12,6 +12,7 @@ namespace mandeye
 class FileSystemClient
 {
 	constexpr static char manifestFilename[]{"mandala_manifest.txt"};
+	constexpr static char versionFilename[]{"version.txt"};
 
 public:
 	FileSystemClient(const std::string& repository);
