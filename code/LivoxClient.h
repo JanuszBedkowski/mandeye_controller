@@ -4,11 +4,16 @@
 #include <deque>
 #include <json.hpp>
 #include <mutex>
+<<<<<<< HEAD
 #include <thread>
+=======
+#include "LivoxTypes.h"
+>>>>>>> 836a49a (Adding support for livox 1)
 #include "utils/TimeStampProvider.h"
 #include <set>
 namespace mandeye
 {
+<<<<<<< HEAD
 struct LivoxPoint
 {
 	LivoxLidarCartesianHighRawPoint point;
@@ -44,6 +49,8 @@ using LivoxPointsBufferConstPtr = std::shared_ptr<const std::deque<LivoxPoint>>;
 using LivoxIMUBuffer = std::deque<LivoxIMU>;
 using LivoxIMUBufferPtr = std::shared_ptr<std::deque<LivoxIMU>>;
 using LivoxIMUBufferConstPtr = std::shared_ptr<const std::deque<LivoxIMU>>;
+=======
+>>>>>>> 836a49a (Adding support for livox 1)
 
 class LivoxClient : public mandeye_utils::TimeStampProvider
 {

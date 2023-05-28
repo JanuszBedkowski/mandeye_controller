@@ -69,11 +69,7 @@ git clone https://github.com/rbrito/usbmount.git
 cd usbmount
 dpkg-buildpackage -us -uc -b
 cd ..
-sudo apt install ./usbmount_0.0.24_all.deb
-```
-
-Edit config `sudo nano /etc/usbmount/usbmount.conf`:
-by changing keys:
+ --
 ```shell
 FILESYSTEMS="vfat ext2 ext3 ext4 hfsplus ntfs fuseblk"
 FS_MOUNTOPTIONS="-fstype=vfat,users,rw,umask=000 -fstype=exfat,users,rw,umask=000"

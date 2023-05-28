@@ -50,6 +50,11 @@ message("Livox SDK2")
 # Livox SDK2
 add_subdirectory(3rd/Livox-SDK2)
 
+message("Livox SDK1")
+# Livox SDK1
+add_subdirectory(3rd/Livox-SDK)
+include_directories(3rd/Livox-SDK/sdk_core/include)
+
 include_directories(code/)
 
 # GPIOs
@@ -70,9 +75,9 @@ add_library(minea STATIC 3rd/minmea/minmea.c)
 
 #executable
 add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h code/LivoxClient.cpp code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp ${PISTACHE_SRC}
-        code/utils/TimeStampReceiver.cpp)
+        code/utils/TimeStampReceiver.cpp code/LivoxClientLegacy.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
-target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea)
+target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea livox_sdk_static)
 #target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static atomic laszip)
 
 

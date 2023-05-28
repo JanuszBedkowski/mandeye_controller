@@ -16,3 +16,6 @@
 [submodule "3rd/minmea"]
     path = 3rd/minmea
     url = https://github.com/kosma/minmea.git
+[submodule "3rd/Livox-SDK"]
+	path = 3rd/Livox-SDK
+	url = https://github.com/Livox-SDK/Livox-SDK.git
