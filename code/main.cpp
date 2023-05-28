@@ -7,6 +7,7 @@
 #include "save_laz.h"
 #include <FileSystemClient.h>
 #include <LivoxClient.h>
+#include <chrono>
 #include <fstream>
 #include <gpios.h>
 #include <iostream>
@@ -14,6 +15,7 @@
 #include "gnss.h"
 #include <chrono>
 
+#include <LivoxClientLegacy.h>
 //configuration for alienware
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
 #define MANDEYE_REPO "/media/usb/"
@@ -26,6 +28,8 @@ namespace utils
 std::string getEnvString(const std::string& env, const std::string& def);
 bool getEnvBool(const std::string& env, bool def);
 } // namespace utils
+
+using LivoxImplementation = mandeye::LivoxLegacyClient;
 
 namespace mandeye
 {
@@ -62,7 +66,8 @@ const std::map<States, std::string> StatesToString{
 
 std::atomic<bool> isRunning{true};
 std::mutex livoxClientPtrLock;
-std::shared_ptr<LivoxClient> livoxCLientPtr;
+
+std::shared_ptr<LivoxImplementation> livoxCLientPtr;
 std::shared_ptr<GNSSClient> gnssClientPtr;
 std::mutex gpioClientPtrLock;
 std::shared_ptr<GpioClient> gpioClientPtr;
@@ -80,10 +85,6 @@ std::string produceReport()
 	if(livoxCLientPtr)
 	{
 		j["livox"] = livoxCLientPtr->produceStatus();
-	}
-	else
-	{
-		j["livox"] = {};
 	}
 
 	if(gpioClientPtr)
@@ -178,9 +179,9 @@ void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chu
 	
 	for(const auto& p : *buffer)
 	{
-		if(p.timestamp > 0){
-			ss << p.timestamp << " " << p.point.gyro_x << " " << p.point.gyro_y << " " << p.point.gyro_z << " " << p.point.acc_x << " "
-					<< p.point.acc_y << " " << p.point.acc_z << "\n";
+		if(p.timestamp > 0)
+		{
+			ss << p.timestamp << " " << p.gyro_x << " " << p.gyro_y << " " << p.gyro_z << " " << p.acc_x << " " << p.acc_y << " " << p.acc_z << "\n";
 		}
 	}
 	lidarStream << ss.rdbuf();
@@ -355,6 +356,17 @@ void stateWatcher()
 				
 				chunkStart = std::chrono::steady_clock::now();
 
+				LivoxPointsBufferPtr lidarBuffer;
+				LivoxIMUBufferPtr imuBuffer;
+				if(livoxCLientPtr)
+				{
+					auto data = livoxCLientPtr->retrieveData();
+					lidarBuffer = data.first;
+					imuBuffer = data.second;
+				}
+
+				if(lidarBuffer && imuBuffer && continousScanDirectory == "")
+				{
 				auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
 				std::deque<std::string> gnssBuffer;
 				if (gnssClientPtr)
@@ -363,7 +375,9 @@ void stateWatcher()
 				}
 				if(continousScanDirectory == ""){
 					app_state = States::USB_IO_ERROR;
-				}else{
+				}
+				else
+				{
 					savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					if (gnssClientPtr)
@@ -522,8 +536,8 @@ bool getEnvBool(const std::string& env, bool def)
 
 
 #if 1
-#include "web_page.h"
-#include <pistache/endpoint.h>
+#	include "web_page.h"
+#	include <pistache/endpoint.h>
 using namespace Pistache;
 
 struct PistacheServerHandler : public Http::Handler
@@ -581,12 +595,34 @@ int main(int argc, char** argv)
 	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", MANDEYE_REPO));
 
 	std::thread thLivox([&]() {
+		if(LIVOX_SDK_VER == 2)
 		{
-			std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
-			mandeye::livoxCLientPtr = std::make_shared<mandeye::LivoxClient>();
+			{
+				std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
+				mandeye::livoxCLientPtr = std::make_shared<mandeye::LivoxClient>();
+			}
+			if(!mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", MANDEYE_LIVOX_LISTEN_IP)))
+			{
+				lidar_error = true;
+			}
 		}
-		if(!mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", MANDEYE_LIVOX_LISTEN_IP))){
-			lidar_error = true;
+		if(LIVOX_SDK_VER == 1)
+		{
+			{
+				std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
+				mandeye::livoxCLientLegacyPtr = std::make_shared<mandeye::LivoxLegacyClient>();
+				if (mandeye::livoxCLientLegacyPtr)
+				{
+					bool success = mandeye::livoxCLientLegacyPtr->Initialize();
+					if (!success)
+					{
+						lidar_error = true;
+					}
+				}else{
+					lidar_error = true;
+				}
+			}
+
 		}
 
 		// intialize in this thread to prevent initialization fiasco

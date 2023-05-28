@@ -142,8 +142,13 @@ void LivoxClient::PointCloudCallback(uint32_t handle,
 		//buffer->resize(buffer->size() + data->dot_num);
 		for(uint32_t i = 0; i < data->dot_num; i++)
 		{
+			const auto &p = p_point_data[i];
 			LivoxPoint point;
-			point.point = p_point_data[i];
+			point.x = p.x;
+			point.y = p.y;
+			point.z = p.z;
+			point.reflectivity = p.reflectivity;
+			point.tag = p.tag;
 			point.timestamp = toUint64.data + i * data->time_interval;
 			if(point.timestamp > 0){
 				buffer->push_back(point);
@@ -189,7 +194,15 @@ void LivoxClient::ImuDataCallback(uint32_t handle,
 		auto& buffer = this_ptr->m_bufferIMUPtr;
 		//buffer->resize(buffer->size() + 1);
 		LivoxIMU point;
-		point.point = *p_imu_data;
+
+		point.acc_x = p_imu_data->acc_x;
+		point.acc_y = p_imu_data->acc_y;
+		point.acc_z = p_imu_data->acc_z;
+
+		point.gyro_x = p_imu_data->gyro_x;
+		point.gyro_y = p_imu_data->gyro_y;
+		point.gyro_z = p_imu_data->gyro_z;
+
 		point.timestamp = toUint64.data;
 		if(point.timestamp > 0){
 			buffer->push_back(point);

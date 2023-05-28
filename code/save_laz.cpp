@@ -17,9 +17,9 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 
 	for(auto& p : *buffer)
 	{
-		double x = 0.001 * p.point.x;
-		double y = 0.001 * p.point.y;
-		double z = 0.001 * p.point.z;
+		double x = 0.001 * p.x;
+		double y = 0.001 * p.y;
+		double z = 0.001 * p.z;
 
 		max_x = std::max(max_x, x);
 		max_y = std::max(max_y, y);
@@ -102,14 +102,14 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 	{
 
 		const auto& p = buffer->at(i);
-		point->intensity = p.point.reflectivity;
+		point->intensity = p.reflectivity;
 		point->gps_time = p.timestamp * 1e-9;
 		point->user_data = p.line_id;
-		point->classification = p.point.tag;
+		point->classification = p.tag;
 		p_count++;
-		coordinates[0] = 0.001 * p.point.x;
-		coordinates[1] = 0.001 * p.point.y;
-		coordinates[2] = 0.001 * p.point.z;
+		coordinates[0] = 0.001 * p.x;
+		coordinates[1] = 0.001 * p.y;
+		coordinates[2] = 0.001 * p.z;
 		if(laszip_set_coordinates(laszip_writer, coordinates))
 		{
 			fprintf(stderr, "DLL ERROR: setting coordinates for point %I64d\n", p_count);
