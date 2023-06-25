@@ -11,6 +11,7 @@
 #include <gpios.h>
 #include <iostream>
 #include <string>
+#include "gnss.h"
 #include <chrono>
 
 //configuration for alienware
@@ -18,6 +19,7 @@
 #define MANDEYE_REPO "/media/usb/"
 #define MANDEYE_GPIO_SIM false
 #define SERVER_PORT 8003
+#define MANDEYE_GNSS_UART "/dev/ttyUSB0"
 
 namespace mandeye
 {
@@ -55,6 +57,7 @@ const std::map<States, std::string> StatesToString{
 std::atomic<bool> isRunning{true};
 std::mutex livoxClientPtrLock;
 std::shared_ptr<LivoxClient> livoxCLientPtr;
+std::shared_ptr<GNSSClient> gnssClientPtr;
 std::mutex gpioClientPtrLock;
 std::shared_ptr<GpioClient> gpioClientPtr;
 std::shared_ptr<FileSystemClient> fileSystemClientPtr;
@@ -85,6 +88,10 @@ std::string produceReport()
 	if(fileSystemClientPtr)
 	{
 		j["fs"] = fileSystemClientPtr->produceStatus();
+	}
+	if(gnssClientPtr)
+	{
+		j["gnss"] = gnssClientPtr->produceStatus();
 	}
 
 	std::ostringstream s;
@@ -174,6 +181,28 @@ void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chu
 	system("sync");
 	return;
 }
+
+void saveGnssData(std::deque<std::string>& buffer, const std::string& directory, int chunk)
+{
+	using namespace std::chrono_literals;
+	char lidarName[256];
+	snprintf(lidarName, 256, "gnss%04d.gnss", chunk);
+	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
+	std::cout << "Savig gnss buffer of size " << buffer.size() << " to " << lidarFilePath << std::endl;
+	std::ofstream lidarStream(lidarFilePath.c_str());
+	std::stringstream ss;
+
+	for(const auto& p : buffer)
+	{
+		ss << p ;
+	}
+	lidarStream << ss.rdbuf();
+
+	lidarStream.close();
+	system("sync");
+	return;
+}
+
 void stateWatcher()
 {
 	using namespace std::chrono_literals;
@@ -275,6 +304,10 @@ void stateWatcher()
 			if(livoxCLientPtr)
 			{
 				livoxCLientPtr->startLog();
+				if (gnssClientPtr)
+				{
+					gnssClientPtr->startLog();
+				}
 				app_state = States::SCANNING;
 			}
 			// create directory
@@ -312,12 +345,20 @@ void stateWatcher()
 				chunkStart = std::chrono::steady_clock::now();
 
 				auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
+				std::deque<std::string> gnssBuffer;
+				if (gnssClientPtr)
+				{
+					gnssBuffer = gnssClientPtr->retrieveData();
+				}
 				if(continousScanDirectory == ""){
 					app_state = States::USB_IO_ERROR;
 				}else{
 					savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
-
+					if (gnssClientPtr)
+					{
+						saveGnssData(gnssBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+					}
 					mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, false);
 					chunksInExperimentCS++;
 				}
@@ -330,12 +371,22 @@ void stateWatcher()
 			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, true);
 
 			auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
+			std::deque<std::string> gnssData;
 			livoxCLientPtr->stopLog();
+			if (gnssClientPtr)
+			{
+				gnssData = gnssClientPtr->retrieveData();
+				gnssClientPtr->stopLog();
+			}
 			if(continousScanDirectory.empty()){
 				app_state = States::USB_IO_ERROR;
 			}else{
 				savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				if (gnssClientPtr)
+				{
+					saveGnssData(gnssData, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				}
 				chunksInExperimentCS++;
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, false);
 				app_state = States::IDLE;
@@ -380,6 +431,10 @@ void stateWatcher()
 					mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, true);
 					livoxCLientPtr->startLog();
 				}
+				if (gnssClientPtr)
+				{
+					gnssClientPtr->startLog();
+				}
 				app_state = States::STOP_SCAN_IN_PROGRESS;
 			}
 		}
@@ -397,13 +452,22 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, true);
 			}
 			auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
+			std::deque<std::string> gnssData;
 			livoxCLientPtr->stopLog();
-			
+			if (gnssClientPtr)
+			{
+				gnssData = gnssClientPtr->retrieveData();
+				gnssClientPtr->stopLog();
+			}
 			if(stopScanDirectory.empty()){
 				app_state = States::USB_IO_ERROR;
 			}else{
 				savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveImuData(imuBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				if (gnssClientPtr)
+				{
+					saveGnssData(gnssData, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				}
 				chunksInExperimentSS++;
 				
 				if(gpioClientPtr)
@@ -513,7 +577,15 @@ int main(int argc, char** argv)
 		if(!mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", MANDEYE_LIVOX_LISTEN_IP))){
 			lidar_error = true;
 		}
+
+		// intialize in this thread to prevent initialization fiasco
+		mandeye::gnssClientPtr = std::make_shared<mandeye::GNSSClient>();
+		mandeye::gnssClientPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
+		mandeye::gnssClientPtr->startListener(utils::getEnvString("MANDEYE_GNSS_UART", MANDEYE_GNSS_UART), 9600);
+
 	});
+
+
 
 	std::thread thStateMachine([&]() { mandeye::stateWatcher(); });
 
@@ -549,15 +621,15 @@ int main(int argc, char** argv)
 	{
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for(1000ms);
-
+		char ch = std::getchar();
+		if(ch == 'q')
+		{
+			mandeye::isRunning.store(false);
+		}
 		if(!lidar_error){
 			std::cout << "Press q -> quit, s -> start scan , e -> end scan" << std::endl;
-			char ch = std::getchar();
-			if(ch == 'q')
-			{
-				mandeye::isRunning.store(false);
-			}
-			else if(ch == 's')
+
+			if(ch == 's')
 			{
 				if(mandeye::StartScan())
 				{
