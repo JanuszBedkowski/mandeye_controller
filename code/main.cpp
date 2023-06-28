@@ -19,7 +19,7 @@
 #define MANDEYE_REPO "/media/usb/"
 #define MANDEYE_GPIO_SIM false
 #define SERVER_PORT 8003
-#define MANDEYE_GNSS_UART "/dev/ttyUSB0"
+#define MANDEYE_GNSS_UART "/dev/S0"
 
 namespace mandeye
 {
@@ -92,7 +92,9 @@ std::string produceReport()
 	if(gnssClientPtr)
 	{
 		j["gnss"] = gnssClientPtr->produceStatus();
-	}
+	}else{
+        j["gnss"] = {};
+    }
 
 	std::ostringstream s;
 	s << std::setw(4) << j;
@@ -578,10 +580,13 @@ int main(int argc, char** argv)
 		}
 
 		// intialize in this thread to prevent initialization fiasco
-		mandeye::gnssClientPtr = std::make_shared<mandeye::GNSSClient>();
-		mandeye::gnssClientPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
-		mandeye::gnssClientPtr->startListener(utils::getEnvString("MANDEYE_GNSS_UART", MANDEYE_GNSS_UART), 9600);
-
+        const std::string portName = utils::getEnvString("MANDEYE_GNSS_UART", MANDEYE_GNSS_UART);
+        if (!portName.empty())
+        {
+            mandeye::gnssClientPtr = std::make_shared<mandeye::GNSSClient>();
+            mandeye::gnssClientPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
+            mandeye::gnssClientPtr->startListener(utils::getEnvString("MANDEYE_GNSS_UART", MANDEYE_GNSS_UART), 9600);
+        }
 	});
 
 

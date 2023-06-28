@@ -15,8 +15,8 @@ nlohmann::json GNSSClient::produceStatus()
 	data["gga"]["time"]["m"] = lastGGA.time.minutes;
 	data["gga"]["time"]["s"] = lastGGA.time.seconds;
 	data["gga"]["fix_quality"] = lastGGA.fix_quality;
-	data["gga"]["latitude"] = minmea_tofloat(&lastGGA.latitude);
-	data["gga"]["longitude"] = minmea_tofloat(&lastGGA.longitude);
+	data["gga"]["latitude"] = minmea_tocoord(&lastGGA.latitude);
+	data["gga"]["longitude"] = minmea_tocoord(&lastGGA.longitude);
 	data["gga"]["hdop"] = minmea_tofloat(&lastGGA.hdop);
 	data["gga"]["satellites_tracked"] = lastGGA.satellites_tracked;
 	data["gga"]["altitude"] = minmea_tofloat(&lastGGA.altitude);
@@ -95,15 +95,15 @@ std::deque<std::string> GNSSClient::retrieveData()
 std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double laserTimestamp)
 {
 	std:std::stringstream oss;
-	oss << laserTimestamp << ",";
-	oss << minmea_tofloat(&gga.latitude) << ",";
-	oss	<< minmea_tofloat(&gga.longitude) << ",";
-	oss	<< minmea_tofloat(&gga.altitude) << ",";
-	oss << minmea_tofloat(&gga.hdop) << ",";
-	oss << gga.satellites_tracked << ",";
-	oss << minmea_tofloat(&gga.height) << ",";
-	oss << minmea_tofloat(&gga.dgps_age) << ",";
-	oss << gga.time.hours << ":" << gga.time.minutes << ":" << gga.time.seconds << ",";
+	oss << std::setprecision(20) << laserTimestamp << " ";
+	oss << minmea_tocoord(&gga.latitude) << " ";
+	oss	<< minmea_tocoord(&gga.longitude) << " ";
+	oss	<< minmea_tofloat(&gga.altitude) << " ";
+	oss << minmea_tofloat(&gga.hdop) << " ";
+	oss << gga.satellites_tracked << " ";
+	oss << minmea_tofloat(&gga.height) << " ";
+	oss << minmea_tofloat(&gga.dgps_age) << " ";
+	oss << gga.time.hours << ":" << gga.time.minutes << ":" << gga.time.seconds << " ";
 	oss << gga.fix_quality << "\n";
 	return oss.str();
 }
