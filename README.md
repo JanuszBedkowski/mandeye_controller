@@ -15,7 +15,7 @@
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g
+sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev
 ```
 
 ## Static IP for eth0
