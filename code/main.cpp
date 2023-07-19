@@ -19,7 +19,7 @@
 #define MANDEYE_REPO "/media/usb/"
 #define MANDEYE_GPIO_SIM false
 #define SERVER_PORT 8003
-#define MANDEYE_GNSS_UART "/dev/S0"
+#define MANDEYE_GNSS_UART "/dev/ttyS0"
 
 namespace mandeye
 {
@@ -186,6 +186,9 @@ void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chu
 
 void saveGnssData(std::deque<std::string>& buffer, const std::string& directory, int chunk)
 {
+	if(buffer.size() == 0){
+		mandeye::gnssClientPtr->startListener("/dev/ttyS0", 9600);
+	}
 	using namespace std::chrono_literals;
 	char lidarName[256];
 	snprintf(lidarName, 256, "gnss%04d.gnss", chunk);
