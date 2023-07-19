@@ -139,7 +139,7 @@ void LivoxClient::PointCloudCallback(uint32_t handle,
 			return;
 		}
 		auto& buffer = this_ptr->m_bufferLivoxPtr;
-		buffer->resize(buffer->size() + data->dot_num);
+		//buffer->resize(buffer->size() + data->dot_num);
 		for(uint32_t i = 0; i < data->dot_num; i++)
 		{
 			LivoxPoint point;
@@ -187,7 +187,7 @@ void LivoxClient::ImuDataCallback(uint32_t handle,
 			return;
 		}
 		auto& buffer = this_ptr->m_bufferIMUPtr;
-		buffer->resize(buffer->size() + 1);
+		//buffer->resize(buffer->size() + 1);
 		LivoxIMU point;
 		point.point = *p_imu_data;
 		point.timestamp = toUint64.data;
