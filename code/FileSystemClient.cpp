@@ -84,7 +84,7 @@ int32_t FileSystemClient::GetIdFromManifest()
 		std::filesystem::path(m_repository) / std::filesystem::path(versionFilename);
 	std::ofstream versionOFstream;
 	versionOFstream.open(versionfn.c_str());
-	versionOFstream << "Version 0.1" << std::endl;
+	versionOFstream << "Version 0.1 - branch gnss" << std::endl;
 	
 	std::filesystem::path manifest =
 		std::filesystem::path(m_repository) / std::filesystem::path(manifestFilename);

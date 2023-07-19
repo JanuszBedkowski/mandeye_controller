@@ -24,11 +24,12 @@ nlohmann::json GNSSClient::produceStatus()
 	data["gga"]["dgps_age"] = minmea_tofloat(&lastGGA.dgps_age);
 	return data;
 }
+
 bool GNSSClient::startListener(const std::string& portName, int baudRate) {
 	assert(baudRate == 9600);//Only 9600 is supported
 	try
 	{
-		m_serialPort.Open(portName);
+		m_serialPort.Open(portName, std::ios_base::in);
 		m_serialPort.SetBaudRate(LibSerial::BaudRate::BAUD_9600);
 		init_succes = true;
 		m_serialPortThread = std::thread(&GNSSClient::worker, this);
@@ -48,6 +49,7 @@ void GNSSClient::worker()
 	{
 		std::string line;
 		m_serialPort.ReadLine(line);
+		std::cout << "line: '" << line << "'" << std::endl;
 
 		bool is_vaild = minmea_check(line.c_str(), true);
 		if (is_vaild)
@@ -72,6 +74,8 @@ void GNSSClient::worker()
 			std::cout << "Invalid line: " << line << std::endl;
 		}
 	}
+	//std::cout << "problem with GNSS" << std::endl;
+	//exit(1);
 }
 void GNSSClient::startLog() {
 	std::lock_guard<std::mutex> lock(m_bufferMutex);
@@ -88,6 +92,14 @@ std::deque<std::string> GNSSClient::retrieveData()
 	std::lock_guard<std::mutex> lock(m_bufferMutex);
 	std::deque<std::string> ret;
 	std::swap(ret, m_buffer);
+
+	//if(ret.size() == 0){
+	//	if(m_serialPort.IsOpen()){
+	//		m_serialPort.Close();
+	//		m_serialPort.Open("/dev/ttyS0");
+	//	}
+	//}
+
 	return ret;
 }
 
@@ -95,7 +107,7 @@ std::deque<std::string> GNSSClient::retrieveData()
 std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double laserTimestamp)
 {
 	std:std::stringstream oss;
-	oss << std::setprecision(20) << laserTimestamp << " ";
+	oss << std::setprecision(20) << static_cast<uint_least64_t>(laserTimestamp * 1000000000.0) << " ";
 	oss << minmea_tocoord(&gga.latitude) << " ";
 	oss	<< minmea_tocoord(&gga.longitude) << " ";
 	oss	<< minmea_tofloat(&gga.altitude) << " ";
