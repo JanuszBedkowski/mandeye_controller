@@ -21,7 +21,7 @@ public:
 
 	//! Spins up a thread that reads from the serial port
 	bool startListener(const std::string& portName, int baudRate);
-
+	bool startListener();
 	//! Start logging into the buffers
 	void startLog();
 
@@ -40,6 +40,8 @@ private:
 	LibSerial::SerialPort m_serialPort;
 	LibSerial::SerialStream m_serialPortStream;
 	std::thread m_serialPortThread;
+	std::string m_portName;
+	int m_baudRate {0};
 	void worker();
 
 	bool init_succes{false};

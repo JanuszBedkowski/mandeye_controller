@@ -5,6 +5,7 @@
 #include <json.hpp>
 #include <mutex>
 #include "utils/TimeStampProvider.h"
+#include <set>
 namespace mandeye
 {
 struct LivoxPoint
@@ -12,12 +13,14 @@ struct LivoxPoint
 	LivoxLidarCartesianHighRawPoint point;
 	uint64_t timestamp;
 	uint8_t line_id;
+	uint16_t laser_id;
 };
 
 struct LivoxIMU
 {
 	LivoxLidarImuRawPoint point;
 	uint64_t timestamp;
+	uint16_t laser_id;
 };
 
 using LivoxPointsBuffer = std::deque<LivoxPoint>;
@@ -44,6 +47,9 @@ public:
 
 	std::pair<LivoxPointsBufferPtr, LivoxIMUBufferPtr> retrieveData();
 
+	//! Return current mapping from serial number to lidar id
+	std::unordered_map<uint32_t, std::string> getSerialNumberToLidarIdMapping() const;
+
 	// mandeye_utils::TimeStampProvider overrides ...
 	double getTimestamp() override;
 
@@ -57,12 +63,24 @@ private:
 	std::mutex m_timestampMutex;
 	uint64_t m_timestamp;
 
-	uint64_t m_recivedImuMsgs{0};
-	uint64_t m_recivedPointMessages{0};
-	LivoxLidarInfo m_LivoxLidarInfo;
-	LivoxLidarInfo m_LivoxLidarDeviceType;
+	//! Multilovx support
+	mutable std::mutex m_lidarInfoMutex;
+	std::unordered_map<uint32_t, uint64_t> m_recivedImuMsgs;
+	std::unordered_map<uint32_t, uint64_t> m_recivedPointMessages;
+	std::unordered_map<uint32_t, LivoxLidarInfo> m_LivoxLidarInfo;
+	std::unordered_map<uint32_t, uint64_t> m_handleToLastTimestamp;
+	std::unordered_map<uint32_t,std::string> m_handleToSerialNumber;
+
+	//! This is a set of serial numbers that we have already seen, its used to find lidarId
+	std::set<std::string> m_serialNumbers;
 
 	bool init_succes{false};
+
+	//! converts a handle to a lidar id. The logic is as follows:
+	//! id is zero for lidar with smallest Serial number
+	//! @param handle the handle to convert
+	uint16_t handleToLidarId(uint32_t handle) const;
+
 
 	static constexpr char config[] = {"{\n"
 									  "\t\"MID360\": {\n"

@@ -15,6 +15,7 @@ nlohmann::json GNSSClient::produceStatus()
 	data["gga"]["time"]["m"] = lastGGA.time.minutes;
 	data["gga"]["time"]["s"] = lastGGA.time.seconds;
 	data["gga"]["fix_quality"] = lastGGA.fix_quality;
+	data["gga"]["satellites_tracked"] = lastGGA.satellites_tracked;
 	data["gga"]["latitude"] = minmea_tocoord(&lastGGA.latitude);
 	data["gga"]["longitude"] = minmea_tocoord(&lastGGA.longitude);
 	data["gga"]["hdop"] = minmea_tofloat(&lastGGA.hdop);
