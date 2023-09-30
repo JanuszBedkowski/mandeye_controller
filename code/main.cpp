@@ -21,6 +21,12 @@
 #define SERVER_PORT 8003
 #define MANDEYE_GNSS_UART "/dev/ttyS0"
 
+namespace utils
+{
+std::string getEnvString(const std::string& env, const std::string& def);
+bool getEnvBool(const std::string& env, bool def);
+} // namespace utils
+
 namespace mandeye
 {
 enum class States
@@ -186,8 +192,8 @@ void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chu
 
 void saveGnssData(std::deque<std::string>& buffer, const std::string& directory, int chunk)
 {
-	if(buffer.size() == 0){
-		mandeye::gnssClientPtr->startListener("/dev/ttyS0", 9600);
+	if(buffer.size() == 0 && mandeye::gnssClientPtr){
+		mandeye::gnssClientPtr->startListener(utils::getEnvString("MANDEYE_GNSS_UART", MANDEYE_GNSS_UART), 9600);
 	}
 	using namespace std::chrono_literals;
 	char lidarName[256];
