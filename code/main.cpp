@@ -29,7 +29,22 @@ std::string getEnvString(const std::string& env, const std::string& def);
 bool getEnvBool(const std::string& env, bool def);
 } // namespace utils
 
+#define USE_LIVOX_SDK1
+
+#ifdef USE_LIVOX_SDK1
 using LivoxImplementation = mandeye::LivoxLegacyClient;
+#ifdef USE_LIVOX_SDK2
+#error "Cannot use both Livox SDKs"
+#endif
+
+#endif
+#ifdef USE_LIVOX_SDK2
+using LivoxImplementation = mandeye::LivoxLegacyClient;
+#ifdef USE_LIVOX_SDK1
+#error "Cannot use both Livox SDKs"
+#endif
+#endif
+
 
 namespace mandeye
 {
@@ -89,6 +104,10 @@ std::string produceReport()
 	if(livoxCLientPtr)
 	{
 		j["livox"] = livoxCLientPtr->produceStatus();
+	}
+	else
+	{
+		j["livox"] = {};
 	}
 
 	if(gpioClientPtr)
@@ -427,17 +446,6 @@ void stateWatcher()
 				
 				chunkStart = std::chrono::steady_clock::now();
 
-				LivoxPointsBufferPtr lidarBuffer;
-				LivoxIMUBufferPtr imuBuffer;
-				if(livoxCLientPtr)
-				{
-					auto data = livoxCLientPtr->retrieveData();
-					lidarBuffer = data.first;
-					imuBuffer = data.second;
-				}
-
-				if(lidarBuffer && imuBuffer && continousScanDirectory == "")
-				{
 				auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
 				std::deque<std::string> gnssBuffer;
 				if (gnssClientPtr)
@@ -446,9 +454,7 @@ void stateWatcher()
 				}
 				if(continousScanDirectory == ""){
 					app_state = States::USB_IO_ERROR;
-				}
-				else
-				{
+				}else{
 					savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
@@ -663,8 +669,8 @@ bool getEnvBool(const std::string& env, bool def)
 
 
 #if 1
-#	include "web_page.h"
-#	include <pistache/endpoint.h>
+#include "web_page.h"
+#include <pistache/endpoint.h>
 using namespace Pistache;
 
 struct PistacheServerHandler : public Http::Handler
@@ -723,35 +729,23 @@ int main(int argc, char** argv)
 	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", MANDEYE_REPO));
 
 	std::thread thLivox([&]() {
-		if(LIVOX_SDK_VER == 2)
 		{
-			{
-				std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
-				mandeye::livoxCLientPtr = std::make_shared<mandeye::LivoxClient>();
-			}
-			if(!mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", MANDEYE_LIVOX_LISTEN_IP)))
-			{
-				lidar_error = true;
-			}
-		}
-		if(LIVOX_SDK_VER == 1)
-		{
-			{
-				std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
-				mandeye::livoxCLientLegacyPtr = std::make_shared<mandeye::LivoxLegacyClient>();
-				if (mandeye::livoxCLientLegacyPtr)
-				{
-					bool success = mandeye::livoxCLientLegacyPtr->Initialize();
-					if (!success)
-					{
-						lidar_error = true;
-					}
-				}else{
-					lidar_error = true;
-				}
-			}
+			std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
 
+			mandeye::livoxCLientPtr = std::make_shared<LivoxImplementation>();
 		}
+#ifdef USE_LIVOX_SDK2
+
+		if(!mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", MANDEYE_LIVOX_LISTEN_IP))){
+			lidar_error = true;
+		}
+#endif
+#ifdef USE_LIVOX_SDK1
+		if(!mandeye::livoxCLientPtr->Initialize())
+		{
+			lidar_error = true;
+		}
+#endif
 
 		// intialize in this thread to prevent initialization fiasco
         const std::string portName = utils::getEnvString("MANDEYE_GNSS_UART", MANDEYE_GNSS_UART);

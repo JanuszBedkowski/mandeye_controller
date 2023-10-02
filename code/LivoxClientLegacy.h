@@ -3,10 +3,11 @@
 #include "livox_def.h"
 #include "livox_sdk.h"
 #include <mutex>
+#include "utils/TimeStampProvider.h"
 namespace mandeye
 {
 
-class LivoxLegacyClient
+class LivoxLegacyClient : public mandeye_utils::TimeStampProvider
 {
 public:
 	nlohmann::json produceStatus();
@@ -20,7 +21,8 @@ public:
 
 	bool Initialize();
 
-	double GetLastTimestamp();
+	// mandeye_utils::TimeStampProvider overrides ...
+	double getTimestamp() override;
 
 private:
 	uint64_t m_timestamp;

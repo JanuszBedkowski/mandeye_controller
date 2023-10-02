@@ -135,7 +135,7 @@ void LivoxLegacyClient::OnLidarErrorStatusCallback(livox_status status, uint8_t 
 	}
 }
 
-double LivoxLegacyClient::GetLastTimestamp()
+double LivoxLegacyClient::getTimestamp()
 {
 	std::lock_guard<std::mutex> lock(m_lastTimestampMutex);
 	return m_LastTimestamp;
