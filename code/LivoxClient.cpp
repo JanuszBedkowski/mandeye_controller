@@ -129,13 +129,17 @@ void LivoxClient::PointCloudCallback(uint32_t handle,
 		std::lock_guard<std::mutex> lcK(this_ptr->m_bufferLidarMutex);
 		ToUint64 toUint64;
 		std::memcpy(toUint64.array, data->timestamp, sizeof(uint64_t));
-		this_ptr->m_timestamp = toUint64.data;
+		{
+			std::lock_guard<std::mutex> lcK(this_ptr->m_timestampMutex);
+			this_ptr->m_timestamp = toUint64.data;
+		}
+
 		if(this_ptr->m_bufferLivoxPtr == nullptr)
 		{
 			return;
 		}
 		auto& buffer = this_ptr->m_bufferLivoxPtr;
-		buffer->resize(buffer->size() + data->dot_num);
+		//buffer->resize(buffer->size() + data->dot_num);
 		for(uint32_t i = 0; i < data->dot_num; i++)
 		{
 			LivoxPoint point;
@@ -174,13 +178,16 @@ void LivoxClient::ImuDataCallback(uint32_t handle,
 		std::lock_guard<std::mutex> lcK(this_ptr->m_bufferImuMutex);
 		ToUint64 toUint64;
 		std::memcpy(toUint64.array, data->timestamp, sizeof(uint64_t));
-		this_ptr->m_timestamp = toUint64.data;
+		{
+			std::lock_guard<std::mutex> lcK(this_ptr->m_timestampMutex);
+			this_ptr->m_timestamp = toUint64.data;
+		}
 		if(this_ptr->m_bufferIMUPtr == nullptr)
 		{
 			return;
 		}
 		auto& buffer = this_ptr->m_bufferIMUPtr;
-		buffer->resize(buffer->size() + 1);
+		//buffer->resize(buffer->size() + 1);
 		LivoxIMU point;
 		point.point = *p_imu_data;
 		point.timestamp = toUint64.data;
@@ -320,6 +327,11 @@ void LivoxClient::LidarInfoChangeCallback(const uint32_t handle,
 	{
 		this_ptr->m_LivoxLidarInfo = *info;
 	}
+}
+double LivoxClient::getTimestamp()
+{
+	std::lock_guard<std::mutex> lcK(m_timestampMutex);
+	return double(m_timestamp)/1e9;
 }
 
 } // namespace mandeye

@@ -56,11 +56,23 @@ include_directories(code/)
 add_subdirectory(3rd/CppGPIO)
 include_directories(3rd/CppGPIO/include/)
 
+# NMEA and libserial
+find_path(LIBSERIAL_INCLUDE_DIR SerialPort.h
+        PATH_SUFFIXES include
+        PATHS /usr /usr/local /usr/include/libserial)
+message(${LIBSERIAL_INCLUDE_DIR})
+find_library(LIBSERIAL_LIBRARY
+        NAMES libserial.so
+        PATH_SUFFIXES lib
+        PATHS /usr/lib)
+include_directories(3rd/minmea ${LIBSERIAL_INCLUDE_DIR})
+add_library(minea STATIC 3rd/minmea/minmea.c)
 
 #executable
-add_executable(control_program code/main.cpp  code/web_page.h code/LivoxClient.cpp code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp ${PISTACHE_SRC})
+add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h code/LivoxClient.cpp code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp ${PISTACHE_SRC}
+        code/utils/TimeStampReceiver.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
-target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip)
+target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea)
 #target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static atomic laszip)
 
 

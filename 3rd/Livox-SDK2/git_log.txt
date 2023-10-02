@@ -1,0 +1,91 @@
+commit 3b2606f64cb4f87c00434caa35d2e563b4b644c8
+Author: Michał Pełka <michal.pelka@robotec.ai>
+Date:   Sun Apr 23 21:49:49 2023 +0200
+
+    Limit usage of 1 byte padding
+    
+    Signed-off-by: Michał Pełka <michal.pelka@robotec.ai>
+
+commit e2722862b6cdec0ca6b15de95b27abb4ee75face
+Author: marvin.li <marvin.li@dji.com>
+Date:   Wed Jan 11 18:18:09 2023 +0800
+
+    update the link to MID-360 Protocol in README
+
+commit e774a48a51f7535d75f72fb48c0e4094552e5f05
+Author: marvin.li <marvin.li@dji.com>
+Date:   Tue Dec 13 19:59:24 2022 +0800
+
+    fix a file permission problem
+
+commit 1809e369f48da3fc123565c96d786baee5531fd6
+Author: marvin.li <marvin.li@dji.com>
+Date:   Tue Dec 13 14:19:27 2022 +0800
+
+    update CHANGELOG
+
+commit 5885cb9a909b2fdf9aaf913811ab52a6f184e6b3
+Author: marvin.li <marvin.li@dji.com>
+Date:   Mon Dec 12 21:20:07 2022 +0800
+
+    release v1.0.0
+
+commit e1f26e73237b12edf01fa055d926fafe150f2637
+Author: marvin.li <marvin.li@dji.com>
+Date:   Wed Oct 12 19:44:59 2022 +0800
+
+    Update README.md
+
+commit d7c6c9880066994a356aaae5e02c0a9bc6dda688
+Author: Livox-SDK <dev@livoxtech.com>
+Date:   Fri Sep 23 21:38:32 2022 +0800
+
+    updated the chapter 3.2 of readme
+
+commit a520ad7076eb85825b32731f5ced2391264d6bc9
+Author: Livox-SDK <dev@livoxtech.com>
+Date:   Thu Sep 8 12:00:31 2022 +0800
+
+    added the hap sdk communication protocol english version
+
+commit 6190941219f34d522d1109bdb6dae84f904b1777
+Author: Livox-SDK <dev@livoxtech.com>
+Date:   Tue Aug 2 11:03:26 2022 +0800
+
+    updated the readmde for arm-linux compile cmd
+
+commit 70a024cfb20ac233a8865c8ff1abf46f9dcb2fdf
+Author: livox <dev@livoxtech.com>
+Date:   Fri Jul 29 16:00:10 2022 +0800
+
+    Update README.md
+    
+    ARM-Linux cross  Compile changed to ARM-Linux Compile
+
+commit 7c4f42d0e6c66320d48ed4dfaf20b0b7d95b6076
+Author: livox <dev@livoxtech.com>
+Date:   Fri Jul 29 15:56:11 2022 +0800
+
+    Update README.md
+    
+    arm-linux cross compile changed to arm-linux compile
+
+commit a23f2aaaac1c31798c58480f0f70cf45f5ac56eb
+Author: livox <dev@livoxtech.com>
+Date:   Tue Jul 26 18:12:25 2022 +0800
+
+    Update README.md
+    
+    add the  HAP communication protocol link
+
+commit b5e0b8f663d4a416a08b9d2b6cd693368a2e83f6
+Author: Livox-SDK <dev@livoxtech.com>
+Date:   Fri Jul 22 21:19:24 2022 +0800
+
+    updated readme
+
+commit 7488f6504c96787c467fc1e235c0e77bfb13d0bf
+Author: Livox-SDK <dev@livoxtech.com>
+Date:   Fri Jul 22 21:01:23 2022 +0800
+
+    initial version

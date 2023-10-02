@@ -4,7 +4,7 @@
 #include <deque>
 #include <json.hpp>
 #include <mutex>
-
+#include "utils/TimeStampProvider.h"
 namespace mandeye
 {
 struct LivoxPoint
@@ -28,7 +28,7 @@ using LivoxIMUBuffer = std::deque<LivoxIMU>;
 using LivoxIMUBufferPtr = std::shared_ptr<std::deque<LivoxIMU>>;
 using LivoxIMUBufferConstPtr = std::shared_ptr<const std::deque<LivoxIMU>>;
 
-class LivoxClient
+class LivoxClient : public mandeye_utils::TimeStampProvider
 {
 public:
 	nlohmann::json produceStatus();
@@ -44,6 +44,9 @@ public:
 
 	std::pair<LivoxPointsBufferPtr, LivoxIMUBufferPtr> retrieveData();
 
+	// mandeye_utils::TimeStampProvider overrides ...
+	double getTimestamp() override;
+
 private:
 	std::mutex m_bufferImuMutex;
 	std::mutex m_bufferLidarMutex;
@@ -51,7 +54,9 @@ private:
 	LivoxPointsBufferPtr m_bufferLivoxPtr{nullptr};
 	LivoxIMUBufferPtr m_bufferIMUPtr{nullptr};
 
+	std::mutex m_timestampMutex;
 	uint64_t m_timestamp;
+
 	uint64_t m_recivedImuMsgs{0};
 	uint64_t m_recivedPointMessages{0};
 	LivoxLidarInfo m_LivoxLidarInfo;
