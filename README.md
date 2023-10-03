@@ -2,6 +2,12 @@
 
 # Hardware documementation
 
+## 3D Model
+
+The source design is available on Onshape at [this link](https://cad.onshape.com/documents/a6c6019ccb399ad39d830fad/w/0440af658555626c8fea1136/e/e1bf637894052d9247ac984d?renderMode=0&uiState=651c527c78128a19b84b4be1).
+The design is available for download on Printables at [this link](https://www.printables.com/model/602273-open-source-3d-scanner).
+The protective cap for the Livox 360 can be found on Printables at [this link](https://www.printables.com/pl/model/578608-protective-cap-for-livox-mid-306).
+
 ## Bill of Materials
 [Click here to BIM](doc/BIM.md)
 
@@ -17,6 +23,7 @@ sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g
 ```
+
 
 ## Static IP for eth0
 
