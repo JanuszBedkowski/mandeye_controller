@@ -19,3 +19,6 @@
 [submodule "3rd/Livox-SDK"]
 	path = 3rd/Livox-SDK
 	url = https://github.com/Livox-SDK/Livox-SDK.git
+[submodule "3rd/vn100_test"]
+	path = 3rd/vn100_test
+	url = https://github.com/michalpelka/vn100_binary_example.git

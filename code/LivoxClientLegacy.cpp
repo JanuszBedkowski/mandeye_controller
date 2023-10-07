@@ -169,10 +169,14 @@ void LivoxLegacyClient::GetLidarData(uint8_t handle, LivoxEthPacket* data, uint3
 		std::memcpy(toUint64.array, data->timestamp, sizeof(uint64_t));
 		std::lock_guard<std::mutex> lcK(m_bufferLidarMutex);
 
-
+		{
+			std::lock_guard<std::mutex> lock(m_lastTimestampMutex);
+			m_LastTimestamp = toUint64.data;
+		}
 
 		if(data->data_type == kCartesian)
 		{
+
 			data_recveive_count[handle]++;
 			if(m_bufferLivoxPtr == nullptr)
 			{

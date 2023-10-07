@@ -14,14 +14,17 @@
 #include <string>
 #include "gnss.h"
 #include <chrono>
-
+#include "vn100Client.h"
 #include <LivoxClientLegacy.h>
 //configuration for alienware
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
 #define MANDEYE_REPO "/media/usb/"
 #define MANDEYE_GPIO_SIM false
 #define SERVER_PORT 8003
-#define MANDEYE_GNSS_UART "/dev/ttyS0"
+#define MANDEYE_GNSS_UART ""
+
+#define MANDEYE_VN100_PORT "/dev/ttyUSB0"
+
 
 namespace utils
 {
@@ -29,7 +32,10 @@ std::string getEnvString(const std::string& env, const std::string& def);
 bool getEnvBool(const std::string& env, bool def);
 } // namespace utils
 
+
+// build configuration
 #define USE_LIVOX_SDK1
+#define USE_VN100
 
 #ifdef USE_LIVOX_SDK1
 using LivoxImplementation = mandeye::LivoxLegacyClient;
@@ -84,6 +90,7 @@ std::mutex livoxClientPtrLock;
 
 std::shared_ptr<LivoxImplementation> livoxCLientPtr;
 std::shared_ptr<GNSSClient> gnssClientPtr;
+std::shared_ptr<VN100Client> vn100ClientPtr;
 std::mutex gpioClientPtrLock;
 std::shared_ptr<GpioClient> gpioClientPtr;
 std::shared_ptr<FileSystemClient> fileSystemClientPtr;
@@ -121,6 +128,15 @@ std::string produceReport()
 	}else{
         j["gnss"] = {};
     }
+
+	if (vn100ClientPtr)
+	{
+		j["vn100"] = vn100ClientPtr->produceStatus();
+	}
+	else
+	{
+		j["vn100"] = {};
+	}
 
 	std::ostringstream s;
 	s << std::setw(4) << j;
@@ -220,6 +236,27 @@ void saveGnssData(std::deque<std::string>& buffer, const std::string& directory,
 	snprintf(lidarName, 256, "gnss%04d.gnss", chunk);
 	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
 	std::cout << "Savig gnss buffer of size " << buffer.size() << " to " << lidarFilePath << std::endl;
+	std::ofstream lidarStream(lidarFilePath.c_str());
+	std::stringstream ss;
+
+	for(const auto& p : buffer)
+	{
+		ss << p ;
+	}
+	lidarStream << ss.rdbuf();
+
+	lidarStream.close();
+	system("sync");
+	return;
+}
+
+void saveVN100Data(std::deque<std::string>& buffer, const std::string& directory, int chunk)
+{
+	using namespace std::chrono_literals;
+	char lidarName[256];
+	snprintf(lidarName, 256, "vn_%04d.csv", chunk);
+	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
+	std::cout << "Saving vn100 buffer of size " << buffer.size() << " to " << lidarFilePath << std::endl;
 	std::ofstream lidarStream(lidarFilePath.c_str());
 	std::stringstream ss;
 
@@ -339,6 +376,9 @@ void stateWatcher()
 				{
 					gnssClientPtr->startLog();
 				}
+				if(vn100ClientPtr){
+					vn100ClientPtr->startLog();
+				}
 				app_state = States::SCANNING;
 			}
 			// create directory
@@ -390,6 +430,11 @@ void stateWatcher()
 					{
 						saveGnssData(gnssBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					}
+					if(vn100ClientPtr)
+					{
+						std::deque<std::string> buffer = vn100ClientPtr->retrieveData();
+						saveVN100Data(buffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+					}
 					mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, false);
 					chunksInExperimentCS++;
 				}
@@ -409,6 +454,9 @@ void stateWatcher()
 				gnssData = gnssClientPtr->retrieveData();
 				gnssClientPtr->stopLog();
 			}
+			if(vn100ClientPtr){
+				vn100ClientPtr->stopLog();
+			}
 			if(continousScanDirectory.empty()){
 				app_state = States::USB_IO_ERROR;
 			}else{
@@ -417,6 +465,10 @@ void stateWatcher()
 				if (gnssClientPtr)
 				{
 					saveGnssData(gnssData, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				}
+				if(vn100ClientPtr){
+					std::deque<std::string> buffer = vn100ClientPtr->retrieveData();
+					saveVN100Data(buffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				}
 				chunksInExperimentCS++;
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, false);
@@ -466,6 +518,9 @@ void stateWatcher()
 				{
 					gnssClientPtr->startLog();
 				}
+				if(vn100ClientPtr){
+					vn100ClientPtr->startLog();
+				}
 				app_state = States::STOP_SCAN_IN_PROGRESS;
 			}
 		}
@@ -484,11 +539,17 @@ void stateWatcher()
 			}
 			auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
 			std::deque<std::string> gnssData;
+			std::deque<std::string> vn100Data;
 			livoxCLientPtr->stopLog();
 			if (gnssClientPtr)
 			{
 				gnssData = gnssClientPtr->retrieveData();
 				gnssClientPtr->stopLog();
+			}
+			if (vn100ClientPtr)
+			{
+				vn100Data = vn100ClientPtr->retrieveData();
+				vn100ClientPtr->stopLog();
 			}
 			if(stopScanDirectory.empty()){
 				app_state = States::USB_IO_ERROR;
@@ -498,6 +559,10 @@ void stateWatcher()
 				if (gnssClientPtr)
 				{
 					saveGnssData(gnssData, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				}
+				if(vn100ClientPtr)
+				{
+					saveVN100Data(vn100Data, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				}
 				chunksInExperimentSS++;
 				
@@ -627,6 +692,12 @@ int main(int argc, char** argv)
             mandeye::gnssClientPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
             mandeye::gnssClientPtr->startListener(utils::getEnvString("MANDEYE_GNSS_UART", MANDEYE_GNSS_UART), 9600);
         }
+		const std::string vn100PortName = utils::getEnvString("MANDEYE_VN100_UART", MANDEYE_VN100_PORT);
+		std::cout << "MANDEYE_VN100_UART : " << vn100PortName << std::endl;
+
+		mandeye::vn100ClientPtr = std::make_shared<mandeye::VN100Client>();
+		mandeye::vn100ClientPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
+		mandeye::vn100ClientPtr->startListener(vn100PortName);
 	});
 
 

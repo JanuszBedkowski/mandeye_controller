@@ -9,27 +9,27 @@ message("pistache")
 add_subdirectory(3rd/pistache)
 
 #include_directories(3rd/pistache/include)
-#set(PISTACHE_SRC 
+#set(PISTACHE_SRC
 #3rd/pistache/src/server/endpoint.cc
 #3rd/pistache/src/server/listener.cc
 #3rd/pistache/src/server/router.cc
-#3rd/pistache/src/common/base64.cc       
-##3rd/pistache/src/common/http_defs.cc     
-#3rd/pistache/src/common/net.cc      
-#3rd/pistache/src/common/stream.cc         
+#3rd/pistache/src/common/base64.cc
+##3rd/pistache/src/common/http_defs.cc
+#3rd/pistache/src/common/net.cc
+#3rd/pistache/src/common/stream.cc
 #3rd/pistache/src/common/transport.cc
-#3rd/pistache/src/common/cookie.cc       
-#3rd/pistache/src/common/http_header.cc   
-#3rd/pistache/src/common/os.cc       
-#3rd/pistache/src/common/string_logger.cc  
+#3rd/pistache/src/common/cookie.cc
+#3rd/pistache/src/common/http_header.cc
+#3rd/pistache/src/common/os.cc
+#3rd/pistache/src/common/string_logger.cc
 #3rd/pistache/src/common/utils.cc
-#3rd/pistache/src/common/description.cc  
-#3rd/pistache/src/common/http_headers.cc  
-#3rd/pistache/src/common/peer.cc     
+#3rd/pistache/src/common/description.cc
+#3rd/pistache/src/common/http_headers.cc
+#3rd/pistache/src/common/peer.cc
 #3rd/pistache/src/common/tcp.cc
-#3rd/pistache/src/common/http.cc         
-#3rd/pistache/src/common/mime.cc          
-#3rd/pistache/src/common/reactor.cc  
+#3rd/pistache/src/common/http.cc
+#3rd/pistache/src/common/mime.cc
+#3rd/pistache/src/common/reactor.cc
 #3rd/pistache/src/common/timer_pool.cc
 #)
 
@@ -73,11 +73,15 @@ find_library(LIBSERIAL_LIBRARY
 include_directories(3rd/minmea ${LIBSERIAL_INCLUDE_DIR})
 add_library(minea STATIC 3rd/minmea/minmea.c)
 
+#vn100
+add_subdirectory(3rd/vn100_test)
+include_directories(3rd/vn100_test)
+
 #executable
 add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h code/LivoxClient.cpp code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp ${PISTACHE_SRC}
-        code/utils/TimeStampReceiver.cpp code/LivoxClientLegacy.cpp)
+        code/utils/TimeStampReceiver.cpp code/LivoxClientLegacy.cpp code/vn100Client.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
-target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea livox_sdk_static)
+target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea livox_sdk_static client_vn100)
 #target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static atomic laszip)
 
 
