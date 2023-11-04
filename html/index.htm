@@ -20,7 +20,7 @@
                 var obj = jQuery.parseJSON(data);
 
                 $('.msgs_livox').text( obj.livox.counters.lidar);
-                $('.msgs_imu').text( obj.livox.counters.imu);
+                $('.msgs_imu').text( obj.vn100.vn100.count);
                 $('.disk').text( obj.fs.FileSystemClient.free_str);
                 $('.state').text( obj.state);
                 $('.filesystem').text(obj.fs.FileSystemClient.error);

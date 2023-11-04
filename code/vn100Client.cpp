@@ -18,10 +18,17 @@ nlohmann::json VN100Client::produceStatus()
 	{
 		data["vn100"]["count"] = count;
 		data["vn100"]["timestamp"] = timestamp;
+		data["vn100"]["buffer_size"] = m_buffer.size();
+		data["vn100"]["is_logging"] = m_isLogging;
 	}
 	return data;
 }
 
+
+int VN100Client::getNumberOfMessagesReceived() const
+{
+	return count;
+}
 
 //! Spins up a thread that reads from the serial port
 void VN100Client::startListener(const std::string portName)

@@ -110,6 +110,16 @@ nlohmann::json LivoxLegacyClient::produceStatus()
 	return status;
 }
 
+int LivoxLegacyClient::getNumberOfMessagesReceived() const
+{
+	int count = 0;
+	for(int i = 0; i < lidar_count; i++)
+	{
+		count+=data_recveive_count[i];
+	}
+	return count;
+}
+
 /** Receiving error message from Livox Lidar. */
 void LivoxLegacyClient::OnLidarErrorStatusCallback(livox_status status, uint8_t handle, ErrorMessage* message)
 {

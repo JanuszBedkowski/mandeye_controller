@@ -337,10 +337,29 @@ void stateWatcher()
 			std::this_thread::sleep_for(100ms);
 			std::lock_guard<std::mutex> l1(livoxClientPtrLock);
 			std::lock_guard<std::mutex> l2(gpioClientPtrLock);
+
+#ifdef USE_LIVOX_SDK1
+			const int numberOfMessagesLidar = mandeye::livoxCLientPtr->getNumberOfMessagesReceived();
+			std::cout << "Number of messages received from Lidar : " << numberOfMessagesLidar << std::endl;
+
+			const int numberOfMessagesVn100 = mandeye::vn100ClientPtr->getNumberOfMessagesReceived();
+			std::cout << "Number of messages received from Vn100 : " << numberOfMessagesVn100 << std::endl;
+
+			if (numberOfMessagesLidar < 1000) {
+				app_state = States::LIDAR_ERROR;
+				continue ;
+			}
+			if (numberOfMessagesVn100 < 100) {
+				app_state = States::LIDAR_ERROR;
+				continue ;
+			}
+#endif
+
 			if(mandeye::gpioClientPtr && mandeye::fileSystemClientPtr)
 			{
 				app_state = States::IDLE;
 			}
+
 		}
 		else if(app_state == States::IDLE)
 		{
@@ -698,6 +717,7 @@ int main(int argc, char** argv)
 		mandeye::vn100ClientPtr = std::make_shared<mandeye::VN100Client>();
 		mandeye::vn100ClientPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
 		mandeye::vn100ClientPtr->startListener(vn100PortName);
+
 	});
 
 
@@ -741,6 +761,7 @@ int main(int argc, char** argv)
 		{
 			mandeye::isRunning.store(false);
 		}
+
 		if(!lidar_error){
 			std::cout << "Press q -> quit, s -> start scan , e -> end scan" << std::endl;
 

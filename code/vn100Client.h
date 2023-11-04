@@ -30,6 +30,8 @@ public:
 	//! Retrieve all data from the buffer, in form of CSV lines
 	std::deque<std::string> retrieveData();
 
+	int getNumberOfMessagesReceived() const;
+
 private:
 	unsigned int count =0;
 	double timestamp = 0;

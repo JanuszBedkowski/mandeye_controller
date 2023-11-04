@@ -24,6 +24,8 @@ public:
 	// mandeye_utils::TimeStampProvider overrides ...
 	double getTimestamp() override;
 
+	int getNumberOfMessagesReceived() const;
+
 private:
 	uint64_t m_timestamp;
 	uint64_t m_recivedImuMsgs{0};
