@@ -1,0 +1,8 @@
+\contentsline {chapter}{\numberline {1}Introduction}{1}{}%
+\contentsline {chapter}{\numberline {2}Hardware description}{5}{}%
+\contentsline {section}{\numberline {2.1}Turn on device}{7}{}%
+\contentsline {section}{\numberline {2.2}Turn on continuous scanning}{7}{}%
+\contentsline {section}{\numberline {2.3}Turn on stop scan}{10}{}%
+\contentsline {section}{\numberline {2.4}Turn off device}{12}{}%
+\contentsline {section}{\numberline {2.5}Error indicators}{13}{}%
+\contentsline {section}{\numberline {2.6}Data structure on USB drive}{13}{}%
