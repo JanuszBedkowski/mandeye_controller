@@ -4,16 +4,26 @@
 
 ## 3D Model
 
-The source design is available on Onshape at [this link](https://cad.onshape.com/documents/a6c6019ccb399ad39d830fad/w/0440af658555626c8fea1136/e/e1bf637894052d9247ac984d?renderMode=0&uiState=651c527c78128a19b84b4be1).
-The design is available for download on Printables at [this link](https://www.printables.com/model/602273-open-source-3d-scanner).
-The protective cap for the Livox 360 can be found on Printables at [this link](https://www.printables.com/pl/model/578608-protective-cap-for-livox-mid-306).
+The source design is available on Onshape, and you can access it [here](https://cad.onshape.com/documents/a6c6019ccb399ad39d830fad/w/0440af658555626c8fea1136/e/e1bf637894052d9247ac984d?renderMode=0&uiState=651c527c78128a19b84b4be1).
+
+The design files for 3D printing are available in the repository's 3mf directory. You can find the file [ScannerAssembly.3mf](./3mf/ScannerAssembly.3mf) containing the models to be printed.
+
+For optimal results, we recommend printing the assembly with PLA. Don't forget to adjust the 3MF file according to your printer specifications. If you need assistance with this, consider including a brief guide or tips on printer adjustments.
+
+![Scanner Assembly](./3mf/ScannerAssembly.png)
+
+Additionally, we recommend printing a protective cap for Livox Mid-360, which you can find in the [LivoxCap.3mf](./3mf/LivoxCap.3mf) file.
+
+![Livox Cap](./3mf/LivoxCap.png)
+
+Feel free to reach out if you have any questions or need further assistance!
+
 
 ## Bill of Materials
 [Click here to BIM](doc/BIM.md)
 
 ## Bill of Materials
 [Wiring manual](doc/wiring/wiring.md)
-
 
 # Software
 
