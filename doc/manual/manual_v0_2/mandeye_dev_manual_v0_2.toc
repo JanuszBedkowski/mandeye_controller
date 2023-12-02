@@ -1,8 +1,10 @@
-\contentsline {chapter}{\numberline {1}Introduction}{1}{}%
-\contentsline {chapter}{\numberline {2}Hardware description}{5}{}%
-\contentsline {section}{\numberline {2.1}Turn on device}{7}{}%
-\contentsline {section}{\numberline {2.2}Turn on continuous scanning}{7}{}%
-\contentsline {section}{\numberline {2.3}Turn on stop scan}{10}{}%
-\contentsline {section}{\numberline {2.4}Turn off device}{12}{}%
-\contentsline {section}{\numberline {2.5}Error indicators}{13}{}%
-\contentsline {section}{\numberline {2.6}Data structure on USB drive}{13}{}%
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
+\contentsline {chapter}{\numberline {2}Hardware description}{7}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Turn on device (MANDEYE DEV/PRO)}{11}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Turn on continuous scanning (MANDEYE DEV/PRO)}{11}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Turn on stop scan (MANDEYE DEV/PRO)}{14}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Turn off device (MANDEYE DEV/PRO)}{16}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Error indicators (MANDEYE DEV/PRO)}{17}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Data structure on USB drive (MANDEYE DEV/PRO)}{17}{section.2.6}%
+\contentsline {section}{\numberline {2.7}Online documentation and software (MANDEYE DEV/PRO)}{18}{section.2.7}%
+\contentsline {section}{\numberline {2.8}Support (MANDEYE DEV/PRO)}{18}{section.2.8}%

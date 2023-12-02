@@ -1,13 +1,14 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (MiKTeX 23.4) (preloaded format=pdflatex 2023.7.19)  20 OCT 2023 14:54
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.4.8)  2 DEC 2023 11:48
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**./mandeye_dev_manual_v0_2.tex
-(mandeye_dev_manual_v0_2.tex
+**mandeye_dev_manual_v0_2.tex
+(./mandeye_dev_manual_v0_2.tex
 LaTeX2e <2022-11-01> patch level 1
-L3 programming layer <2023-03-30> (S:\MikTex\tex/latex/base\book.cls
+L3 programming layer <2023-03-30>
+(c:/texlive/2023/texmf-dist/tex/latex/base/book.cls
 Document Class: book 2022/07/02 v1.4n Standard LaTeX document class
-(S:\MikTex\tex/latex/base\bk12.clo
+(c:/texlive/2023/texmf-dist/tex/latex/base/bk12.clo
 File: bk12.clo 2022/07/02 v1.4n Standard LaTeX file (size option)
 )
 \c@part=\count185
@@ -22,40 +23,41 @@ File: bk12.clo 2022/07/02 v1.4n Standard LaTeX file (size option)
 \abovecaptionskip=\skip48
 \belowcaptionskip=\skip49
 \bibindent=\dimen140
-) (S:\MikTex\tex/latex/base\inputenc.sty
+)
+(c:/texlive/2023/texmf-dist/tex/latex/base/inputenc.sty
 Package: inputenc 2021/02/14 v1.3d Input encoding file
 \inpenc@prehook=\toks16
 \inpenc@posthook=\toks17
 )
-(S:\MikTex\tex/latex/graphics\graphicx.sty
+(c:/texlive/2023/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 2021/09/16 v1.2d Enhanced LaTeX Graphics (DPC,SPQR)
 
-(S:\MikTex\tex/latex/graphics\keyval.sty
+(c:/texlive/2023/texmf-dist/tex/latex/graphics/keyval.sty
 Package: keyval 2022/05/29 v1.15 key=value parser (DPC)
 \KV@toks@=\toks18
 )
-(S:\MikTex\tex/latex/graphics\graphics.sty
+(c:/texlive/2023/texmf-dist/tex/latex/graphics/graphics.sty
 Package: graphics 2022/03/10 v1.4e Standard LaTeX Graphics (DPC,SPQR)
 
-(S:\MikTex\tex/latex/graphics\trig.sty
+(c:/texlive/2023/texmf-dist/tex/latex/graphics/trig.sty
 Package: trig 2021/08/11 v1.11 sin cos tan (DPC)
 )
-(S:\MikTex\tex/latex/graphics-cfg\graphics.cfg
+(c:/texlive/2023/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
 File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
 )
 Package graphics Info: Driver file: pdftex.def on input line 107.
 
-(S:\MikTex\tex/latex/graphics-def\pdftex.def
+(c:/texlive/2023/texmf-dist/tex/latex/graphics-def/pdftex.def
 File: pdftex.def 2022/09/22 v1.2b Graphics/color driver for pdftex
 ))
 \Gin@req@height=\dimen141
 \Gin@req@width=\dimen142
 )
-(S:\MikTex\tex/latex/caption\caption.sty
-Package: caption 2023/07/31 v3.6n Customizing captions (AR)
+(c:/texlive/2023/texmf-dist/tex/latex/caption/caption.sty
+Package: caption 2023/03/12 v3.6j Customizing captions (AR)
 
-(S:\MikTex\tex/latex/caption\caption3.sty
-Package: caption3 2023/07/31 v2.4d caption3 kernel (AR)
+(c:/texlive/2023/texmf-dist/tex/latex/caption/caption3.sty
+Package: caption3 2023/03/12 v2.4 caption3 kernel (AR)
 \caption@tempdima=\dimen143
 \captionmargin=\dimen144
 \caption@leftmargin=\dimen145
@@ -69,14 +71,14 @@ Package caption Info: Standard document class detected.
 \c@caption@flags=\count194
 \c@continuedfloat=\count195
 )
-(S:\MikTex\tex/latex/caption\subcaption.sty
-Package: subcaption 2023/07/28 v1.6b Sub-captions (AR)
-Package caption Info: New subtype `subfigure' on input line 238.
+(c:/texlive/2023/texmf-dist/tex/latex/caption/subcaption.sty
+Package: subcaption 2023/02/19 v1.6 Sub-captions (AR)
+Package caption Info: New subtype `subfigure' on input line 239.
 \c@subfigure=\count196
-Package caption Info: New subtype `subtable' on input line 238.
+Package caption Info: New subtype `subtable' on input line 239.
 \c@subtable=\count197
 )
-(S:\MikTex\tex/latex/float\float.sty
+(c:/texlive/2023/texmf-dist/tex/latex/float/float.sty
 Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \c@float@type=\count198
 \float@exts=\toks19
@@ -84,28 +86,28 @@ Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \@float@everytoks=\toks20
 \@floatcapt=\box52
 )
-(S:\MikTex\tex/latex/adjustbox\adjustbox.sty
+(c:/texlive/2023/texmf-dist/tex/latex/adjustbox/adjustbox.sty
 Package: adjustbox 2022/10/17 v1.3a Adjusting TeX boxes (trim, clip, ...)
 
-(S:\MikTex\tex/latex/xkeyval\xkeyval.sty
+(c:/texlive/2023/texmf-dist/tex/latex/xkeyval/xkeyval.sty
 Package: xkeyval 2022/06/16 v2.9 package option processing (HA)
 
-(S:\MikTex\tex/generic/xkeyval\xkeyval.tex
-(S:\MikTex\tex/generic/xkeyval\xkvutils.tex
+(c:/texlive/2023/texmf-dist/tex/generic/xkeyval/xkeyval.tex
+(c:/texlive/2023/texmf-dist/tex/generic/xkeyval/xkvutils.tex
 \XKV@toks=\toks21
 \XKV@tempa@toks=\toks22
 )
 \XKV@depth=\count199
 File: xkeyval.tex 2014/12/03 v2.7a key=value parser (HA)
 ))
-(S:\MikTex\tex/latex/adjustbox\adjcalc.sty
+(c:/texlive/2023/texmf-dist/tex/latex/adjustbox/adjcalc.sty
 Package: adjcalc 2012/05/16 v1.1 Provides advanced setlength with multiple back
 -ends (calc, etex, pgfmath)
 )
-(S:\MikTex\tex/latex/adjustbox\trimclip.sty
+(c:/texlive/2023/texmf-dist/tex/latex/adjustbox/trimclip.sty
 Package: trimclip 2020/08/19 v1.2 Trim and clip general TeX material
 
-(S:\MikTex\tex/latex/collectbox\collectbox.sty
+(c:/texlive/2023/texmf-dist/tex/latex/collectbox/collectbox.sty
 Package: collectbox 2022/10/17 v0.4c Collect macro arguments as boxes
 \collectedbox=\box53
 )
@@ -115,7 +117,7 @@ Package: collectbox 2022/10/17 v0.4c Collect macro arguments as boxes
 \tc@ury=\dimen154
 Package trimclip Info: Using driver 'tc-pdftex.def'.
 
-(S:\MikTex\tex/latex/adjustbox\tc-pdftex.def
+(c:/texlive/2023/texmf-dist/tex/latex/adjustbox/tc-pdftex.def
 File: tc-pdftex.def 2019/01/04 v2.2 Clipping driver for pdftex
 ))
 \adjbox@Width=\dimen155
@@ -127,75 +129,229 @@ File: tc-pdftex.def 2019/01/04 v2.2 Clipping driver for pdftex
 \adjbox@pdepth=\dimen161
 \adjbox@ptotalheight=\dimen162
 
-(S:\MikTex\tex/latex/ifoddpage\ifoddpage.sty
+(c:/texlive/2023/texmf-dist/tex/latex/ifoddpage/ifoddpage.sty
 Package: ifoddpage 2022/10/18 v1.2 Conditionals for odd/even page detection
 \c@checkoddpage=\count266
 )
-(S:\MikTex\tex/latex/varwidth\varwidth.sty
+(c:/texlive/2023/texmf-dist/tex/latex/varwidth/varwidth.sty
 Package: varwidth 2009/03/30 ver 0.92;  Variable-width minipages
 \@vwid@box=\box54
 \sift@deathcycles=\count267
 \@vwid@loff=\dimen163
 \@vwid@roff=\dimen164
 ))
-(S:\MikTex\tex/latex/l3backend\l3backend-pdftex.def
+(c:/texlive/2023/texmf-dist/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2023-02-07 v7.00v Hypertext links for LaTeX
+
+(c:/texlive/2023/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty
+Package: ltxcmds 2020-05-10 v1.25 LaTeX kernel commands for general use (HO)
+)
+(c:/texlive/2023/texmf-dist/tex/generic/iftex/iftex.sty
+Package: iftex 2022/02/03 v1.0f TeX engine tests
+)
+(c:/texlive/2023/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO
+)
+
+(c:/texlive/2023/texmf-dist/tex/generic/infwarerr/infwarerr.sty
+Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
+)
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+)
+(c:/texlive/2023/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty
+Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
+)
+(c:/texlive/2023/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty
+Package: kvdefinekeys 2019-12-19 v1.6 Define keys (HO)
+)
+(c:/texlive/2023/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+Package: pdfescape 2019/12/09 v1.15 Implements pdfTeX's escape features (HO)
+)
+(c:/texlive/2023/texmf-dist/tex/latex/hycolor/hycolor.sty
+Package: hycolor 2020-01-27 v1.10 Color options for hyperref/bookmark (HO)
+)
+(c:/texlive/2023/texmf-dist/tex/latex/letltxmacro/letltxmacro.sty
+Package: letltxmacro 2019/12/03 v1.6 Let assignment for LaTeX macros (HO)
+)
+(c:/texlive/2023/texmf-dist/tex/latex/auxhook/auxhook.sty
+Package: auxhook 2019-12-17 v1.6 Hooks for auxiliary files (HO)
+)
+(c:/texlive/2023/texmf-dist/tex/latex/hyperref/nameref.sty
+Package: nameref 2022-05-17 v2.50 Cross-referencing by name of section
+
+(c:/texlive/2023/texmf-dist/tex/latex/refcount/refcount.sty
+Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
+)
+(c:/texlive/2023/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
+Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
+
+(c:/texlive/2023/texmf-dist/tex/latex/kvoptions/kvoptions.sty
+Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
+))
+\c@section@level=\count268
+)
+\@linkdim=\dimen165
+\Hy@linkcounter=\count269
+\Hy@pagecounter=\count270
+
+(c:/texlive/2023/texmf-dist/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2023-02-07 v7.00v Hyperref: PDFDocEncoding definition (HO)
+Now handling font encoding PD1 ...
+... no UTF-8 mapping file for font encoding PD1
+)
+(c:/texlive/2023/texmf-dist/tex/generic/intcalc/intcalc.sty
+Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
+)
+(c:/texlive/2023/texmf-dist/tex/generic/etexcmds/etexcmds.sty
+Package: etexcmds 2019/12/15 v1.7 Avoid name clashes with e-TeX commands (HO)
+)
+\Hy@SavedSpaceFactor=\count271
+
+(c:/texlive/2023/texmf-dist/tex/latex/hyperref/puenc.def
+File: puenc.def 2023-02-07 v7.00v Hyperref: PDF Unicode definition (HO)
+Now handling font encoding PU ...
+... no UTF-8 mapping file for font encoding PU
+)
+Package hyperref Info: Hyper figures OFF on input line 4177.
+Package hyperref Info: Link nesting OFF on input line 4182.
+Package hyperref Info: Hyper index ON on input line 4185.
+Package hyperref Info: Plain pages OFF on input line 4192.
+Package hyperref Info: Backreferencing OFF on input line 4197.
+Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
+Package hyperref Info: Bookmarks ON on input line 4425.
+\c@Hy@tempcnt=\count272
+
+(c:/texlive/2023/texmf-dist/tex/latex/url/url.sty
+\Urlmuskip=\muskip16
+Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
+)
+LaTeX Info: Redefining \url on input line 4763.
+\XeTeXLinkMargin=\dimen166
+
+(c:/texlive/2023/texmf-dist/tex/generic/bitset/bitset.sty
+Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
+
+(c:/texlive/2023/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty
+Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
+)
+))
+\Fld@menulength=\count273
+\Field@Width=\dimen167
+\Fld@charsize=\dimen168
+Package hyperref Info: Hyper figures OFF on input line 6042.
+Package hyperref Info: Link nesting OFF on input line 6047.
+Package hyperref Info: Hyper index ON on input line 6050.
+Package hyperref Info: backreferencing OFF on input line 6057.
+Package hyperref Info: Link coloring OFF on input line 6062.
+Package hyperref Info: Link coloring with OCG OFF on input line 6067.
+Package hyperref Info: PDF/A mode OFF on input line 6072.
+
+(c:/texlive/2023/texmf-dist/tex/latex/base/atbegshi-ltx.sty
+Package: atbegshi-ltx 2021/01/10 v1.0c Emulation of the original atbegshi
+package with kernel methods
+)
+\Hy@abspage=\count274
+\c@Item=\count275
+\c@Hfootnote=\count276
+)
+Package hyperref Info: Driver (autodetected): hpdftex.
+
+(c:/texlive/2023/texmf-dist/tex/latex/hyperref/hpdftex.def
+File: hpdftex.def 2023-02-07 v7.00v Hyperref driver for pdfTeX
+
+(c:/texlive/2023/texmf-dist/tex/latex/base/atveryend-ltx.sty
+Package: atveryend-ltx 2020/08/19 v1.0a Emulation of the original atveryend pac
+kage
+with kernel methods
+)
+\Fld@listcount=\count277
+\c@bookmark@seq@number=\count278
+
+(c:/texlive/2023/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
+Package: rerunfilecheck 2022-07-10 v1.10 Rerun checks for auxiliary files (HO)
+
+(c:/texlive/2023/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
+Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
+)
+Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
+85.
+)
+\Hy@SectionHShift=\skip50
+)
+(c:/texlive/2023/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2023-03-30 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count268
+\l__color_backend_stack_int=\count279
 \l__pdf_internal_box=\box55
 )
-(mandeye_dev_manual_v0_2.aux (TeX_files/chapter01.aux) (TeX_files/chapter02.aux
-))
+(./mandeye_dev_manual_v0_2.aux (./TeX_files/chapter01.aux)
+(./TeX_files/chapter02.aux))
 \openout1 = `mandeye_dev_manual_v0_2.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 10.
-LaTeX Font Info:    ... okay on input line 10.
- (S:\MikTex\tex/context/base/mkii\supp-pdf.mkii
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+
+(c:/texlive/2023/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count269
-\scratchdimen=\dimen165
+\scratchcounter=\count280
+\scratchdimen=\dimen169
 \scratchbox=\box56
-\nofMPsegments=\count270
-\nofMParguments=\count271
+\nofMPsegments=\count281
+\nofMParguments=\count282
 \everyMPshowfont=\toks23
-\MPscratchCnt=\count272
-\MPscratchDim=\dimen166
-\MPnumerator=\count273
-\makeMPintoPDFobject=\count274
+\MPscratchCnt=\count283
+\MPscratchDim=\dimen170
+\MPnumerator=\count284
+\makeMPintoPDFobject=\count285
 \everyMPtoPDFconversion=\toks24
-) (S:\MikTex\tex/latex/epstopdf-pkg\epstopdf-base.sty
+) (c:/texlive/2023/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 85.
 
-(S:\MikTex\tex/latex/00miktex\epstopdf-sys.cfg
-File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
+(c:/texlive/2023/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
+e
 ))
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: float package is loaded.
+Package caption Info: hyperref package is loaded.
 Package caption Info: End \AtBeginDocument code.
+Package hyperref Info: Link coloring OFF on input line 11.
+
+(./mandeye_dev_manual_v0_2.out) (./mandeye_dev_manual_v0_2.out)
+\@outlinefile=\write3
+\openout3 = `mandeye_dev_manual_v0_2.out'.
+
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <14.4> on input line 17.
+(Font)              <14.4> on input line 19.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 17.
+(Font)              <7> on input line 19.
  [1
 
 
 
-{C:/Users/Bazylax/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}] [2
+{c:/texlive/2023/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2
 
-] (mandeye_dev_manual_v0_2.toc
+]
+(./mandeye_dev_manual_v0_2.toc
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <12> on input line 3.
 LaTeX Font Info:    External font `cmex10' loaded for size
@@ -203,78 +359,100 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <6> on input line 3.
 )
-\tf@toc=\write3
-\openout3 = `mandeye_dev_manual_v0_2.toc'.
+\tf@toc=\write4
+\openout4 = `mandeye_dev_manual_v0_2.toc'.
 
-
-[3] [4
+ [3] [4
 
 ]
 \openout2 = `./TeX_files/chapter01.aux'.
 
- (TeX_files/chapter01.tex
+ (./TeX_files/chapter01.tex
 Chapter 1.
-<./photos//IMG_9490.jpg, id=18, 4047.12pt x 3035.34pt>
+<./photos//IMG_0121.jpg, id=77, 2023.56pt x 1517.67pt>
+File: ./photos//IMG_0121.jpg Graphic file (type jpg)
+<use ./photos//IMG_0121.jpg>
+Package pdftex.def Info: ./photos//IMG_0121.jpg  used on input line 12.
+(pdftex.def)             Requested size: 312.00119pt x 233.9859pt.
+<./photos//IMG_9481b.jpg, id=78, 3035.34pt x 4047.12pt>
+File: ./photos//IMG_9481b.jpg Graphic file (type jpg)
+<use ./photos//IMG_9481b.jpg>
+Package pdftex.def Info: ./photos//IMG_9481b.jpg  used on input line 19.
+(pdftex.def)             Requested size: 155.99762pt x 207.98747pt.
+<./photos//IMG_0325.jpg, id=79, 2023.56pt x 1517.67pt>
+File: ./photos//IMG_0325.jpg Graphic file (type jpg)
+<use ./photos//IMG_0325.jpg>
+Package pdftex.def Info: ./photos//IMG_0325.jpg  used on input line 26.
+(pdftex.def)             Requested size: 208.65143pt x 156.47691pt.
+
+Overfull \hbox (0.46967pt too wide) in paragraph at lines 39--49
+\OT1/cmr/m/n/12 recorder in-tro-duced in EN-RICH 2023 (https://enrich.european-
+robotics.eu/).
+ []
+
+<./photos//IMG_9490.jpg, id=80, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9490.jpg Graphic file (type jpg)
 <use ./photos//IMG_9490.jpg>
-Package pdftex.def Info: ./photos//IMG_9490.jpg  used on input line 34.
+Package pdftex.def Info: ./photos//IMG_9490.jpg  used on input line 71.
 (pdftex.def)             Requested size: 155.99762pt x 116.99295pt.
-<./photos//IMG_9492.jpg, id=19, 4047.12pt x 3035.34pt>
+<./photos//IMG_9492.jpg, id=81, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9492.jpg Graphic file (type jpg)
 <use ./photos//IMG_9492.jpg>
-Package pdftex.def Info: ./photos//IMG_9492.jpg  used on input line 41.
+Package pdftex.def Info: ./photos//IMG_9492.jpg  used on input line 78.
 (pdftex.def)             Requested size: 155.99762pt x 116.99295pt.
-<./photos//mandeye_npp.png, id=20, 3398.6975pt x 2214.2725pt>
+<./photos//mandeye_npp.png, id=82, 3398.6975pt x 2214.2725pt>
 File: ./photos//mandeye_npp.png Graphic file (type png)
 <use ./photos//mandeye_npp.png>
-Package pdftex.def Info: ./photos//mandeye_npp.png  used on input line 48.
+Package pdftex.def Info: ./photos//mandeye_npp.png  used on input line 85.
 (pdftex.def)             Requested size: 272.99881pt x 177.85495pt.
-<./photos//npp_all_madeye_jackal.jpg, id=22, 2039.2185pt x 1106.9355pt>
+<./photos//npp_all_madeye_jackal.jpg, id=84, 2039.2185pt x 1106.9355pt>
 File: ./photos//npp_all_madeye_jackal.jpg Graphic file (type jpg)
 <use ./photos//npp_all_madeye_jackal.jpg>
 Package pdftex.def Info: ./photos//npp_all_madeye_jackal.jpg  used on input lin
-e 55.
+e 92.
 (pdftex.def)             Requested size: 272.99881pt x 148.17995pt.
 
-LaTeX Warning: Float too large for page by 57.8325pt on input line 61.
+LaTeX Warning: Float too large for page by 57.8325pt on input line 98.
 
-<./photos//IMG_9458.jpg, id=23, 4047.12pt x 3035.34pt>
+[1
+
+
+{c:/texlive/2023/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
+[2 <./photos//IMG_0121.jpg> <./photos//IMG_9481b.jpg> <./photos//IMG_0325.jpg>]
+<./photos//IMG_9458.jpg, id=96, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9458.jpg Graphic file (type jpg)
 <use ./photos//IMG_9458.jpg>
-Package pdftex.def Info: ./photos//IMG_9458.jpg  used on input line 67.
+Package pdftex.def Info: ./photos//IMG_9458.jpg  used on input line 104.
 (pdftex.def)             Requested size: 155.99762pt x 116.99295pt.
-<./photos//river.jpg, id=24, 2039.2185pt x 1106.9355pt>
+<./photos//river.jpg, id=97, 2039.2185pt x 1106.9355pt>
 File: ./photos//river.jpg Graphic file (type jpg)
 <use ./photos//river.jpg>
-Package pdftex.def Info: ./photos//river.jpg  used on input line 74.
+Package pdftex.def Info: ./photos//river.jpg  used on input line 111.
 (pdftex.def)             Requested size: 272.99881pt x 148.17995pt.
-<./photos//river2.jpg, id=25, 2039.2185pt x 1106.9355pt>
+<./photos//river2.jpg, id=98, 2039.2185pt x 1106.9355pt>
 File: ./photos//river2.jpg Graphic file (type jpg)
 <use ./photos//river2.jpg>
-Package pdftex.def Info: ./photos//river2.jpg  used on input line 81.
+Package pdftex.def Info: ./photos//river2.jpg  used on input line 118.
 (pdftex.def)             Requested size: 272.99881pt x 148.17995pt.
-) [1
-
-
-] [2 <./photos//IMG_9490.jpg> <./photos//IMG_9492.jpg> <./photos//mandeye_npp.p
-ng> <./photos//npp_all_madeye_jackal.jpg>] [3 <./photos//IMG_9458.jpg> <./photo
-s//river.jpg> <./photos//river2.jpg>]
+) [3] [4 <./photos//IMG_9490.jpg> <./photos//IMG_9492.jpg> <./photos//mandeye_n
+pp.png> <./photos//npp_all_madeye_jackal.jpg>] [5 <./photos//IMG_9458.jpg> <./p
+hotos//river.jpg> <./photos//river2.jpg>]
 \openout2 = `./TeX_files/chapter02.aux'.
 
- (TeX_files/chapter02.tex [4
+ (./TeX_files/chapter02.tex [6
 
 
 
 
 ]
 Chapter 2.
-[5]
-<./photos//IMG_9478.jpg, id=45, 642.4pt x 481.8pt>
+[7]
+<./photos//IMG_9478.jpg, id=126, 642.4pt x 481.8pt>
 File: ./photos//IMG_9478.jpg Graphic file (type jpg)
 <use ./photos//IMG_9478.jpg>
 Package pdftex.def Info: ./photos//IMG_9478.jpg  used on input line 16.
 (pdftex.def)             Requested size: 272.99881pt x 204.75125pt.
-<./photos//IMG_9493.jpg, id=46, 4047.12pt x 3035.34pt>
+<./photos//IMG_9493.jpg, id=127, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9493.jpg Graphic file (type jpg)
 <use ./photos//IMG_9493.jpg>
 Package pdftex.def Info: ./photos//IMG_9493.jpg  used on input line 23.
@@ -283,131 +461,173 @@ Package pdftex.def Info: ./photos//IMG_9493.jpg  used on input line 23.
 Overfull \vbox (45.8976pt too high) has occurred while \output is active []
 
 
-[6 <./photos//IMG_9478.jpg> <./photos//IMG_9493.jpg>]
-<./photos//IMG_9482.jpg, id=50, 4047.12pt x 3035.34pt>
+[8 <./photos//IMG_9478.jpg> <./photos//IMG_9493.jpg>]
+<./photos//IMG_0328.jpg, id=134, 2023.56pt x 1517.67pt>
+File: ./photos//IMG_0328.jpg Graphic file (type jpg)
+<use ./photos//IMG_0328.jpg>
+Package pdftex.def Info: ./photos//IMG_0328.jpg  used on input line 44.
+(pdftex.def)             Requested size: 272.99881pt x 204.73766pt.
+<./photos//IMG_0327.jpg, id=135, 2023.56pt x 1517.67pt>
+File: ./photos//IMG_0327.jpg Graphic file (type jpg)
+<use ./photos//IMG_0327.jpg>
+Package pdftex.def Info: ./photos//IMG_0327.jpg  used on input line 51.
+(pdftex.def)             Requested size: 272.99881pt x 204.73766pt.
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [9]
+Overfull \vbox (45.8976pt too high) has occurred while \output is active []
+
+
+[10 <./photos//IMG_0328.jpg> <./photos//IMG_0327.jpg>]
+<./photos//IMG_9482.jpg, id=149, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9482.jpg Graphic file (type jpg)
 <use ./photos//IMG_9482.jpg>
-Package pdftex.def Info: ./photos//IMG_9482.jpg  used on input line 39.
+Package pdftex.def Info: ./photos//IMG_9482.jpg  used on input line 67.
 (pdftex.def)             Requested size: 175.49881pt x 131.58232pt.
-<./photos//IMG_9484.jpg, id=51, 4047.12pt x 3035.34pt>
+<./photos//IMG_9484.jpg, id=150, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9484.jpg Graphic file (type jpg)
 <use ./photos//IMG_9484.jpg>
-Package pdftex.def Info: ./photos//IMG_9484.jpg  used on input line 46.
+Package pdftex.def Info: ./photos//IMG_9484.jpg  used on input line 74.
 (pdftex.def)             Requested size: 175.49881pt x 131.58232pt.
-<./photos//IMG_9481.jpg, id=52, 4047.12pt x 3035.34pt>
+
+Overfull \hbox (8.6058pt too wide) in paragraph at lines 81--81
+[]\OT1/cmr/bx/n/17.28 Turn on con-tin-u-ous scan-ning (MAND-EYE
+ []
+
+<./photos//IMG_9481.jpg, id=152, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9481.jpg Graphic file (type jpg)
 <use ./photos//IMG_9481.jpg>
-Package pdftex.def Info: ./photos//IMG_9481.jpg  used on input line 60.
+Package pdftex.def Info: ./photos//IMG_9481.jpg  used on input line 88.
 (pdftex.def)             Requested size: 360.6253pt x 270.4362pt.
 
-Overfull \hbox (13.70819pt too wide) in paragraph at lines 57--65
+Overfull \hbox (13.70819pt too wide) in paragraph at lines 85--93
 []\OT1/cmr/m/n/12 2: []
  []
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Underfull \vbox (badness 3179) has occurred while \output is active []
 
- [7 <./photos//IMG_9482.jpg> <./photos//IMG_9484.jpg>]
-<./photos//IMG_9494.jpg, id=56, 4047.12pt x 3035.34pt>
+ [11 <./photos//IMG_9482.jpg> <./photos//IMG_9484.jpg>]
+<./photos//IMG_9494.jpg, id=160, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9494.jpg Graphic file (type jpg)
 <use ./photos//IMG_9494.jpg>
-Package pdftex.def Info: ./photos//IMG_9494.jpg  used on input line 73.
+Package pdftex.def Info: ./photos//IMG_9494.jpg  used on input line 101.
 (pdftex.def)             Requested size: 175.49881pt x 131.58232pt.
-<./photos//IMG_9495.jpg, id=57, 4047.12pt x 3035.34pt>
+<./photos//IMG_9495.jpg, id=161, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9495.jpg Graphic file (type jpg)
 <use ./photos//IMG_9495.jpg>
-Package pdftex.def Info: ./photos//IMG_9495.jpg  used on input line 80.
+Package pdftex.def Info: ./photos//IMG_9495.jpg  used on input line 108.
 (pdftex.def)             Requested size: 175.49881pt x 131.58232pt.
 
 Underfull \vbox (badness 1688) has occurred while \output is active []
 
- [8 <./photos//IMG_9481.jpg>]
+ [12 <./photos//IMG_9481.jpg>]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [9 <./photos//IMG_9494.jpg> <./photos//IMG_9495.jpg>]
+ [13 <./photos//IMG_9494.jpg> <./photos//IMG_9495.jpg>]
+Overfull \hbox (22.58377pt too wide) in paragraph at lines 117--117
+[]\OT1/cmr/bx/n/17.28 Turn on stop scan (MAND-EYE DEV/PRO) 
+ []
+
 File: ./photos//IMG_9481.jpg Graphic file (type jpg)
 <use ./photos//IMG_9481.jpg>
-Package pdftex.def Info: ./photos//IMG_9481.jpg  used on input line 96.
+Package pdftex.def Info: ./photos//IMG_9481.jpg  used on input line 124.
 (pdftex.def)             Requested size: 270.46898pt x 202.81557pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 93--102
+Underfull \hbox (badness 10000) in paragraph at lines 121--130
 []\OT1/cmr/m/n/12 2a: []
  []
 
-<./photos//IMG_9498.jpg, id=65, 4047.12pt x 3035.34pt>
+<./photos//IMG_9498.jpg, id=174, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9498.jpg Graphic file (type jpg)
 <use ./photos//IMG_9498.jpg>
-Package pdftex.def Info: ./photos//IMG_9498.jpg  used on input line 115.
+Package pdftex.def Info: ./photos//IMG_9498.jpg  used on input line 143.
 (pdftex.def)             Requested size: 175.49881pt x 131.58232pt.
 
-Underfull \hbox (badness 1902) in paragraph at lines 116--116
+Underfull \hbox (badness 1902) in paragraph at lines 144--144
 []\OT1/cmr/m/n/10.95 (a) |MAND-EYE DEV is show-ing
  []
 
-<./photos//IMG_9499.jpg, id=66, 4047.12pt x 3035.34pt>
+<./photos//IMG_9499.jpg, id=175, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9499.jpg Graphic file (type jpg)
 <use ./photos//IMG_9499.jpg>
-Package pdftex.def Info: ./photos//IMG_9499.jpg  used on input line 122.
+Package pdftex.def Info: ./photos//IMG_9499.jpg  used on input line 150.
 (pdftex.def)             Requested size: 175.49881pt x 131.58232pt.
 
-Underfull \hbox (badness 1226) in paragraph at lines 123--123
+Underfull \hbox (badness 1226) in paragraph at lines 151--151
 \OT1/cmr/m/n/10.95 data from lo-cal mem-ory to USB
  []
 
-[10]
+[14]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [11 <./photos//IMG_9498.jpg> <./photos//IMG_9499.jpg>]
-<./photos//IMG_9483.jpg, id=73, 4047.12pt x 3035.34pt>
+ [15 <./photos//IMG_9498.jpg> <./photos//IMG_9499.jpg>]
+<./photos//IMG_9483.jpg, id=187, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_9483.jpg Graphic file (type jpg)
 <use ./photos//IMG_9483.jpg>
-Package pdftex.def Info: ./photos//IMG_9483.jpg  used on input line 135.
+Package pdftex.def Info: ./photos//IMG_9483.jpg  used on input line 163.
 (pdftex.def)             Requested size: 390.0pt x 292.48238pt.
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [12 <./photos//IMG_9483.jpg>]
-<./photos//IMG_95011.jpg, id=77, 4047.12pt x 3035.34pt>
+ [16 <./photos//IMG_9483.jpg>]
+Overfull \hbox (9.3558pt too wide) in paragraph at lines 169--169
+[]\OT1/cmr/bx/n/17.28 Error in-di-ca-tors (MAND-EYE DEV/PRO) 
+ []
+
+<./photos//IMG_95011.jpg, id=195, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_95011.jpg Graphic file (type jpg)
 <use ./photos//IMG_95011.jpg>
-Package pdftex.def Info: ./photos//IMG_95011.jpg  used on input line 153.
+Package pdftex.def Info: ./photos//IMG_95011.jpg  used on input line 181.
 (pdftex.def)             Requested size: 175.49881pt x 131.58232pt.
 
-Underfull \hbox (badness 4441) in paragraph at lines 154--154
+Underfull \hbox (badness 4441) in paragraph at lines 182--182
 []\OT1/cmr/m/n/10.95 (a) |MAND-EYE DEV "no USB
  []
 
-<./photos//IMG_95021.jpg, id=78, 4047.12pt x 3035.34pt>
+<./photos//IMG_95021.jpg, id=196, 4047.12pt x 3035.34pt>
 File: ./photos//IMG_95021.jpg Graphic file (type jpg)
 <use ./photos//IMG_95021.jpg>
-Package pdftex.def Info: ./photos//IMG_95021.jpg  used on input line 160.
+Package pdftex.def Info: ./photos//IMG_95021.jpg  used on input line 188.
 (pdftex.def)             Requested size: 175.49881pt x 131.58232pt.
-)
-Overfull \hbox (20.31497pt too wide) in paragraph at lines 177--22
+
+Overfull \hbox (20.31497pt too wide) in paragraph at lines 205--207
 \OT1/cmr/m/n/12 The more you op-er-ate with MAND-EYE DEV the more $\OML/cmm/m/i
 t/12 continousScanning[]\OT1/cmr/m/n/12 0000$,
  []
 
-[13 <./photos//IMG_95011.jpg> <./photos//IMG_95021.jpg>] [14]
-(mandeye_dev_manual_v0_2.aux (TeX_files/chapter01.aux) (TeX_files/chapter02.aux
-)) ) 
+[17 <./photos//IMG_95011.jpg> <./photos//IMG_95021.jpg>]
+Overfull \hbox (32.16777pt too wide) in paragraph at lines 208--208
+[]\OT1/cmr/bx/n/17.28 Online doc-u-men-ta-tion and soft-ware (MAND-
+ []
+
+) [18] (./mandeye_dev_manual_v0_2.aux (./TeX_files/chapter01.aux)
+(./TeX_files/chapter02.aux))
+Package rerunfilecheck Info: File `mandeye_dev_manual_v0_2.out' has not changed
+.
+(rerunfilecheck)             Checksum: FE129EC180F00AC428732F3AE9A68266;2332.
+ ) 
 Here is how much of TeX's memory you used:
- 4320 strings out of 476331
- 79421 string characters out of 5804174
- 1858660 words of memory out of 5000000
- 24704 multiletter control sequences out of 15000+600000
- 518743 words of font info for 53 fonts, out of 8000000 for 9000
+ 11184 strings out of 476017
+ 188132 string characters out of 5793767
+ 1859660 words of memory out of 5000000
+ 31435 multiletter control sequences out of 15000+600000
+ 518912 words of font info for 54 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,11n,70p,495b,574s stack positions out of 10000i,1000n,20000p,200000b,200000s
- <C:\Users\Bazylax\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\
-tcrm1200.pk><S:/MikTex/fonts/type1/public/amsfonts/cm/cmbx12.pfb><S:/MikTex/fon
-ts/type1/public/amsfonts/cm/cmmi12.pfb><S:/MikTex/fonts/type1/public/amsfonts/c
-m/cmr10.pfb><S:/MikTex/fonts/type1/public/amsfonts/cm/cmr12.pfb><S:/MikTex/font
-s/type1/public/amsfonts/cm/cmr17.pfb><S:/MikTex/fonts/type1/public/amsfonts/cm/
-cmsl12.pfb>
-Output written on mandeye_dev_manual_v0_2.pdf (18 pages, 38302006 bytes).
+ 75i,11n,76p,502b,590s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/tex
+live/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/texlive/2023
+/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><c:/texlive/2023/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/texlive/2023/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmr17.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public
+/amsfonts/cm/cmsl12.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmtt12.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sfrm1200
+.pfb>
+Output written on mandeye_dev_manual_v0_2.pdf (22 pages, 43573276 bytes).
 PDF statistics:
- 116 PDF objects out of 1000 (max. 8388607)
- 0 named destinations out of 1000 (max. 500000)
- 96 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 259 PDF objects out of 1000 (max. 8388607)
+ 192 compressed objects within 2 object streams
+ 44 named destinations out of 1000 (max. 500000)
+ 201 words of extra memory for PDF output out of 10000 (max. 10000000)
 

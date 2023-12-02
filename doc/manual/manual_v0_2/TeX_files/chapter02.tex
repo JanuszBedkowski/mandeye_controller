@@ -2,7 +2,7 @@
 MANDEYE DEV is composed of (figure \ref{fig:m11}):
 \begin{itemize}
 	\item \underline{MANDEYE DEV main unit}.
-	\item \underline{RONIN grip} which is also a battery for MANDEYE. It must be attached to the main unit. To install it first unscrew safety screws, attach RONIN grip and tighten the safety screws back. From below RONIN grip has a thread to attach a tripod.
+	\item \underline{RONIN grip} which is also a battery for MANDEYE DEV/PRO. It must be attached to the main unit. To install it first unscrew safety screws, attach RONIN grip and tighten the safety screws back. From below RONIN grip has a thread to attach a tripod.
 	\item \underline{Tripod}, screwed from below of the RONIN grip.
 	\item \underline{Tool for nuts}.
 	\item \underline{Charger}, to charge battery (which is inside the RONIN grip) separate RONIN grip from MANDEYE DEV main unit and connect it with the charger, then connect the charger to power source.
@@ -28,7 +28,35 @@ MANDEYE DEV is stored in a suitcase for secure transport (figure \ref{fig:m12}).
 	\label{fig:mandeye_hardware}
 \end{figure}
 
-\section{Turn on device}
+MANDEYE PRO is composed of (figure \ref{fig:m11b}):
+\begin{itemize}
+	\item \underline{MANDEYE PRO main unit}.
+	\item \underline{RONIN grip} which is also a battery for MANDEYE DEV/PRO. It must be attached to the main unit. 
+	\item \underline{Tripod}, screwed from below of the RONIN grip.
+	\item \underline{Charger}, to charge battery (which is inside the RONIN grip) separate RONIN grip from MANDEYE PRO main unit and connect it with the charger, then connect the charger to power source.
+\end{itemize}
+MANDEYE PRO is stored in a suitcase for secure transport (figure \ref{fig:m12b}).
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[b]{0.7\textwidth}
+		\centering
+		\includegraphics[width=\textwidth, angle = -90]{IMG_0328.jpg}
+		\caption{MANDEYE PRO all components - 1: MANDEYE PRO main unit, 2: Handle (attached to main unit), 3: Tripod (on the right), 4: Charger.}
+		\label{fig:m11b}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.7\textwidth}
+		\centering
+		\includegraphics[width=\textwidth, angle = -90]{IMG_0327.jpg}
+		\caption{Suitcase with MANDEYE PRO for secure transport.}
+		\label{fig:m12b}
+	\end{subfigure}
+	\caption{MANDEYE PRO parts.}
+	\label{fig:mandeye_hardwareb}
+\end{figure}
+
+\section{Turn on device (MANDEYE DEV/PRO)}
 Please click button on the bottom of the RONIN grip (figure \ref{fig:m21}). 
 Green square lights on RONIN grip should be visible. In short time blue light on MANDEYE DEV should be visible indicating that the device is on (figure \ref{fig:m22}). Wait around 30 seconds till all other lights on MANDEYE DEV (green, red and yellow) blink one after another - this indicates that the device is ready for action. Now proceed to Section 2.2 Turn on continuous scanning or to Section 2.4 Turn on stop scan.
 Otherwise please check error section \ref{section:errors}.
@@ -50,7 +78,7 @@ Otherwise please check error section \ref{section:errors}.
 	\caption{MANDEYE DEV turned on.}
 	\label{fig:mandeye_hardware2}
 \end{figure}
-\section{Turn on continuous scanning}
+\section{Turn on continuous scanning (MANDEYE DEV/PRO)}
 If everything from section 2.1 is done and no errors where indicated (otherwise check error section \ref{section:errors}) the procedure for running continuous data collection is as follows:
 \begin{itemize}
 	\item 1: Place MANDEYE DEV steady on the ground using attached tripod.
@@ -86,7 +114,7 @@ If everything from section 2.1 is done and no errors where indicated (otherwise 
 \end{figure}
 
 \pagebreak
-\section{Turn on stop scan}
+\section{Turn on stop scan (MANDEYE DEV/PRO)}
 If everything from section 2.1 is done and no errors where indicated (otherwise check error section \ref{section:errors}) the procedure for using stop scan is as follows:
 \begin{itemize}
 	\item 1a: Place MANDEYE DEV steady on the ground.
@@ -128,7 +156,7 @@ If everything from section 2.1 is done and no errors where indicated (otherwise 
 \end{figure}
 
 \pagebreak
-\section{Turn off device}
+\section{Turn off device (MANDEYE DEV/PRO)}
  After being finished using MANDEYE DEV make sure that no process is active (only blue light is on - figure \ref{fig:m22}). To turn the device off, press shortly RONIN grip button and then press longer RONIN grip button. All green lights on RONIN grip and blue light on MANDEYE main unit should turn off.
  \begin{figure}[H]
  	\centering
@@ -138,7 +166,7 @@ If everything from section 2.1 is done and no errors where indicated (otherwise 
  \end{figure}
 
 \pagebreak
-\section{Error indicators}
+\section{Error indicators (MANDEYE DEV/PRO)}
 \label{section:errors}
 MANDEYE DEV is capable of indicating two errors:
 \begin{itemize}
@@ -165,7 +193,7 @@ MANDEYE DEV is capable of indicating two errors:
 	\label{fig:mandeye_harware6}
 \end{figure}
 	
-\section{Data structure on USB drive}
+\section{Data structure on USB drive (MANDEYE DEV/PRO)}
 MANDEYE DEV starts with empty USB drive that has to be formatted as FAT, otherwise error "No USB drive" can appear.
 Once MANDEYE DEV will be turned on it will create following data on USB drive:
 \begin{itemize}
@@ -176,3 +204,16 @@ Once MANDEYE DEV will be turned on it will create following data on USB drive:
 \end{itemize}
 The more you operate with MANDEYE DEV the more $continousScanning\_0000$, $stopScans\_0000$ will appear. New folders are creating for each turn on of the MANDEYE DEV, so sometimes they can be empty.
 Once you approach full USB drive, please remove all files from it.
+
+\section{Online documentation and software (MANDEYE DEV/PRO)}
+
+This manual is available at:
+
+\url{https://github.com/JanuszBedkowski/mandeye_controller} \newline
+Compatible software for 3D data registration is available at:
+
+\url{https://github.com/MapsHD/HDMapping}
+
+\section{Support (MANDEYE DEV/PRO)}
+In case of any issue/question contact januszbedkowski@gmail.com
+
