@@ -81,12 +81,39 @@ nlohmann::json LivoxClient::produceStatus()
 	std::lock_guard<std::mutex> lcK2(m_bufferImuMutex);
 	data["LivoxLidarInfo"]["timestamp"] = m_timestamp;
 
+
+	auto arrayworkMode = nlohmann::json::array();
+	for (auto& mode : m_LivoxLidarWorkMode)
+	{
+		std::string modeName;
+		if (auto it = WorkModeToStr.find(mode.second); it != WorkModeToStr.end())
+		{
+			modeName = it->second;
+		}
+		else
+		{
+			modeName = "unknown";
+		}
+		std::stringstream oss;
+		oss << mode.second << " " << modeName;
+		arrayworkMode.push_back(oss.str());
+	}
+	data["multi"]["workmode"] = arrayworkMode;
+
+	auto arrayTimeSync = nlohmann::json::array();
+	for (auto& [_,mode] : m_LivoxLidarTimeSync)
+	{
+		arrayTimeSync.push_back(mode);
+	}
+	data["multi"]["timesyncmode"] = arrayTimeSync;
+
 	auto array = nlohmann::json::array();
 	for (auto& timestamp : m_handleToLastTimestamp)
 	{
 		array.push_back(timestamp.second);
 	}
 	data["multi"]["timestamps"] = array;
+
 
 	auto arraysn = nlohmann::json::array();
 	for (auto& sn : m_serialNumbers)
@@ -140,7 +167,34 @@ std::pair<LivoxPointsBufferPtr, LivoxIMUBufferPtr> LivoxClient::retrieveData()
 	std::swap(m_bufferLivoxPtr, returnPointerLidar);
 	return std::pair<LivoxPointsBufferPtr, LivoxIMUBufferPtr>(returnPointerLidar, returnPointerImu);
 }
+void LivoxClient::testThread()
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	std::cout << "Livox periodical watch thread" << std::endl;
+	while(!isDone)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
+
+		std::lock_guard<std::mutex> lcK(this->m_lidarInfoMutex);
+		for (auto& it : this->m_handleToSerialNumber)
+		{
+			const auto & handle = it.first;
+			QueryLivoxLidarInternalInfo(handle, &LivoxClient::QueryInternalInfoCallback, this);
+
+			// wakey wakey sleepy head - if lidar is sleeping, wake it up
+			if (auto it = m_LivoxLidarWorkMode.find(handle); it != m_LivoxLidarWorkMode.end())
+			{
+				if (it->second != kLivoxLidarNormal)
+				{
+					std::cout << "wakey wakey lidar with handle" << it->first << std::endl;
+					SetLivoxLidarWorkMode(handle, kLivoxLidarNormal, &LivoxClient::WorkModeCallback, this);
+				}
+			}
+		}
+
+	}
+}
 bool LivoxClient::startListener(const std::string& interfaceIp)
 {
 	constexpr char configFn[] = "/tmp/config.json";
@@ -160,6 +214,7 @@ bool LivoxClient::startListener(const std::string& interfaceIp)
 	SetLivoxLidarImuDataCallback(ImuDataCallback, (void*)this);
 	SetLivoxLidarInfoChangeCallback(LidarInfoChangeCallback, (void*)this);
 
+	m_livoxWatchThread = std::thread(&LivoxClient::testThread, this);
 	return true;
 }
 
@@ -322,7 +377,10 @@ void LivoxClient::QueryInternalInfoCallback(livox_status status,
 	if(status != kLivoxLidarStatusSuccess)
 	{
 		printf("Query lidar internal info failed.\n");
-		QueryLivoxLidarInternalInfo(handle, QueryInternalInfoCallback, nullptr);
+		LivoxClient* this_ptr = (LivoxClient*)(client_data);
+		assert(this_ptr);
+		std::lock_guard<std::mutex> lcK(this_ptr->m_lidarInfoMutex);
+		this_ptr->m_LivoxLidarWorkMode[handle] = -1;
 		return;
 	}
 
@@ -354,6 +412,20 @@ void LivoxClient::QueryInternalInfoCallback(livox_status status,
 			memcpy(host_imu_ipaddr, &(kv->value[0]), sizeof(uint8_t) * 4);
 			memcpy(&(host_imu_data_port), &(kv->value[4]), sizeof(uint16_t));
 			memcpy(&(lidar_imu_data_port), &(kv->value[6]), sizeof(uint16_t));
+		}
+		else if (kv->key == kKeyWorkMode)
+		{
+			LivoxClient* this_ptr = (LivoxClient*)(client_data);
+			assert(this_ptr);
+			std::lock_guard<std::mutex> lcK(this_ptr->m_lidarInfoMutex);
+			this_ptr->m_LivoxLidarWorkMode[handle] = static_cast<LivoxLidarWorkMode>(kv->value[0]);
+		}
+		else if (kv->key == kKeyTimeSyncType)
+		{
+			LivoxClient* this_ptr = (LivoxClient*)(client_data);
+			assert(this_ptr);
+			std::lock_guard<std::mutex> lcK(this_ptr->m_lidarInfoMutex);
+			this_ptr->m_LivoxLidarTimeSync[handle] = static_cast<uint8_t>(kv->value[0]);
 		}
 		off += sizeof(uint16_t) * 2;
 		off += kv->length;
@@ -387,6 +459,7 @@ void LivoxClient::LidarInfoChangeCallback(const uint32_t handle,
 		return;
 	}
 	printf("LidarInfoChangeCallback Lidar handle: %u SN: %s\n", handle, info->sn);
+	assert(client_data);
 	SetLivoxLidarWorkMode(handle, kLivoxLidarNormal, &LivoxClient::WorkModeCallback, client_data);
 
 	QueryLivoxLidarInternalInfo(handle, &LivoxClient::QueryInternalInfoCallback, client_data);
