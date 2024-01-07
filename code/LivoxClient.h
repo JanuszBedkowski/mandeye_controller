@@ -4,6 +4,7 @@
 #include <deque>
 #include <json.hpp>
 #include <mutex>
+#include <thread>
 #include "utils/TimeStampProvider.h"
 #include <set>
 namespace mandeye
@@ -21,6 +22,19 @@ struct LivoxIMU
 	LivoxLidarImuRawPoint point;
 	uint64_t timestamp;
 	uint16_t laser_id;
+};
+
+const std::unordered_map<int32_t, char*> WorkModeToStr{
+	{LivoxLidarWorkMode::kLivoxLidarNormal, "kLivoxLidarNormal"},
+	{LivoxLidarWorkMode::kLivoxLidarWakeUp, "kLivoxLidarWakeUp"},
+	{LivoxLidarWorkMode::kLivoxLidarSleep, "kLivoxLidarSleep"},
+	{LivoxLidarWorkMode::kLivoxLidarError, "kLivoxLidarError"},
+	{LivoxLidarWorkMode::kLivoxLidarPowerOnSelfTest, "kLivoxLidarPowerOnSelfTest"},
+	{LivoxLidarWorkMode::kLivoxLidarMotorStarting, "kLivoxLidarMotorStarting"},
+	{LivoxLidarWorkMode::kLivoxLidarMotorStoping, "kLivoxLidarMotorStoping"},
+	{LivoxLidarWorkMode::kLivoxLidarUpgrade, "kLivoxLidarUpgrade"},
+	{-1, "FailedToGetWorkMode"},
+
 };
 
 using LivoxPointsBuffer = std::deque<LivoxPoint>;
@@ -53,7 +67,12 @@ public:
 	// mandeye_utils::TimeStampProvider overrides ...
 	double getTimestamp() override;
 
+	// periodically ask lidars for status
+	void testThread();
+
 private:
+	bool isDone{false};
+	std::thread m_livoxWatchThread;
 	std::mutex m_bufferImuMutex;
 	std::mutex m_bufferLidarMutex;
 
@@ -68,8 +87,13 @@ private:
 	std::unordered_map<uint32_t, uint64_t> m_recivedImuMsgs;
 	std::unordered_map<uint32_t, uint64_t> m_recivedPointMessages;
 	std::unordered_map<uint32_t, LivoxLidarInfo> m_LivoxLidarInfo;
+	std::unordered_map<uint32_t, int32_t> m_LivoxLidarWorkMode;
+	std::unordered_map<uint32_t, int32_t> m_LivoxLidarTimeSync;
+
+
 	std::unordered_map<uint32_t, uint64_t> m_handleToLastTimestamp;
-	std::unordered_map<uint32_t,std::string> m_handleToSerialNumber;
+	std::unordered_map<uint32_t, std::string> m_handleToSerialNumber;
+
 
 	//! This is a set of serial numbers that we have already seen, its used to find lidarId
 	std::set<std::string> m_serialNumbers;
@@ -82,29 +106,54 @@ private:
 	uint16_t handleToLidarId(uint32_t handle) const;
 
 
-	static constexpr char config[] = {"{\n"
-									  "\t\"MID360\": {\n"
-									  "\t\t\"lidar_net_info\" : {\n"
-									  "\t\t\t\"cmd_data_port\": 56100,\n"
-									  "\t\t\t\"push_msg_port\": 56200,\n"
-									  "\t\t\t\"point_data_port\": 56300,\n"
-									  "\t\t\t\"imu_data_port\": 56400,\n"
-									  "\t\t\t\"log_data_port\": 56500\n"
-									  "\t\t},\n"
-									  "\t\t\"host_net_info\" : {\n"
-									  "\t\t\t\"cmd_data_ip\" : \"${HOSTIP}\",\n"
-									  "\t\t\t\"cmd_data_port\": 56101,\n"
-									  "\t\t\t\"push_msg_ip\": \"${HOSTIP}\",\n"
-									  "\t\t\t\"push_msg_port\": 56201,\n"
-									  "\t\t\t\"point_data_ip\": \"${HOSTIP}\",\n"
-									  "\t\t\t\"point_data_port\": 56301,\n"
-									  "\t\t\t\"imu_data_ip\" : \"${HOSTIP}\",\n"
-									  "\t\t\t\"imu_data_port\": 56401,\n"
-									  "\t\t\t\"log_data_ip\" : \"${HOSTIP}\",\n"
-									  "\t\t\t\"log_data_port\": 56501\n"
-									  "\t\t}\n"
-									  "\t}\n"
-									  "}\t"};
+	static constexpr char config[] =
+R"(
+{
+	"MID360": {
+		"lidar_net_info" : {
+			"cmd_data_port": 56100,
+			"push_msg_port": 56200,
+			"point_data_port": 56300,
+			"imu_data_port": 56400,
+			"log_data_port": 56500
+		},
+		"host_net_info" : {
+			"cmd_data_ip" : "${HOSTIP}",
+			"cmd_data_port": 56101,
+			"push_msg_ip": "${HOSTIP}",
+			"push_msg_port": 56201,
+			"point_data_ip": "${HOSTIP}",
+			"point_data_port": 56301,
+			"imu_data_ip" : "${HOSTIP}",
+			"imu_data_port": 56401,
+			"log_data_ip" : "${HOSTIP}",
+			"log_data_port": 56501
+		}
+	},
+	"HAP": {
+		"lidar_net_info" : {
+			"cmd_data_port": 56000,
+			"push_msg_port": 0,
+			"point_data_port": 57000,
+			"imu_data_port": 58000,
+			"log_data_port": 59000
+		},
+		"host_net_info" : {
+			"cmd_data_ip" : "${HOSTIP}",
+			"cmd_data_port": 56000,
+			"push_msg_ip": "",
+			"push_msg_port": 0,
+			"point_data_ip": "${HOSTIP}",
+			"point_data_port": 57000,
+			"imu_data_ip" : "${HOSTIP}",
+			"imu_data_port": 58000,
+			"log_data_ip" : "",
+			"log_data_port": 59000
+		}
+	}
+}
+
+)";
 
 	// callbacks
 	static void PointCloudCallback(uint32_t handle,
