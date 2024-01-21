@@ -362,8 +362,7 @@ void stateWatcher()
 			stopScanInitialDeadline = std::chrono::steady_clock::now();
 			stopScanInitialDeadline += std::chrono::milliseconds(5000);
 
-			stopScanDeadline = std::chrono::steady_clock::now();
-			stopScanDeadline += std::chrono::milliseconds(10000);
+			stopScanDeadline = stopScanInitialDeadline + std::chrono::milliseconds(30000);
 
 			app_state = States::STOP_SCAN_IN_INITIAL_PROGRESS;
 		}else if(app_state == States::STOP_SCAN_IN_INITIAL_PROGRESS){
