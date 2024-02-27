@@ -3,7 +3,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 project (mandeye_multisensor)
 
-
+include_directories(3rd/)
 message("pistache")
 #pistache
 add_subdirectory(3rd/pistache)
@@ -68,11 +68,24 @@ find_library(LIBSERIAL_LIBRARY
 include_directories(3rd/minmea ${LIBSERIAL_INCLUDE_DIR})
 add_library(minea STATIC 3rd/minmea/minmea.c)
 
+#Optris
+option(BUILD_WITH_OPTRIS "Use Optris library" OFF)
+if (BUILD_WITH_OPTRIS)
+    INCLUDE_DIRECTORIES(/usr/include/libirimager)
+    LINK_DIRECTORIES(/usr/lib)
+    include_directories(code/ir)
+    add_library(optris_client STATIC code/ir/optris.cpp)
+    add_compile_definitions(WITH_OPTRIS)
+endif()
+
 #executable
 add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h code/LivoxClient.cpp code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp ${PISTACHE_SRC}
         code/utils/TimeStampReceiver.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
 target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea)
+if (BUILD_WITH_OPTRIS)
+    target_link_libraries(control_program irdirectsdk udev pthread usb-1.0 optris_client)
+endif()
 #target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static atomic laszip)
 
 

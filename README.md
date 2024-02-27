@@ -59,6 +59,9 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j4
 ```
 
+You can use extra options for cmake:
+- `-DBUILD_WITH_OPTRIS:BOOL=ON` - to build with Optris thermal camera support
+
 ## Set USB mount
 Follow manual for build and configuration of USB mount
 https://gist.github.com/michalpelka/82d44a21c29f34ee5320c349f8bbf683
