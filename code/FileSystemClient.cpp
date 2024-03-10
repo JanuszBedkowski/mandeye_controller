@@ -85,6 +85,9 @@ int32_t FileSystemClient::GetIdFromManifest()
 	std::ofstream versionOFstream;
 	versionOFstream.open(versionfn.c_str());
 	versionOFstream << "Version 0.2" << std::endl;
+#ifdef WITH_OPTRIS
+	versionOFstream << "Optris support" << std::endl;
+#endif
 	
 	std::filesystem::path manifest =
 		std::filesystem::path(m_repository) / std::filesystem::path(manifestFilename);

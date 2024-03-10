@@ -24,7 +24,7 @@ struct LivoxIMU
 	uint16_t laser_id;
 };
 
-const std::unordered_map<int32_t, char*> WorkModeToStr{
+const std::unordered_map<int32_t, std::string> WorkModeToStr{
 	{LivoxLidarWorkMode::kLivoxLidarNormal, "kLivoxLidarNormal"},
 	{LivoxLidarWorkMode::kLivoxLidarWakeUp, "kLivoxLidarWakeUp"},
 	{LivoxLidarWorkMode::kLivoxLidarSleep, "kLivoxLidarSleep"},
