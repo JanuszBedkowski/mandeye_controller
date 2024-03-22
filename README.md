@@ -103,3 +103,31 @@ touch /media/usb/test
 ```shell
 tail -f /var/log/syslog
 ```
+
+## Setup systemctl for autostart
+Create a file `/usr/lib/systemd/system/mandeye.service` with content.
+Note that you need to adjust your user's name:
+```
+[Unit]
+Description=Mandeye
+After=multi-user.target
+
+[Service]
+ExecStartPre=/bin/sleep 20
+ExecStart=/home/robot/mandeye_controller/build/control_program
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Next reload daemons, enable and start the service`
+```
+sudo systemctl daemon-reload
+sudo systemctl enable mandeye.service
+sudo systemctl start mandeye.service
+```
+You can check status of the service with:
+```bash
+sudo systemctl status mandeye.service
+```
