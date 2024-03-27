@@ -30,6 +30,10 @@ bool GNSSClient::startListener(const std::string& portName, int baudRate) {
 	assert(baudRate == 9600);//Only 9600 is supported
 	try
 	{
+		if (init_succes)
+		{
+			return true;
+		}
 		if (m_serialPort.IsOpen())
 		{
 			m_serialPort.Close();
