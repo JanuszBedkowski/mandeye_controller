@@ -113,13 +113,13 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 		coordinates[2] = 0.001 * p.point.z;
 		if(laszip_set_coordinates(laszip_writer, coordinates))
 		{
-			fprintf(stderr, "DLL ERROR: setting coordinates for point %I64d\n", p_count);
+			fprintf(stderr, "DLL ERROR: setting coordinates for point %I64ld\n", p_count);
 			return false;
 		}
 
 		if(laszip_write_point(laszip_writer))
 		{
-			fprintf(stderr, "DLL ERROR: writing point %I64d\n", p_count);
+			fprintf(stderr, "DLL ERROR: writing point %I64ld\n", p_count);
 			return false;
 		}
 	}
@@ -130,7 +130,7 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 		return false;
 	}
 
-	fprintf(stderr, "successfully written %I64d points\n", p_count);
+	fprintf(stderr, "successfully written %I64ld points\n", p_count);
 
 	// close the writer
 

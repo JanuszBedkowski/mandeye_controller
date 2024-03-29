@@ -14,12 +14,18 @@
 #include "gnss.h"
 #include <chrono>
 
+#ifdef WITH_OPTRIS
+#include "ir/optris.h"
+#endif
+
 //configuration for alienware
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
 #define MANDEYE_REPO "/media/usb/"
 #define MANDEYE_GPIO_SIM false
 #define SERVER_PORT 8003
 #define MANDEYE_GNSS_UART "/dev/ttyS0"
+#define MANDEYE_OPTRIS_XML "/opt/optris.xml"
+#define MANDEYE_OPTRIS_TIMING 1.0
 
 namespace utils
 {
@@ -68,6 +74,10 @@ std::mutex gpioClientPtrLock;
 std::shared_ptr<GpioClient> gpioClientPtr;
 std::shared_ptr<FileSystemClient> fileSystemClientPtr;
 
+#ifdef WITH_OPTRIS
+std::shared_ptr<mandeye::OptisClient> optrisClientPtr;
+#endif
+
 mandeye::States app_state{mandeye::States::WAIT_FOR_RESOURCES};
 
 using json = nlohmann::json;
@@ -101,6 +111,12 @@ std::string produceReport()
 	}else{
         j["gnss"] = {};
     }
+#ifdef WITH_OPTRIS
+	if (optrisClientPtr)
+	{
+		j["optris"] = optrisClientPtr->produceStatus();
+	}
+#endif
 
 	std::ostringstream s;
 	s << std::setw(4) << j;
@@ -335,6 +351,7 @@ void stateWatcher()
 				{
 					gnssClientPtr->startLog();
 				}
+
 				app_state = States::SCANNING;
 			}
 			// create directory
@@ -349,7 +366,12 @@ void stateWatcher()
 			{
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
 			}
-			
+#ifdef WITH_OPTRIS
+			if (optrisClientPtr)
+			{
+				optrisClientPtr->startLog(continousScanDirectory);
+			}
+#endif
 			const auto now = std::chrono::steady_clock::now();
 			if(now - chunkStart > std::chrono::seconds(60))
 			{
@@ -407,6 +429,12 @@ void stateWatcher()
 				gnssData = gnssClientPtr->retrieveData();
 				gnssClientPtr->stopLog();
 			}
+#ifdef WITH_OPTRIS
+			if (optrisClientPtr)
+			{
+				optrisClientPtr->stopLog();
+			}
+#endif
 			if(continousScanDirectory.empty()){
 				app_state = States::USB_IO_ERROR;
 			}else{
@@ -465,6 +493,11 @@ void stateWatcher()
 				{
 					gnssClientPtr->startLog();
 				}
+				{
+#ifdef WITH_OPTRIS
+					optrisClientPtr->startLog(stopScanDirectory);
+#endif
+				}
 				app_state = States::STOP_SCAN_IN_PROGRESS;
 			}
 		}
@@ -484,11 +517,18 @@ void stateWatcher()
 			auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
 			std::deque<std::string> gnssData;
 			livoxCLientPtr->stopLog();
+
 			if (gnssClientPtr)
 			{
 				gnssData = gnssClientPtr->retrieveData();
 				gnssClientPtr->stopLog();
 			}
+#ifdef WITH_OPTRIS
+			if (optrisClientPtr)
+			{
+				optrisClientPtr->stopLog();
+			}
+#endif
 			if(stopScanDirectory.empty()){
 				app_state = States::USB_IO_ERROR;
 			}else{
@@ -538,6 +578,19 @@ bool getEnvBool(const std::string& env, bool def)
 		return true;
 	}
 	return false;
+}
+double getEnvDouble(const std::string& env, double def)
+{
+	const char* env_p = std::getenv(env.c_str());
+	if(env_p == nullptr)
+	{
+		return def;
+	}
+	if(std::atof(env_p) != 0)
+	{
+		return std::atof(env_p);
+	}
+	return 0;
 }
 } // namespace utils
 
@@ -600,7 +653,6 @@ int main(int argc, char** argv)
 	});
 
 	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", MANDEYE_REPO));
-
 	std::thread thLivox([&]() {
 		{
 			std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
@@ -618,6 +670,12 @@ int main(int argc, char** argv)
             mandeye::gnssClientPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
             mandeye::gnssClientPtr->startListener(utils::getEnvString("MANDEYE_GNSS_UART", MANDEYE_GNSS_UART), 9600);
         }
+#ifdef WITH_OPTRIS
+		mandeye::optrisClientPtr = std::make_shared<mandeye::OptisClient>();
+		mandeye::optrisClientPtr->startListener(utils::getEnvString("MANDEYE_OPTRIS_XML", MANDEYE_OPTRIS_XML));
+		mandeye::optrisClientPtr->setCameraTimingSec(utils::getEnvDouble("MANDEYE_OPTRIS_TIMING", MANDEYE_OPTRIS_TIMING));
+		mandeye::optrisClientPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
+#endif
 	});
 
 
