@@ -196,7 +196,7 @@ void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chu
 	{
 		if(p.timestamp > 0){
 			ss << p.timestamp << " " << p.point.gyro_x << " " << p.point.gyro_y << " " << p.point.gyro_z << " " << p.point.acc_x << " "
-					<< p.point.acc_y << " " << p.point.acc_z << " " << p.laser_id << "\n";
+					<< p.point.acc_y << " " << p.point.acc_z << " " << p.laser_id  << " " <<p.epoch_time << "\n";
 		}
 	}
 	lidarStream << ss.rdbuf();
