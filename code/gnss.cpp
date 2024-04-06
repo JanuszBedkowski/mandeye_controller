@@ -23,6 +23,10 @@ nlohmann::json GNSSClient::produceStatus()
 	data["gga"]["altitude"] = minmea_tofloat(&lastGGA.altitude);
 	data["gga"]["height"] = minmea_tofloat(&lastGGA.height);
 	data["gga"]["dgps_age"] = minmea_tofloat(&lastGGA.dgps_age);
+	data["is_logging"] = m_isLogging;
+	data["buffer_size"] = m_buffer.size();
+	data["timestampFromProvider"] = GetTimeStamp();
+	data["availableInReadBuffer"] = m_serialPort.GetNumberOfBytesAvailable();
 	return data;
 }
 
@@ -58,7 +62,7 @@ void GNSSClient::worker()
 	{
 		std::string line;
 		m_serialPort.ReadLine(line);
-		std::cout << "line: '" << line << "'" << std::endl;
+//		std::cout << "line: '" << line << "'" << std::endl;
 
 		bool is_vaild = minmea_check(line.c_str(), true);
 		if (is_vaild)
@@ -115,6 +119,10 @@ std::deque<std::string> GNSSClient::retrieveData()
 //! Convert a minmea_sentence_gga to a CSV line
 std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double laserTimestamp)
 {
+	auto now = std::chrono::system_clock::now();
+	auto duration = now.time_since_epoch();
+	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+
 	std:std::stringstream oss;
 	oss << std::setprecision(20) << static_cast<uint_least64_t>(laserTimestamp * 1000000000.0) << " ";
 	oss << minmea_tocoord(&gga.latitude) << " ";
@@ -125,7 +133,8 @@ std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double lase
 	oss << minmea_tofloat(&gga.height) << " ";
 	oss << minmea_tofloat(&gga.dgps_age) << " ";
 	oss << gga.time.hours << ":" << gga.time.minutes << ":" << gga.time.seconds << " ";
-	oss << gga.fix_quality << "\n";
+	oss << gga.fix_quality << " ";
+	oss << millis.count() << "\n";
 	return oss.str();
 }
 } // namespace mandeye
