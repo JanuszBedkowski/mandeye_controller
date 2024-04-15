@@ -80,6 +80,11 @@ add_executable(led_demo code/led_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
 target_link_libraries(led_demo cppgpio-static)
 
+add_executable(fake_pps code/fake_pps.cpp)
+set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
+target_link_libraries(fake_pps cppgpio-static ${LIBSERIAL_LIBRARY})
+
+
 add_executable(button_demo code/button_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
 target_link_libraries(button_demo cppgpio-static)
