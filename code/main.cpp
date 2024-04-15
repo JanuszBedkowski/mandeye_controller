@@ -18,7 +18,7 @@
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
 #define MANDEYE_REPO "/media/usb/"
 #define MANDEYE_GPIO_SIM false
-#define SERVER_PORT 8003
+#define SERVER_PORT 8005
 #define MANDEYE_GNSS_UART "/dev/ttyS0"
 
 namespace utils

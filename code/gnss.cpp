@@ -3,6 +3,7 @@
 #include <thread>
 #include <exception>
 #include "minmea.h"
+
 namespace mandeye
 {
 nlohmann::json GNSSClient::produceStatus()
