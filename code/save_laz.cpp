@@ -50,6 +50,18 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 	}
 
 	// populate the header
+	int step = 1;
+	if(buffer->size() > 4000000){
+		step = ceil((double)buffer->size() / 2000000.0);
+	}
+	if(step < 1){
+		step = 1;
+	}
+
+	int num_points = 0;
+	for(int i = 0; i < buffer->size(); i += step){
+		num_points ++;
+	}
 
 	header->file_source_ID = 4711;
 	header->global_encoding = (1 << 0); // see LAS specification for details
@@ -59,8 +71,8 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 	//    header->file_creation_year = 2013;
 	header->point_data_format = 1;
 	header->point_data_record_length = 0;
-	header->number_of_point_records = buffer->size();
-	header->number_of_points_by_return[0] = buffer->size();
+	header->number_of_point_records = num_points;//buffer->size();
+	header->number_of_points_by_return[0] = num_points;//buffer->size();
 	header->number_of_points_by_return[1] = 0;
 	header->point_data_record_length = 28;
 	header->x_scale_factor = scale;
@@ -98,7 +110,8 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 	laszip_I64 p_count = 0;
 	laszip_F64 coordinates[3];
 
-	for(int i = 0; i < buffer->size(); i++)
+	//for(int i = 0; i < buffer->size(); i++)
+	for(int i = 0; i < buffer->size(); i += step)
 	{
 
 		const auto& p = buffer->at(i);

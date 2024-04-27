@@ -588,6 +588,7 @@ struct PistacheServerHandler : public Http::Handler
 
 int main(int argc, char** argv)
 {
+	std::cout << "program: " << argv[0] << " v0.4" << std::endl;
 	bool lidar_error = false;
 	Address addr(Ipv4::any(), SERVER_PORT);
 
