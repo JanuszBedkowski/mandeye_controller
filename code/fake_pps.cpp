@@ -9,8 +9,7 @@
 
 #include <SerialPort.h>
 #include <SerialStream.h>
-
-namespace NMEA
+#include <hardware_config/mandeye.h>
 namespace NMEA
 {
 const unsigned int BufferLen = 128;
@@ -30,8 +29,6 @@ std::string produceNMEA(const NMEA::timestamp& ts)
 {
 	char buffer[BufferLen];
 	char payload[BufferLen];
-	// start time set to Sunday, September 13, 2020 12:26:40 PM - posix is 1600000000.
-	const char date[] = "130920"; //dd/mm/yy
 	snprintf(
 		//		payload, NMEA::BufferLen, "GPRMC,%02d%02d%02d.00,A,5109.0262308,N,11401.8407342,W,0.004,133.4,%s,0.0,E,D", ts.hours, ts.mins, ts.secs, date);
 		payload,
@@ -74,14 +71,27 @@ NMEA::timestamp GetTimestampFromSec(time_t secsElapsed)
 std::atomic<bool> stop{false};
 void oneSecondThread()
 {
-
 	// setup serial port
-	LibSerial::SerialPort serialPort;
-	serialPort.Open("/dev/ttyS0", std::ios_base::out);
-	serialPort.SetBaudRate(LibSerial::BaudRate::BAUD_9600);
+	std::vector<std::unique_ptr<LibSerial::SerialPort>> serialPorts;
+	std::vector<std::unique_ptr<GPIO::DigitalOut>> syncOuts;
+
+	const auto portsNames = hardware::GetLidarSyncPorts();
+	for(const auto& portName : portsNames)
+	{
+		std::unique_ptr<LibSerial::SerialPort> serialPort = std::make_unique<LibSerial::SerialPort>();
+		serialPort->Open(portName, std::ios_base::out);
+		serialPort->SetBaudRate(LibSerial::BaudRate::BAUD_9600);
+		serialPorts.emplace_back(std::move(serialPort));
+	}
+	const auto ouputs = hardware::GetLidarSyncLEDs();
+	for (const auto& led : ouputs)
+	{
+		std::unique_ptr<GPIO::DigitalOut> syncOut = std::make_unique<GPIO::DigitalOut>(hardware::GetLED(led));
+		syncOuts.emplace_back(std::move(syncOut));
+	}
+	assert(serialPorts.size() == syncOuts.size());
 
 	//setup pps gpio
-	GPIO::DigitalOut pps(18);
 	constexpr uint64_t Rate = 1000;
 	const auto now = std::chrono::system_clock::now();
 	uint64_t millisFromEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
@@ -102,12 +112,21 @@ void oneSecondThread()
 		const uint64_t secs = millisFromEpoch / 1000;
 		NMEA::timestamp ts = NMEA::GetTimestampFromSec(secs);
 
-		pps.off();
+		for (auto& syncOut : syncOuts)
+		{
+			syncOut->off();
+		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		pps.on();
+		for (auto& syncOut : syncOuts)
+		{
+			syncOut->on();
+		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		const std::string nmeaMessage = NMEA::produceNMEA(ts);
-		serialPort.Write(nmeaMessage);
+		for (auto& serialPort : serialPorts)
+		{
+			serialPort->Write(nmeaMessage);
+		}
 
 		std::this_thread::sleep_until(waKeUpTime);
 	}
@@ -120,7 +139,6 @@ int main(int arc, char* argv[])
 	while(!stop)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		//		std::cout << "fake pps" << std::endl;
 	}
 	t1.join();
 	return 0;
