@@ -290,6 +290,9 @@ void LivoxClient::ImuDataCallback(uint32_t handle,
 	{
 		return;
 	}
+	auto now = std::chrono::system_clock::now();
+	auto duration = now.time_since_epoch();
+	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 
 	LivoxClient* this_ptr = (LivoxClient*)client_data;
 	if(data->data_type == kLivoxLidarImuData)
@@ -303,6 +306,7 @@ void LivoxClient::ImuDataCallback(uint32_t handle,
 		{
 			std::lock_guard<std::mutex> lcK(this_ptr->m_timestampMutex);
 			this_ptr->m_timestamp = toUint64.data;
+
 		}
 		if(this_ptr->m_bufferIMUPtr == nullptr)
 		{
@@ -314,6 +318,7 @@ void LivoxClient::ImuDataCallback(uint32_t handle,
 		point.point = *p_imu_data;
 		point.timestamp = toUint64.data;
 		point.laser_id = laser_id;
+		point.epoch_time = millis.count();
 		if(point.timestamp > 0){
 			buffer->push_back(point);
 		}
