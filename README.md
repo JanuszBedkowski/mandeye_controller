@@ -2,6 +2,16 @@
 
 # Hardware documementation
 
+## Supported hardware
+We support the following hardware:
+- Raspbery Pi 4 or 5 without any special hardware (bunch of of-the-shelf components and 3D printed parts)
+- Raspbery Pi 4 Compute module with custom carrier board. The carrier board is not part of this repository and is available on request.
+
+Both version shares the same software, but are different in hardware (e.g. different GPIO layout, some extra features on custom carrier board).
+The target hardware is defined during compilation time.
+If you want to extend this project to different platforms or hardware, please refer to source code available in [hardware](./src/hardware) directory.
+
+
 ## 3D Model
 
 The source design is available on Onshape, and you can access it [here](https://cad.onshape.com/documents/a6c6019ccb399ad39d830fad/w/0440af658555626c8fea1136/e/e1bf637894052d9247ac984d?renderMode=0&uiState=651c527c78128a19b84b4be1).
@@ -18,14 +28,15 @@ Additionally, we recommend printing a protective cap for Livox Mid-360, which yo
 
 Feel free to reach out if you have any questions or need further assistance!
 
-
 ## Bill of Materials
 [Click here to BIM](doc/BIM.md)
 
-## Bill of Materials
 [Wiring manual](doc/wiring/wiring.md)
 
 # Software
+
+# Important notes
+Currently Raspbian Bullseye is recommended for the system. The system is tested on Raspbian Bullseye.
 
 ## Update system
 ```bash
@@ -49,13 +60,15 @@ static routers=0.0.0.0
 
 ## Clone and build app
 
+Note that, target hardware is defined during compilation time using `-DMANDEYE_HARDWARE_XXX:BOOL=ON` parameter.
+The next example shows how to build the app for Raspberry Pi 4 without custom carrier board.
 ```
 git clone https://github.com/JanuszBedkowski/mandeye_controller.git
 cd mandeye_controller
 git submodule init
 git submodule update
 mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_BUILD_TYPE=Release -DMANDEYE_HARDWARE_STANDARD:BOOL=ON
 make -j4
 ```
 
@@ -131,3 +144,5 @@ You can check status of the service with:
 ```bash
 sudo systemctl status mandeye.service
 ```
+
+

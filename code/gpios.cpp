@@ -59,7 +59,13 @@ GpioClient::GpioClient(bool sim)
 	{
 		{
 			addButtonCallback(buttonID, "DBG" + ButtonName, [&]() {
-				std::cout << "TestButton " << ButtonName << std::endl;
+				if (m_ledGpio[LED::BUZZER])
+				{
+					m_ledGpio[LED::BUZZER]->on();
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+					m_ledGpio[LED::BUZZER]->off();
+				}
+				std::cout << "Button :  " << ButtonName << std::endl;
 			});
 		}
 	};

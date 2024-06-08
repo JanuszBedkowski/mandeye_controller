@@ -60,13 +60,25 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 	return GPIO::GPIO_PULL::DOWN;
 }
 
-[[maybe_unused]] const std::array<LED, 2> GetLidarSyncLEDs()
+[[maybe_unused]] inline const std::array<LED, 2> GetLidarSyncLEDs()
 {
 	return {LED::LIDAR_SYNC_1, LED::LIDAR_SYNC_2};
 }
 
-[[maybe_unused]] const std::array<const std::string, 2> GetLidarSyncPorts(){
+[[maybe_unused]] inline  const std::array<const std::string, 2> GetLidarSyncPorts()
+{
 	return {"/dev/ttyAMA1", // GPIO ID_SD (TXD2)
 			"/dev/ttyAMA4"}; // GPIO 12 (TXD5)
 };
+
+[[maybe_unused]] inline const std::string GetGNSSPort()
+{
+	return "/dev/ttyAMA2";
+};
+
+[[maybe_unused]] inline const LibSerial::BaudRate GetGNSSBaudrate()
+{
+	return LibSerial::BaudRate::BAUD_38400;
+};
+
 } // namespace hardware

@@ -25,7 +25,7 @@ struct LivoxIMU
 	uint64_t  epoch_time;
 };
 
-const std::unordered_map<int32_t, char*> WorkModeToStr{
+const std::unordered_map<int32_t, const char*> WorkModeToStr{
 	{LivoxLidarWorkMode::kLivoxLidarNormal, "kLivoxLidarNormal"},
 	{LivoxLidarWorkMode::kLivoxLidarWakeUp, "kLivoxLidarWakeUp"},
 	{LivoxLidarWorkMode::kLivoxLidarSleep, "kLivoxLidarSleep"},

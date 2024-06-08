@@ -20,7 +20,7 @@ public:
 	nlohmann::json produceStatus();
 
 	//! Spins up a thread that reads from the serial port
-	bool startListener(const std::string& portName, int baudRate);
+	bool startListener(const std::string& portName, LibSerial::BaudRate baudRate);
 	bool startListener();
 	//! Start logging into the buffers
 	void startLog();
