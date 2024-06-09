@@ -26,8 +26,6 @@ nlohmann::json GNSSClient::produceStatus()
 	data["gga"]["dgps_age"] = minmea_tofloat(&lastGGA.dgps_age);
 	data["is_logging"] = m_isLogging;
 	data["buffer_size"] = m_buffer.size();
-	data["timestampFromProvider"] = GetTimeStamp();
-	data["availableInReadBuffer"] = m_serialPort.GetNumberOfBytesAvailable();
 	return data;
 }
 

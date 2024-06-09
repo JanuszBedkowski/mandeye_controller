@@ -189,8 +189,9 @@ void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chu
 	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
 	std::cout << "Savig imu buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
 	std::ofstream lidarStream(lidarFilePath.c_str());
+	lidarStream << "timestamp gyroX gyroY gyroZ accX accY accZ imuId timestampUnix\n";
 	std::stringstream ss;
-	
+
 	for(const auto& p : *buffer)
 	{
 		if(p.timestamp > 0){
