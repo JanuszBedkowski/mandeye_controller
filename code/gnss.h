@@ -31,6 +31,9 @@ public:
 	//! Retrieve all data from the buffer, in form of CSV lines
 	std::deque<std::string> retrieveData();
 
+	//! Addcallback on data received
+	void setDataCallback(const std::function<void(const minmea_sentence_gga& gga)>& callback);
+
 private:
 	std::mutex m_bufferMutex;
 	std::deque<std::string> m_buffer;
@@ -49,5 +52,7 @@ private:
 	//! Convert a minmea_sentence_gga to a CSV line
 	std::string GgaToCsvLine(const minmea_sentence_gga& gga, double laserTimestamp);
 
+	//! Callbacks to call when new data is received
+	std::function<void(const minmea_sentence_gga& gga)> m_dataCallback;
 };
 } // namespace mandeye

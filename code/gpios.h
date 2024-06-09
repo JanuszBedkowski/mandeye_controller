@@ -31,6 +31,8 @@ public:
 						   const std::string& callbackName,
 						   const std::function<void()>& callback);
 
+	//! allow to beep the buzzer with a given duration
+	void beep(const std::vector<int> &durations );
 private:
 	using Callbacks = std::unordered_map<std::string, std::function<void()>>;
 

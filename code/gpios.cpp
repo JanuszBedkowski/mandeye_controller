@@ -138,5 +138,36 @@ void GpioClient::addButtonCallback(hardware::BUTTON btn,
 	}
 	(it->second)[callbackName] = callback;
 }
+void GpioClient::beep(const std::vector<int>& durations )
+{
+	std::lock_guard<std::mutex> lck{m_lock};
+	if (m_ledGpio[LED::BUZZER] == nullptr)
+	{
+		std::cerr << "No LED with id " << (int)LED::BUZZER << " in hardware config " << hardware::mandeyeHarwareType() << std::endl;
+		return;
+	}
+	if(!m_useSimulatedGPIO)
+	{
+		bool isOn = false;
+		for(auto& duration : durations)
+		{
+			const auto sleepDuration = std::chrono::milliseconds(duration);
+			if (!isOn)
+			{
+				m_ledGpio[LED::BUZZER]->on();
+				std::this_thread::sleep_for(sleepDuration);
+				isOn = true;
+			}
+			else
+			{
+				m_ledGpio[LED::BUZZER]->off();
+				std::this_thread::sleep_for(sleepDuration);
+				isOn = false;
+			}
+		}
+		m_ledGpio[LED::BUZZER]->off();
+	}
+}
+
 
 } // namespace mandeye

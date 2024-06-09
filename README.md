@@ -31,12 +31,15 @@ Feel free to reach out if you have any questions or need further assistance!
 ## Bill of Materials
 [Click here to BIM](doc/BIM.md)
 
+## Wiring
+
 [Wiring manual](doc/wiring/wiring.md)
 
 # Software
 
 # Important notes
 Currently Raspbian Bullseye is recommended for the system. The system is tested on Raspbian Bullseye.
+The software can run other distros (e.g. Ubuntu) but it is not tested and maintained.
 
 ## Update system
 ```bash
@@ -70,6 +73,18 @@ git submodule update
 mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DMANDEYE_HARDWARE_STANDARD:BOOL=ON
 make -j4
+```
+
+## Test wiring and hardware
+Before running the application, you should test the wiring and hardware. You can use the following commands to test the hardware:
+```bash
+cd mandeye_controller/build
+./led_demo
+./button_demo
+```
+Both program should work correctly, without need of `sudo`. If not , check if your user is in `gpio` group, if not add it:
+```bash
+sudo usermod -a -G gpio $USER
 ```
 
 ## Set USB mount
@@ -126,6 +141,9 @@ Description=Mandeye
 After=multi-user.target
 
 [Service]
+User=mandeye
+StandardOutput=null
+StandardError=null
 ExecStartPre=/bin/sleep 20
 ExecStart=/home/robot/mandeye_controller/build/control_program
 Restart=always

@@ -63,6 +63,10 @@ void GNSSClient::worker()
 	{
 		std::string line;
 		m_serialPort.ReadLine(line);
+		{
+			std::lock_guard<std::mutex> lock(m_bufferMutex);
+			m_lastLine = line;
+		}
 		bool is_vaild = minmea_check(line.c_str(), true);
 		if (is_vaild)
 		{
@@ -70,6 +74,10 @@ void GNSSClient::worker()
 			bool isGGA = minmea_parse_gga(&gga, line.c_str());
 			if (isGGA)
 			{
+				if (m_dataCallback)
+				{
+					m_dataCallback(gga);
+				}
 				double laserTimestamp = GetTimeStamp();
 				std::string csvline = GgaToCsvLine(gga, laserTimestamp);
 				std::lock_guard<std::mutex> lock(m_bufferMutex);
@@ -126,5 +134,10 @@ std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double lase
 	oss << gga.fix_quality << " ";
 	oss << millis.count() << "\n";
 	return oss.str();
+}
+
+void GNSSClient::setDataCallback(const std::function<void(const minmea_sentence_gga& gga)>& callback)
+{
+	m_dataCallback = callback;
 }
 } // namespace mandeye

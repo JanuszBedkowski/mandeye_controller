@@ -1,4 +1,18 @@
-# Setup additional UARTS
+# Prerequisites
+All setup for Mandeye Pro board is done in the same way as for Mandeye board.
+
+:bulb: **Note** You need to specify the correct board in the CMake configuration file. For Mandeye Pro board you need to set the `MAND_PRO` variable to `ON`:
+```shell
+git clone https://github.com/JanuszBedkowski/mandeye_controller.git
+cd mandeye_controller
+git submodule init
+git submodule update
+mkdir -p build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DMANDEYE_HARDWARE_PRO:BOOL=ON
+make -j4
+```
+# Building Project
+
 
 Carrier boards supports number of extra serial ports. To enable them you need to add the following lines to the `/boot/config.txt` file:
 
@@ -35,4 +49,15 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
+```
+
+Next reload daemons, enable and start the service`
+```
+sudo systemctl daemon-reload
+sudo systemctl enable mandeye_fakepps.service
+sudo systemctl start mandeye_fakepps.service
+```
+You can check status of the service with:
+```bash
+sudo systemctl status mandeye_fakepps.service
 ```

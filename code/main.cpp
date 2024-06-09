@@ -74,7 +74,7 @@ using json = nlohmann::json;
 std::string produceReport()
 {
 	json j;
-	j["name"] = "Mandye";
+	j["name"] = "Mandeye";
 	j["state"] = StatesToString.at(app_state);
 	if(livoxCLientPtr)
 	{
@@ -273,6 +273,7 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_CONTINOUS_SCANNING, true);
 				std::this_thread::sleep_for(1000ms);
 				std::cout << "app_state == States::LIDAR_ERROR" << std::endl;
+				mandeye::gpioClientPtr->beep({100, 10});
 			}
 		}if(app_state == States::USB_IO_ERROR){
 			if(mandeye::gpioClientPtr){
@@ -285,6 +286,8 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_CONTINOUS_SCANNING, false);
 				std::this_thread::sleep_for(1000ms);
 				std::cout << "app_state == States::USB_IO_ERROR" << std::endl;
+				mandeye::gpioClientPtr->beep({100, 10});
+
 			}
 		}
 		else if(app_state == States::WAIT_FOR_RESOURCES)
@@ -295,6 +298,9 @@ void stateWatcher()
 			if(mandeye::gpioClientPtr && mandeye::fileSystemClientPtr)
 			{
 				app_state = States::IDLE;
+				// play hello beep
+				mandeye::gpioClientPtr->beep({100, 100, 100, 100, 100, 100, 1000}); // beep, beep, beeeeeep
+
 			}
 		}
 		else if(app_state == States::IDLE)
@@ -615,6 +621,19 @@ int main(int argc, char** argv)
             mandeye::gnssClientPtr = std::make_shared<mandeye::GNSSClient>();
             mandeye::gnssClientPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
             mandeye::gnssClientPtr->startListener(portName, baud);
+
+			// set callback
+			mandeye::gnssClientPtr->setDataCallback( [&](const minmea_sentence_gga& gga)
+			{
+				if(mandeye::gpioClientPtr && gga.fix_quality > 0) // if any fix quality is available
+				{
+					std::lock_guard<std::mutex> l2(mandeye::gpioClientPtrLock);
+					mandeye::gpioClientPtr->setLed(hardware::LED::BUZZER, true);
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+					mandeye::gpioClientPtr->setLed(hardware::LED::BUZZER, false);
+				}
+			});
+
         }
 	});
 
