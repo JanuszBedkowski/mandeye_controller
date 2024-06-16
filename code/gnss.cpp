@@ -25,6 +25,7 @@ nlohmann::json GNSSClient::produceStatus()
 	data["gga"]["height"] = minmea_tofloat(&lastGGA.height);
 	data["gga"]["dgps_age"] = minmea_tofloat(&lastGGA.dgps_age);
 	data["is_logging"] = m_isLogging;
+	data["message_count"] = m_messageCount.load();
 	data["buffer_size"] = m_buffer.size();
 	return data;
 }
@@ -81,6 +82,7 @@ void GNSSClient::worker()
 				std::lock_guard<std::mutex> lock(m_bufferMutex);
 				std::swap(m_lastLine, line);
 				lastGGA = gga;
+				m_messageCount++;
 				if(m_isLogging)
 				{
 					m_buffer.emplace_back(csvline);

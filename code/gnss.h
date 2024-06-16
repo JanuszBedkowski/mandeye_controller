@@ -9,6 +9,7 @@
 #include "thread"
 #include "utils/TimeStampReceiver.h"
 #include "minmea.h"
+#include <atomic>
 namespace mandeye
 {
 
@@ -54,5 +55,6 @@ private:
 
 	//! Callbacks to call when new data is received
 	std::function<void(const minmea_sentence_gga& gga)> m_dataCallback;
+	std::atomic<unsigned uint32_t> m_messageCount{0};
 };
 } // namespace mandeye

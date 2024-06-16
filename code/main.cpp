@@ -71,7 +71,7 @@ mandeye::States app_state{mandeye::States::WAIT_FOR_RESOURCES};
 
 using json = nlohmann::json;
 
-std::string produceReport()
+std::string produceReport(bool reportUSB = true)
 {
 	json j;
 	j["name"] = "Mandeye";
@@ -90,7 +90,7 @@ std::string produceReport()
 		j["gpio"] = gpioClientPtr->produceStatus();
 	}
 
-	if(fileSystemClientPtr)
+	if(fileSystemClientPtr && reportUSB)
 	{
 		j["fs"] = fileSystemClientPtr->produceStatus();
 	}
@@ -274,7 +274,7 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_CONTINOUS_SCANNING, true);
 				std::this_thread::sleep_for(1000ms);
 				std::cout << "app_state == States::LIDAR_ERROR" << std::endl;
-				mandeye::gpioClientPtr->beep({100, 10});
+				mandeye::gpioClientPtr->beep({2000, 100, 2000, 100, 2000, 100, 10000});
 			}
 		}if(app_state == States::USB_IO_ERROR){
 			if(mandeye::gpioClientPtr){
@@ -287,7 +287,7 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_CONTINOUS_SCANNING, false);
 				std::this_thread::sleep_for(1000ms);
 				std::cout << "app_state == States::USB_IO_ERROR" << std::endl;
-				mandeye::gpioClientPtr->beep({100, 10});
+				mandeye::gpioClientPtr->beep({2000, 100, 2000, 100, 2000,100, 5000});
 
 			}
 		}
@@ -300,7 +300,7 @@ void stateWatcher()
 			{
 				app_state = States::IDLE;
 				// play hello beep
-				mandeye::gpioClientPtr->beep({100, 100, 100, 100, 100, 100, 1000}); // beep, beep, beeeeeep
+				mandeye::gpioClientPtr->beep({100, 50, 100, 50, 100, 50,100, 50,100, 50,100, 50 }); // beep, beep, beeeeeep
 
 			}
 		}
@@ -545,7 +545,7 @@ bool getEnvBool(const std::string& env, bool def)
 } // namespace utils
 
 
-#if 1
+#ifdef PISTACHE_SERVER
 #include "web_page.h"
 #include <pistache/endpoint.h>
 using namespace Pistache;
@@ -556,6 +556,12 @@ struct PistacheServerHandler : public Http::Handler
 	void onRequest(const Http::Request& request, Http::ResponseWriter writer) override
 	{
 		if(request.resource() == "/status" || request.resource() == "/json/status")
+		{
+			std::string p = mandeye::produceReport(false);
+			writer.send(Http::Code::Ok, p);
+			return;
+		}
+		if(request.resource() == "/status_full" || request.resource() == "/json/status_full")
 		{
 			std::string p = mandeye::produceReport();
 			writer.send(Http::Code::Ok, p);
@@ -626,7 +632,7 @@ int main(int argc, char** argv)
 			// set callback
 			mandeye::gnssClientPtr->setDataCallback( [&](const minmea_sentence_gga& gga)
 			{
-				if(mandeye::gpioClientPtr && gga.fix_quality > 0) // if any fix quality is available
+				if(mandeye::gpioClientPtr && gga.fix_quality > 0 && gga.satellites_tracked > 5) // if any fix quality is available
 				{
 					std::lock_guard<std::mutex> l2(mandeye::gpioClientPtrLock);
 					mandeye::gpioClientPtr->setLed(hardware::LED::BUZZER, true);

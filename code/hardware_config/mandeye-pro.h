@@ -8,6 +8,7 @@
 #define MANDEYE_HARDWARE_CONFIGURED
 namespace hardware
 {
+#define PISTACHE_SERVER
 
 constexpr const char* mandeyeHarwareType()
 {

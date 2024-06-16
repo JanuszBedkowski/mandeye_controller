@@ -9,6 +9,7 @@
 namespace hardware
 {
 
+#define PISTACHE_SERVER
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyeStandard";

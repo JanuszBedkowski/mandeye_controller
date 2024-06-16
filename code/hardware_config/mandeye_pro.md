@@ -61,3 +61,25 @@ You can check status of the service with:
 ```bash
 sudo systemctl status mandeye_fakepps.service
 ```
+
+## Ublox
+The following config file is used for the Ublox GNSS module, use [U-Center2](https://www.u-blox.com/en/u-center-2) to configure the module.
+Config: [mandeye_pro.ucf, for version 24.02, EXTCore 1.00 8d3640 firmware](mandeye_pro.ucf)
+## Useful aliases
+Add to your `~/.bashrc` file:
+```bash
+alias mandeye_start="sudo systemctl start mandeye.service"
+alias mandeye_stop="sudo systemctl stop mandeye.service"
+alias mandeye_status="sudo systemctl status mandeye.service"
+alias mandeye_log="journalctl -u mandeye.service"
+alias mandeye_fakepps_start="sudo systemctl start mandeye_fakepps.service"
+alias mandeye_fakepps_stop="sudo systemctl stop mandeye_fakepps.service"
+alias mandeye_fakepps_status="sudo systemctl status mandeye_fakepps.service"
+alias mandeye_fakepps_log="journalctl -u mandeye_fakepps.service"
+alias GPIO_BUZZER_ON="raspi-gpio set 24 op && raspi-gpio set 24 dh"
+alias GPIO_BUZZER_OFF="raspi-gpio set 24 dl"
+alias mandeye_test="curl 127.0.0.1:8005/json/status --silent"
+alias mandeye_gnss_sattelites="mandeye_test | grep satellites_tracked"
+alias mandeye_gnss_data="stty -F /dev/ttyAMA2 38400 cs8 -cstopb -parenb && cat /dev/ttyAMA2"
+alias mandeye_gnss_data_speed="stty -F /dev/ttyAMA2 38400 cs8 -cstopb -parenb && cat /dev/ttyAMA2 | pv -r > /dev/null"
+```
