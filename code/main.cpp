@@ -36,6 +36,8 @@ enum class States
 	STARTING_SCAN = 10,
 	SCANNING = 20,
 	STOPPING = 30,
+	STOPPING_STAGE_1 = 31,
+	STOPPING_STAGE_2 = 32,
 	STOPPED = 40,
 	STARTING_STOP_SCAN = 100,
 	STOP_SCAN_IN_PROGRESS = 150,
@@ -51,6 +53,8 @@ const std::map<States, std::string> StatesToString{
 	{States::STARTING_SCAN, "STARTING_SCAN"},
 	{States::SCANNING, "SCANNING"},
 	{States::STOPPING, "STOPPING"},
+	{States::STOPPING_STAGE_1, "STOPPING_STAGE_1"},
+	{States::STOPPING_STAGE_2, "STOPPING_STAGE_2"},
 	{States::STOPPED, "STOPPED"},
 	{States::STARTING_STOP_SCAN, "STARTING_STOP_SCAN"},
 	{States::STOP_SCAN_IN_PROGRESS, "STOP_SCAN_IN_PROGRESS"},
@@ -138,13 +142,54 @@ bool TriggerStopScan()
 	return false;
 }
 
+
+//std::chrono::steady_clock::time_point stoppingStage1Start;
+std::chrono::steady_clock::time_point stoppingStage1StartDeadline;
+std::chrono::steady_clock::time_point stoppingStage1StartDeadlineChangeLed;
+std::chrono::steady_clock::time_point stoppingStage2StartDeadline;
+std::chrono::steady_clock::time_point stoppingStage2StartDeadlineChangeLed;
+//stopScanDeadline = stopScanInitialDeadline + std::chrono::milliseconds(30000);
+
+//std::chrono::steady_clock::time_point stoppingStage2Start;
+ 
 bool TriggerContinousScanning(){
+	
+	//for(int i = 0; i < 100; i++){
+	//		std::cout << "TriggerContinousScanning()" << std::endl;
+	//}
+	
 	if(app_state == States::IDLE || app_state == States::STOPPED){
 		app_state = States::STARTING_SCAN;
 		return true;
 	}else if(app_state == States::SCANNING)
 	{
-		app_state = States::STOPPING;
+		app_state = States::STOPPING_STAGE_1;
+		//stoppingStage1Start = std::chrono::steady_clock::now();
+		stoppingStage1StartDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(2000);
+		
+		stoppingStage1StartDeadlineChangeLed = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
+		
+		return true;
+	}else if(app_state == States::STOPPING_STAGE_1){
+	
+		const auto now = std::chrono::steady_clock::now();
+				
+		if(now < stoppingStage1StartDeadline){
+			//stoppingStage2Start = std::chrono::steady_clock::now();
+			stoppingStage2StartDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(2000);
+			
+			stoppingStage2StartDeadlineChangeLed = std::chrono::steady_clock::now() + std::chrono::milliseconds(25);
+			
+			app_state = States::STOPPING_STAGE_2;
+
+		}
+			
+		return true;
+	}else if(app_state == States::STOPPING_STAGE_2){
+		const auto now = std::chrono::steady_clock::now();
+		if(now < stoppingStage2StartDeadline){
+			app_state = States::STOPPING;
+		}
 		return true;
 	}
 	return false;
@@ -343,11 +388,13 @@ void stateWatcher()
 			//}
 			chunkStart = std::chrono::steady_clock::now();
 		}
-		else if(app_state == States::SCANNING)
+		else if(app_state == States::SCANNING || app_state == States::STOPPING_STAGE_1 || app_state == States::STOPPING_STAGE_2)
 		{
 			if(gpioClientPtr)
 			{
-				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
+				if(app_state == States::SCANNING){
+					mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
+				}
 			}
 			
 			const auto now = std::chrono::steady_clock::now();
@@ -365,9 +412,11 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
 				std::this_thread::sleep_for(100ms);
 			}
-			if(now - chunkStart > std::chrono::seconds(10))
+			if(now - chunkStart > std::chrono::seconds(10) && app_state == States::SCANNING)
 			{
+				
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, true);
+				
 				
 				chunkStart = std::chrono::steady_clock::now();
 
@@ -392,13 +441,53 @@ void stateWatcher()
 					chunksInExperimentCS++;
 				}
 			}
-			std::this_thread::sleep_for(100ms);
+			
+			
+			if(app_state == States::STOPPING_STAGE_1){
+				std::cout << "app_state == States::STOPPING_STAGE_1" << std::endl;
+				
+				const auto now = std::chrono::steady_clock::now();
+				
+				if(now > stoppingStage1StartDeadlineChangeLed){
+					static bool led_1 = true;
+					
+					mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, led_1);
+				
+					led_1 = !led_1;
+					
+					stoppingStage1StartDeadlineChangeLed = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+				}
+				
+				if(now > stoppingStage1StartDeadline){
+					app_state = States::SCANNING;
+				}
+			}
+			
+			if(app_state == States::STOPPING_STAGE_2){
+				std::cout << "app_state == States::STOPPING_STAGE_2" << std::endl;
+				
+				const auto now = std::chrono::steady_clock::now();
+				
+				if(now > stoppingStage2StartDeadlineChangeLed){
+					static bool led_2 = true;
+					
+					mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, led_2);
+				
+					led_2 = !led_2;
+					
+					stoppingStage2StartDeadlineChangeLed = std::chrono::steady_clock::now() + std::chrono::milliseconds(250);
+				}
+				
+				if(now > stoppingStage2StartDeadline){
+					app_state = States::SCANNING;
+				}
+			}
+			
+			
+			std::this_thread::sleep_for(20ms);
 		}
 		else if(app_state == States::STOPPING)
 		{
-			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
-			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, true);
-
 			auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
 			std::deque<std::string> gnssData;
 			livoxCLientPtr->stopLog();
@@ -407,6 +496,17 @@ void stateWatcher()
 				gnssData = gnssClientPtr->retrieveData();
 				gnssClientPtr->stopLog();
 			}
+			
+			for(int i = 0 ; i < 20; i++){
+				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
+				std::this_thread::sleep_for(50ms);
+				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, false);
+				std::this_thread::sleep_for(50ms);
+			}
+						
+			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_CONTINOUS_SCANNING, true);
+			mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_COPY_DATA, true);
+			
 			if(continousScanDirectory.empty()){
 				app_state = States::USB_IO_ERROR;
 			}else{
@@ -588,7 +688,7 @@ struct PistacheServerHandler : public Http::Handler
 
 int main(int argc, char** argv)
 {
-	std::cout << "program: " << argv[0] << " v0.4" << std::endl;
+	std::cout << "program: " << argv[0] << " v0.5" << std::endl;
 	bool lidar_error = false;
 	Address addr(Ipv4::any(), SERVER_PORT);
 
