@@ -8,8 +8,8 @@
 #define MANDEYE_HARDWARE_CONFIGURED
 namespace hardware
 {
-
 #define PISTACHE_SERVER
+
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyeStandard";
@@ -61,13 +61,26 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 	return GPIO::GPIO_PULL::UP;
 }
 
-[[maybe_unused]] const std::string GetGNSSPort()
+[[maybe_unused]] inline const std::array<LED, 2> GetLidarSyncLEDs()
 {
-	return "/dev/ttyS0";
+	return {};  // No hardware sync
+}
+
+[[maybe_unused]] inline  const std::array<const std::string, 2> GetLidarSyncPorts()
+{
+	return {}; // No hardware sync
 };
 
-[[maybe_unused]] const LibSerial::BaudRate GetGNSSBaudrate()
+[[maybe_unused]] inline const std::string GetGNSSPort()
 {
-	return LibSerial::BaudRate::BAUD_9600;
+	return "/dev/S0";
 };
+
+
+[[maybe_unused]] inline const LibSerial::BaudRate GetGNSSBaudrate()
+{
+	return LibSerial::BaudRate::BAUD_38400;
+};
+
+
 } // namespace hardware
