@@ -2,6 +2,7 @@
 #include <cppgpio/buttons.hpp>
 #include <cppgpio/output.hpp>
 #include <json.hpp>
+#include <thread>
 #include <mutex>
 #include <unordered_map>
 
@@ -13,7 +14,22 @@ using namespace hardware;
 
 class GpioClient
 {
+	using Callbacks = std::unordered_map<std::string, std::function<void()>>;
 
+struct ButtonData{
+	std::string m_name; //! button name
+	int m_pin; //! pin number
+	uint32_t m_pressedTime {0}; //! time when button was pressed
+	GPIO::GPIO_PULL m_pullMode; //! pull up or down
+	bool m_pressed; //! is button pressed
+	Callbacks m_callbacks; //! callbacks to call when button is pressed
+	static constexpr int DEBOUNCE_TIME = 2; //! debounce time in cycles
+
+	static bool GetButtonState(const ButtonData& button);
+	void CallUserCallbacks();
+
+
+};
 
 public:
 	//! Constructor
@@ -34,7 +50,9 @@ public:
 	//! allow to beep the buzzer with a given duration
 	void beep(const std::vector<int> &durations );
 private:
-	using Callbacks = std::unordered_map<std::string, std::function<void()>>;
+	std::thread  m_gpioReadBackThread;
+
+
 
 	//! use simulated GPIOs instead real one
 	bool m_useSimulatedGPIO{true};
@@ -49,12 +67,11 @@ private:
 	};
 
 	//! available LEDs
-	std::unordered_map<hardware::LED, std::unique_ptr<GPIO::DigitalOut>> m_ledGpio;
+	//std::unordered_map<hardware::LED, std::unique_ptr<GPIO::DigitalOut>> m_ledGpio;
 
 	//! available Buttons
-	std::unordered_map<hardware::BUTTON, std::unique_ptr<GPIO::PushButton>> m_buttons;
+	std::unordered_map<hardware::BUTTON, ButtonData> m_buttons;
 
-	std::unordered_map<hardware::BUTTON, Callbacks> m_buttonsCallbacks;
 
 	//! useful translations
 	const std::unordered_map<LED, std::string> LedToName{

@@ -9,7 +9,7 @@
 namespace hardware
 {
 #define PISTACHE_SERVER
-
+constexpr int Offset = 0;
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyeStandard";
@@ -17,17 +17,18 @@ constexpr const char* mandeyeHarwareType()
 
 constexpr int GetLED(LED led)
 {
+
 	if(led == LED::LED_GPIO_STOP_SCAN)
 	{
-		return 26;
+		return Offset+26;
 	}
 	if(led == LED::LED_GPIO_COPY_DATA)
 	{
-		return 19;
+		return Offset+19;
 	}
 	if(led == LED::LED_GPIO_CONTINOUS_SCANNING)
 	{
-		return 13;
+		return Offset+13;
 	}
 	if(led == LED::LIDAR_SYNC_1)
 	{
@@ -47,11 +48,11 @@ constexpr int GetButton(BUTTON btn)
 {
 	if(btn == BUTTON::BUTTON_STOP_SCAN)
 	{
-		return 5;
+		return Offset+5;
 	}
 	if(btn == BUTTON::BUTTON_CONTINOUS_SCANNING)
 	{
-		return 6;
+		return Offset+6;
 	}
 	return -1;
 }
