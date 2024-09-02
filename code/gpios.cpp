@@ -1,15 +1,12 @@
-#include <cppgpio.hpp>
-#include <cppgpio/output.hpp>
+#include <fstream>
 #include <gpios.h>
 #include <iostream>
-#include <fstream>
-namespace mandeye
-{
-constexpr int Offset = 512;
 
-void CreateDigitalIn(int pin)
+void GPIO::CreateDigitalIn(int pin)
 {
-
+	std::string command = "raspi-gpio set " + std::to_string(pin) + " ip";
+	int ret = std::system(command.c_str());
+	std::cout << "Called " << command << " return " << ret << std::endl;
 	pin += Offset;
 	if(pin > 0)
 	{
@@ -25,8 +22,11 @@ void CreateDigitalIn(int pin)
 	}
 }
 
-void CreateDigitalOut(int pin)
+void GPIO::CreateDigitalOut(int pin)
 {
+	std::string command = "raspi-gpio set " + std::to_string(pin) + " op";
+	int ret = std::system(command.c_str());
+	std::cout << "Called " << command << " return " << ret << std::endl;
 	pin += Offset;
 	if(pin > 0)
 	{
@@ -42,7 +42,7 @@ void CreateDigitalOut(int pin)
 	}
 }
 
-void SetDigitalOut(int pin, bool value)
+void GPIO::SetDigitalOut(int pin, bool value)
 {
 	pin += Offset;
 	if(pin > 0)
@@ -53,7 +53,7 @@ void SetDigitalOut(int pin, bool value)
 	}
 }
 
-bool GetDigitalIn(int pin, int& value)
+bool GPIO::GetDigitalIn(int pin, int& value)
 {
 	pin += Offset;
 	if(pin > 0)
@@ -65,17 +65,19 @@ bool GetDigitalIn(int pin, int& value)
 	return true;
 }
 
-void setPullUp(int gpio, GPIO::GPIO_PULL pull) {
+void GPIO::setPullUp(int gpio, GPIO::GPIO_PULL pull)
+{
 
 	std::string command = "raspi-gpio set " + std::to_string(gpio);
-	if (pull == GPIO::GPIO_PULL::OFF){
+	if(pull == GPIO::GPIO_PULL::OFF)
+	{
 		command += " pn";
 	}
-	else if (pull == GPIO::GPIO_PULL::DOWN)
+	else if(pull == GPIO::GPIO_PULL::DOWN)
 	{
 		command += " pd";
 	}
-	else if (pull == GPIO::GPIO_PULL::UP)
+	else if(pull == GPIO::GPIO_PULL::UP)
 	{
 		command += " pu";
 	}
@@ -83,11 +85,15 @@ void setPullUp(int gpio, GPIO::GPIO_PULL pull) {
 	std::cout << "Called " << command << " return " << ret << std::endl;
 }
 
+namespace mandeye
+{
+using namespace hardware;
+using namespace GPIO;
 bool GpioClient::ButtonData::GetButtonState(const GpioClient::ButtonData& button)
 {
 	int rawButtonState = -1;
 	GetDigitalIn(button.m_pin, rawButtonState);
-	if (button.m_pullMode == GPIO::GPIO_PULL::UP)
+	if(button.m_pullMode == GPIO::GPIO_PULL::UP)
 	{
 		return rawButtonState == 0;
 	}
@@ -114,8 +120,6 @@ GpioClient::GpioClient(bool sim)
 		m_buttons[id].m_name = name;
 	}
 
-
-
 	if(!sim)
 	{
 		std::lock_guard<std::mutex> lck{m_lock};
@@ -130,7 +134,6 @@ GpioClient::GpioClient(bool sim)
 
 		// set pull
 
-
 		CreateDigitalIn(hardware::GetButton(BUTTON::BUTTON_STOP_SCAN));
 		CreateDigitalIn(hardware::GetButton(BUTTON::BUTTON_CONTINOUS_SCANNING));
 
@@ -141,53 +144,51 @@ GpioClient::GpioClient(bool sim)
 		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING].m_pullMode = hardware::GetPULL(BUTTON::BUTTON_CONTINOUS_SCANNING);
 
 		// set pull
-		for (auto& [_,button] : m_buttons)
+		for(auto& [_, button] : m_buttons)
 		{
 			setPullUp(button.m_pin, button.m_pullMode);
 		}
 
-
 		//		m_buttons[BUTTON::BUTTON_STOP_SCAN] =
-//			std::make_unique<PushButton>(hardware::GetButton(BUTTON::BUTTON_STOP_SCAN), hardware::GetPULL(BUTTON::BUTTON_STOP_SCAN));
-//		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING] =
-//			std::make_unique<PushButton>(hardware::GetButton(BUTTON::BUTTON_CONTINOUS_SCANNING), hardware::GetPULL(BUTTON::BUTTON_STOP_SCAN));
-
+		//			std::make_unique<PushButton>(hardware::GetButton(BUTTON::BUTTON_STOP_SCAN), hardware::GetPULL(BUTTON::BUTTON_STOP_SCAN));
+		//		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING] =
+		//			std::make_unique<PushButton>(hardware::GetButton(BUTTON::BUTTON_CONTINOUS_SCANNING), hardware::GetPULL(BUTTON::BUTTON_STOP_SCAN));
 	}
 
 	for(auto& [buttonID, ButtonName] : ButtonToName)
 	{
 		{
 			addButtonCallback(buttonID, "DBG" + ButtonName, [&]() {
-//				if (mandeye::hardware::Ge
-//				{
-//					m_ledGpio[LED::BUZZER]->on();
-//					std::this_thread::sleep_for(std::chrono::milliseconds(10));
-//					m_ledGpio[LED::BUZZER]->off();
-//				}
+				//				if (mandeye::hardware::Ge
+				//				{
+				//					m_ledGpio[LED::BUZZER]->on();
+				//					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				//					m_ledGpio[LED::BUZZER]->off();
+				//				}
 				std::cout << "Button :  " << ButtonName << std::endl;
 			});
 		}
 	};
 
-	m_gpioReadBackThread = std::thread([this]()
-	{
+	m_gpioReadBackThread = std::thread([this]() {
 		while(true)
 		{
 			for(auto& [buttonID, buttonData] : m_buttons)
 			{
 				bool rawButtonState = ButtonData::GetButtonState(buttonData);
-				if (rawButtonState == true){
+				if(rawButtonState == true)
+				{
 					buttonData.m_pressedTime++;
-					if (buttonData.m_pressedTime == buttonData.DEBOUNCE_TIME)
+					if(buttonData.m_pressedTime == buttonData.DEBOUNCE_TIME)
 					{
 						buttonData.m_pressed = true;
 						buttonData.CallUserCallbacks();
 					}
 				}
-				else{
+				else
+				{
 					buttonData.m_pressedTime = 0;
 				}
-
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(25));
 		}
@@ -218,7 +219,8 @@ nlohmann::json GpioClient::produceStatus()
 		{
 			data["buttons"][buttonname] = it->second.m_pressed;
 		}
-		else{
+		else
+		{
 			data["buttons"][buttonname] = "NA";
 		}
 	}
@@ -235,9 +237,7 @@ void GpioClient::setLed(LED led, bool state)
 	}
 }
 
-void GpioClient::addButtonCallback(hardware::BUTTON btn,
-								   const std::string& callbackName,
-								   const std::function<void()>& callback)
+void GpioClient::addButtonCallback(hardware::BUTTON btn, const std::string& callbackName, const std::function<void()>& callback)
 {
 	std::lock_guard<std::mutex> lck{m_lock};
 	auto it = m_buttons.find(btn);
@@ -250,13 +250,12 @@ void GpioClient::addButtonCallback(hardware::BUTTON btn,
 	it->second.m_callbacks[callbackName] = callback;
 }
 
-
-void GpioClient::beep(const std::vector<int>& durations )
+void GpioClient::beep(const std::vector<int>& durations)
 {
 	std::lock_guard<std::mutex> lck{m_lock};
 
-		std::cerr << "No LED with id " << (int)LED::BUZZER << " in hardware config " << hardware::mandeyeHarwareType() << std::endl;
-		return;
+	std::cerr << "No LED with id " << (int)LED::BUZZER << " in hardware config " << hardware::mandeyeHarwareType() << std::endl;
+	return;
 
 	if(!m_useSimulatedGPIO)
 	{
@@ -265,7 +264,7 @@ void GpioClient::beep(const std::vector<int>& durations )
 		for(auto& duration : durations)
 		{
 			const auto sleepDuration = std::chrono::milliseconds(duration);
-			if (!isOn)
+			if(!isOn)
 			{
 				SetDigitalOut(buzzerPin, true);
 				std::this_thread::sleep_for(sleepDuration);
@@ -281,6 +280,5 @@ void GpioClient::beep(const std::vector<int>& durations )
 		SetDigitalOut(buzzerPin, false);
 	}
 }
-
 
 } // namespace mandeye

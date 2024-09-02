@@ -1,16 +1,27 @@
 #pragma once
-#include <cppgpio/buttons.hpp>
-#include <cppgpio/output.hpp>
+
 #include <json.hpp>
 #include <thread>
 #include <mutex>
 #include <unordered_map>
 
 #include "hardware_config/mandeye.h"
+
+namespace GPIO
+{
+	constexpr int Offset = 512;
+	void CreateDigitalOut(int pin);
+	void CreateDigitalIn(int pin);
+	void SetDigitalOut(int pin, bool value);
+	bool GetDigitalIn(int pin, int& value);
+	void setPullUp(int gpio, GPIO::GPIO_PULL pull);
+}
+
 namespace mandeye
 {
 using namespace hardware;
 // forward declaration of cppgpio type that I want to keep inside compliation unit
+
 
 class GpioClient
 {

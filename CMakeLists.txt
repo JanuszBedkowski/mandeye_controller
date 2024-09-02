@@ -38,10 +38,6 @@ add_subdirectory(3rd/Livox-SDK2)
 
 include_directories(code/)
 
-# GPIOs
-add_subdirectory(3rd/CppGPIO)
-include_directories(3rd/CppGPIO/include/)
-
 # NMEA and libserial
 find_path(LIBSERIAL_INCLUDE_DIR SerialPort.h
         PATH_SUFFIXES include
@@ -58,19 +54,18 @@ add_library(minea STATIC 3rd/minmea/minmea.c)
 add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h code/LivoxClient.cpp code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp ${PISTACHE_SRC}
         code/utils/TimeStampReceiver.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
-target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea)
-#target_link_libraries(control_program pthread livox_lidar_sdk_static cppgpio-static atomic laszip)
+target_link_libraries(control_program pthread livox_lidar_sdk_static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea)
 
 
 add_executable(led_demo code/led_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
-target_link_libraries(led_demo cppgpio-static)
+target_link_libraries(led_demo )
 
-add_executable(fake_pps code/fake_pps.cpp)
+add_executable(fake_pps code/fake_pps.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
-target_link_libraries(fake_pps cppgpio-static ${LIBSERIAL_LIBRARY})
+target_link_libraries(fake_pps ${LIBSERIAL_LIBRARY})
 
 
 add_executable(button_demo code/button_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
-target_link_libraries(button_demo cppgpio-static)
+target_link_libraries(button_demo)

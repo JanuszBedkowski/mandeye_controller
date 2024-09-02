@@ -1,10 +1,8 @@
 #include <chrono>
-#include <cppgpio.hpp>
-#include <cppgpio/output.hpp>
 #include <gpios.h>
 #include <iostream>
 #include <thread>
-
+#include <atomic>
 #include <stdio.h>
 
 #include <SerialPort.h>
@@ -73,7 +71,7 @@ void oneSecondThread()
 {
 	// setup serial port
 	std::vector<std::unique_ptr<LibSerial::SerialPort>> serialPorts;
-	std::vector<std::unique_ptr<GPIO::DigitalOut>> syncOuts;
+	std::vector<int> syncOutsPins;
 
 	const auto portsNames = hardware::GetLidarSyncPorts();
 	for(const auto& portName : portsNames)
@@ -86,8 +84,8 @@ void oneSecondThread()
 	const auto ouputs = hardware::GetLidarSyncLEDs();
 	for (const auto& led : ouputs)
 	{
-		std::unique_ptr<GPIO::DigitalOut> syncOut = std::make_unique<GPIO::DigitalOut>(hardware::GetLED(led));
-		syncOuts.emplace_back(std::move(syncOut));
+		syncOutsPins.emplace_back(hardware::GetLED(led));
+		GPIO::CreateDigitalOut(syncOutsPins.back());
 	}
 	assert(serialPorts.size() == syncOuts.size());
 
@@ -112,14 +110,14 @@ void oneSecondThread()
 		const uint64_t secs = millisFromEpoch / 1000;
 		NMEA::timestamp ts = NMEA::GetTimestampFromSec(secs);
 
-		for (auto& syncOut : syncOuts)
+		for (auto& syncOut : syncOutsPins)
 		{
-			syncOut->off();
+			GPIO::SetDigitalOut(syncOut, false);
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		for (auto& syncOut : syncOuts)
+		for (auto& syncOut : syncOutsPins)
 		{
-			syncOut->on();
+			GPIO::SetDigitalOut(syncOut, true);
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		const std::string nmeaMessage = NMEA::produceNMEA(ts);
