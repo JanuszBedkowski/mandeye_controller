@@ -17,7 +17,7 @@ int main(int arc, char *argv[]){
         std::cout << "LED_GPIO_STOP_SCAN ON" << std::endl;
         gpioClientPtr->setLed(LED::LED_GPIO_STOP_SCAN, true);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "% ON" << std::endl;
+		std::cout << "LED_GPIO_COPY_DATA ON" << std::endl;
         gpioClientPtr->setLed(LED::LED_GPIO_COPY_DATA, true);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         std::cout << "LED_GPIO_CONTINOUS_SCANNING ON" << std::endl;
