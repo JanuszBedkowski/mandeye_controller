@@ -9,8 +9,11 @@ using namespace hardware;
 using namespace GPIO;
 bool GpioClient::ButtonData::GetButtonState(const GpioClient::ButtonData& button)
 {
-	int rawButtonState = -1;
-	//GetDigitalIn(button.m_pin, rawButtonState);
+	if (button.m_line == nullptr)
+	{
+		return false;
+	}
+	int rawButtonState = gpiod_line_get_value(button.m_line);
 	if(button.m_pullMode == GPIO::GPIO_PULL::UP)
 	{
 		return rawButtonState == 0;
@@ -37,6 +40,10 @@ GpioClient::GpioClient(bool sim)
 	{
 		m_buttons[id].m_name = name;
 	}
+	for (auto& [led, name] : LedToName)
+	{
+		m_ledGpio[led].m_name = name;
+	}
 
 	if(!sim)
 	{
@@ -50,72 +57,90 @@ GpioClient::GpioClient(bool sim)
 		}
 		std::lock_guard<std::mutex> lck{m_lock};
 
-		const std::vector<LED> leds {
-			LED::LED_GPIO_STOP_SCAN,
-			LED::LED_GPIO_COPY_DATA,
-			LED::LED_GPIO_CONTINOUS_SCANNING,
-			LED::BUZZER,
-			LED::LIDAR_SYNC_1,
-			LED::LIDAR_SYNC_2,
-		};
-		for (auto &led : leds)
+		// initialize leds
+		for (auto &[led, name] : LedToName)
 		{
-			LedData ledData;
-			ledData.m_name = LedToName.at(led);
+			LedData& ledData = m_ledGpio[led];
+			ledData.m_name = name;
 			ledData.m_pin = hardware::GetLED(led);
-			ledData.m_line = gpiod_chip_get_line(m_chip, ledData.m_pin);
-			if (!ledData.m_line)
+			if(ledData.m_pin == -1)
 			{
-				std::cerr << "Failed to create line at pin " << ledData.m_pin << " of " << ledData.m_name << std::endl;
+				std::cerr << "No LED with id " << name << " in hardware config " << hardware::mandeyeHarwareType() << std::endl;
 			}
-			int ret = gpiod_line_request_output(ledData.m_line, ledData.m_name.c_str(), 0);
-			if (ret < 0)
+			else
 			{
-				std::cerr << "Failed to create line at pin " << ledData.m_pin << " of " << ledData.m_name << std::endl;
+				ledData.m_line = gpiod_chip_get_line(m_chip, ledData.m_pin);
+
+				if(!ledData.m_line)
+				{
+					std::cerr << "Failed to create line at pin " << ledData.m_pin << " of " << ledData.m_name << std::endl;
+					continue ;
+				}
+				int ret = gpiod_line_request_output(ledData.m_line, ledData.m_name.c_str(), 0);
+				if(ret < 0)
+				{
+					std::cerr << "Failed to create line at pin " << ledData.m_pin << " of " << ledData.m_name << std::endl;
+					continue ;
+				}
 			}
-			m_ledGpio[led] = ledData;
 		}
+		std::cout<< "LEDs initialized" << std::endl;
 
-		// set pull
 
-//		CreateDigitalIn(hardware::GetButton(BUTTON::BUTTON_STOP_SCAN));
-//		CreateDigitalIn(hardware::GetButton(BUTTON::BUTTON_CONTINOUS_SCANNING));
-//
-//		m_buttons[BUTTON::BUTTON_STOP_SCAN].m_pin = hardware::GetButton(BUTTON::BUTTON_STOP_SCAN);
-//		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING].m_pin = hardware::GetButton(BUTTON::BUTTON_CONTINOUS_SCANNING);
-//
-//		m_buttons[BUTTON::BUTTON_STOP_SCAN].m_pullMode = hardware::GetPULL(BUTTON::BUTTON_STOP_SCAN);
-//		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING].m_pullMode = hardware::GetPULL(BUTTON::BUTTON_CONTINOUS_SCANNING);
-//
-//		// set pull
-//		for(auto& [_, button] : m_buttons)
-//		{
-//			setPullUp(button.m_pin, button.m_pullMode);
-//		}
+		for(auto& [button, name] : ButtonToName)
+		{
+			ButtonData& buttonData = m_buttons[button];
+			buttonData.m_pin = hardware::GetButton(button);
+			buttonData.m_pullMode = hardware::GetPULL(button);
+			if(buttonData.m_pin == -1)
+			{
+				std::cerr << "No button with id " <<  name << " in hardware config " << hardware::mandeyeHarwareType() << std::endl;
+			}
+			else
+			{
+				buttonData.m_line = gpiod_chip_get_line(m_chip, buttonData.m_pin);
+				if(!buttonData.m_line)
+				{
+					std::cerr << "Failed to create line at pin " << buttonData.m_pin << " of " << buttonData.m_name << std::endl;
+					continue;
+				}
+				int flags = 0;
+				if(buttonData.m_pullMode == GPIO::GPIO_PULL::UP)
+				{
+					flags = GPIOD_LINE_REQUEST_FLAG_BIAS_PULL_UP;
+				}
+				else
+				{
+					flags = GPIOD_LINE_REQUEST_FLAG_BIAS_PULL_DOWN;
+				}
+				int ret = gpiod_line_request_input_flags(buttonData.m_line, buttonData.m_name.c_str(), flags);
+				if(ret < 0)
+				{
+					std::cerr << "Failed to create line at pin " << buttonData.m_pin << " of " << buttonData.m_name << std::endl;
+					continue ;
+				}
 
-		//		m_buttons[BUTTON::BUTTON_STOP_SCAN] =
-		//			std::make_unique<PushButton>(hardware::GetButton(BUTTON::BUTTON_STOP_SCAN), hardware::GetPULL(BUTTON::BUTTON_STOP_SCAN));
-		//		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING] =
-		//			std::make_unique<PushButton>(hardware::GetButton(BUTTON::BUTTON_CONTINOUS_SCANNING), hardware::GetPULL(BUTTON::BUTTON_STOP_SCAN));
+			}
+
+		}
 	}
+
 
 	for(auto& [buttonID, ButtonName] : ButtonToName)
 	{
 		{
-			addButtonCallback(buttonID, "DBG" + ButtonName, [&]() {
-				//				if (mandeye::hardware::Ge
-				//				{
-				//					m_ledGpio[LED::BUZZER]->on();
-				//					std::this_thread::sleep_for(std::chrono::milliseconds(10));
-				//					m_ledGpio[LED::BUZZER]->off();
-				//				}
+			addButtonCallback(buttonID, "DBG" + ButtonName, [this, ButtonName]() {
+				auto buzzerGPIO = m_ledGpio[LED::BUZZER];
+				setLed(buzzerGPIO, true);
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				setLed(buzzerGPIO, false);
 				std::cout << "Button :  " << ButtonName << std::endl;
 			});
 		}
 	};
 
 	m_gpioReadBackThread = std::thread([this]() {
-		while(true)
+		while(m_running)
 		{
 			for(auto& [buttonID, buttonData] : m_buttons)
 			{
@@ -138,6 +163,33 @@ GpioClient::GpioClient(bool sim)
 		}
 	});
 }
+GpioClient::~GpioClient()
+{
+	if (m_gpioReadBackThread.joinable())
+	{
+		m_running.store(false);
+		m_gpioReadBackThread.join();
+	}
+	if(m_chip)
+	{
+		for(auto& [led, ledData] : m_ledGpio)
+		{
+			if(ledData.m_line)
+			{
+				gpiod_line_release(ledData.m_line);
+			}
+		}
+		for(auto& [button, buttonData] : m_buttons)
+		{
+			if(buttonData.m_line)
+			{
+				gpiod_line_release(buttonData.m_line);
+			}
+		}
+		gpiod_chip_close(m_chip);
+	}
+
+}
 
 nlohmann::json GpioClient::produceStatus()
 {
@@ -147,7 +199,7 @@ nlohmann::json GpioClient::produceStatus()
 	{
 		try
 		{
-			data["leds"][ledname] = m_ledState.at(ledid);
+			data["leds"][ledname] = m_ledGpio.at(ledid).m_state;
 		}
 		catch(const std::out_of_range& ex)
 		{
@@ -173,11 +225,17 @@ nlohmann::json GpioClient::produceStatus()
 
 void GpioClient::setLed(LED led, bool state)
 {
+	assert(m_ledGpio.find(led) != m_ledGpio.end());
+	setLed(m_ledGpio[led], state);
+}
+
+void GpioClient::setLed(LedData& led, bool state)
+{
 	std::lock_guard<std::mutex> lck{m_lock};
-	m_ledState[led] = state;
-	if(!m_useSimulatedGPIO)
+	led.m_state = state;
+	if(!m_useSimulatedGPIO && led.m_line)
 	{
-		gpiod_line_set_value(m_ledGpio[led].m_line, state?0:1);
+		gpiod_line_set_value(led.m_line, state?1:0);
 	}
 }
 
@@ -204,19 +262,19 @@ void GpioClient::beep(const std::vector<int>& durations)
 	if(!m_useSimulatedGPIO)
 	{
 		bool isOn = false;
-		const auto buzzerPin = hardware::GetLED(LED::BUZZER);
+		auto& buzzerGpio = m_ledGpio[LED::BUZZER];
 		for(auto& duration : durations)
 		{
 			const auto sleepDuration = std::chrono::milliseconds(duration);
 			if(!isOn)
 			{
-//				SetDigitalOut(buzzerPin, true);
+				setLed(buzzerGpio, true);
 				std::this_thread::sleep_for(sleepDuration);
 				isOn = true;
 			}
 			else
 			{
-//				SetDigitalOut(buzzerPin, false);
+				setLed(buzzerGpio, true);
 				std::this_thread::sleep_for(sleepDuration);
 				isOn = false;
 			}

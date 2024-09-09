@@ -10,6 +10,10 @@ if(MANDEYE_HARDWARE_STANDARD)
     add_definitions(-DMANDEYE_HARDWARE_STANDARD)
 endif()
 
+if(MANDEYE_HARDWARE_STANDARD_RPI5)
+    add_definitions(-DMANDEYE_HARDWARE_STANDARD_RPI5)
+endif()
+
 if(MANDEYE_HARDWARE_PRO)
     add_definitions(-DMANDEYE_HARDWARE_PRO)
 endif()
@@ -76,4 +80,4 @@ target_link_libraries(fake_pps ${LIBSERIAL_LIBRARY} gpiod)
 
 add_executable(button_demo code/button_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
-target_link_libraries(button_demo)
+target_link_libraries(button_demo gpiod)

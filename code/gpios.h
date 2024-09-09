@@ -4,7 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <unordered_map>
-
+#include <atomic>
 #include "hardware_config/mandeye.h"
 
 // Forward declaration for GPIOD
@@ -37,6 +37,7 @@ struct ButtonData{
 
 struct LedData{
 	std::string m_name;
+	bool m_state{false};
 	int m_pin;
 	gpiod_line *m_line{nullptr};
 };
@@ -46,11 +47,19 @@ public:
 	//! @param sim if true hardware is not called
 	GpioClient(bool sim);
 
+	//! Destructor
+	~GpioClient();
+
+	GpioClient(const GpioClient&) = delete;
+	GpioClient& operator=(const GpioClient&) = delete;
+
 	//! serialize component state to API
 	nlohmann::json produceStatus();
 
 	//! set led to given state
 	void setLed(hardware::LED led, bool state);
+	void setLed(LedData& led, bool state);
+
 
 	//! addcalback
 	void addButtonCallback(hardware::BUTTON btn,
@@ -66,15 +75,6 @@ private:
 	//! use simulated GPIOs instead real one
 	bool m_useSimulatedGPIO{true};
 
-	std::unordered_map<LED, bool> m_ledState{
-		{LED::LED_GPIO_STOP_SCAN, false},
-		{LED::LED_GPIO_COPY_DATA, false},
-		{LED::LED_GPIO_CONTINOUS_SCANNING, false},
-		{LED::BUZZER, false},
-		{LED::LIDAR_SYNC_1, false},
-		{LED::LIDAR_SYNC_2, false},
-	};
-
 	//! available LEDs
 	std::unordered_map<hardware::LED, LedData> m_ledGpio;
 
@@ -88,8 +88,6 @@ private:
 		{LED::LED_GPIO_COPY_DATA, "LED_GPIO_COPY_DATA"},
 		{LED::LED_GPIO_CONTINOUS_SCANNING, "LED_GPIO_CONTINOUS_SCANNING"},
 		{LED::BUZZER, "BUZZER"},
-		{LED::LIDAR_SYNC_1, "LIDAR_SYNC_1"},
-		{LED::LIDAR_SYNC_2, "LIDAR_SYNC_2"},
 	};
 
 	const std::unordered_map<std::string, LED> NameToLed{
@@ -112,5 +110,6 @@ private:
 	};
 
 	std::mutex m_lock;
+	std::atomic<bool> m_running{true};
 };
 } // namespace mandeye

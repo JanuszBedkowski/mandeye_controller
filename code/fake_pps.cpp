@@ -8,6 +8,7 @@
 #include <SerialPort.h>
 #include <SerialStream.h>
 #include <hardware_config/mandeye.h>
+#include <gpiod.h>
 namespace NMEA
 {
 const unsigned int BufferLen = 128;
@@ -71,7 +72,7 @@ void oneSecondThread()
 {
 	// setup serial port
 	std::vector<std::unique_ptr<LibSerial::SerialPort>> serialPorts;
-	std::vector<int> syncOutsPins;
+	std::vector<gpiod_line*> syncOutsLines;
 
 	const auto portsNames = hardware::GetLidarSyncPorts();
 	for(const auto& portName : portsNames)
@@ -82,10 +83,33 @@ void oneSecondThread()
 		serialPorts.emplace_back(std::move(serialPort));
 	}
 	const auto ouputs = hardware::GetLidarSyncLEDs();
+
+	gpiod_chip *chip = gpiod_chip_open(hardware::GetGPIOChip());
+	if (chip == nullptr)
+	{
+		std::cerr << "Error: Unable to open GPIO chip." << std::endl;
+		std::abort();
+	}
+
+
 	for (const auto& led : ouputs)
 	{
-		syncOutsPins.emplace_back(hardware::GetLED(led));
-		GPIO::CreateDigitalOut(syncOutsPins.back());
+		auto pin = hardware::GetLED(led);
+		auto line = gpiod_chip_get_line(chip, pin);
+		if (line == nullptr)
+		{
+			std::cerr << "Error: Unable to open GPIO line." << std::endl;
+			gpiod_chip_close(chip);
+			std::abort();
+		}
+		int ret = gpiod_line_request_output(line, "mandeye_fake_pps", 0);
+		if (ret < 0)
+		{
+			std::cerr << "Error: Unable to request GPIO line." << std::endl;
+			gpiod_chip_close(chip);
+			std::abort();
+		}
+		syncOutsLines.emplace_back(line);
 	}
 	assert(serialPorts.size() == syncOuts.size());
 
@@ -110,14 +134,14 @@ void oneSecondThread()
 		const uint64_t secs = millisFromEpoch / 1000;
 		NMEA::timestamp ts = NMEA::GetTimestampFromSec(secs);
 
-		for (auto& syncOut : syncOutsPins)
+		for (auto& syncOut : syncOutsLines)
 		{
-			GPIO::SetDigitalOut(syncOut, false);
+			gpiod_line_set_value(syncOut, 0);
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		for (auto& syncOut : syncOutsPins)
+		for (auto& syncOut : syncOutsLines)
 		{
-			GPIO::SetDigitalOut(syncOut, true);
+			gpiod_line_set_value(syncOut, 1);
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		const std::string nmeaMessage = NMEA::produceNMEA(ts);
@@ -128,6 +152,11 @@ void oneSecondThread()
 
 		std::this_thread::sleep_until(waKeUpTime);
 	}
+	for (auto& syncOut : syncOutsLines)
+	{
+		gpiod_line_release(syncOut);
+	}
+	gpiod_chip_close(chip);
 }
 int main(int arc, char* argv[])
 {
