@@ -15,6 +15,12 @@ constexpr const char* mandeyeHarwareType()
 	return "MandeyeStandard";
 }
 
+constexpr const char* GetGPIOChip()
+{
+	//for raspberry pi 5
+	return "/dev/gpiochip4";
+}
+
 constexpr int GetLED(LED led)
 {
 

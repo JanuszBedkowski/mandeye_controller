@@ -15,6 +15,12 @@ constexpr const char* mandeyeHarwareType()
 	return "MandeyePro";
 }
 
+constexpr char* GetGPIOChip()
+{
+	return "gpiochip0";
+}
+
+
 constexpr int GetLED(LED led)
 {
 	if(led == LED::LED_GPIO_STOP_SCAN)

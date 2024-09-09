@@ -1,89 +1,7 @@
 #include <fstream>
 #include <gpios.h>
 #include <iostream>
-
-void GPIO::CreateDigitalIn(int pin)
-{
-	std::string command = "raspi-gpio set " + std::to_string(pin) + " ip";
-	int ret = std::system(command.c_str());
-	std::cout << "Called " << command << " return " << ret << std::endl;
-	pin += Offset;
-	if(pin > 0)
-	{
-		// export the pin
-		std::ofstream exportFile("/sys/class/gpio/export");
-		exportFile << pin;
-		exportFile.close();
-
-		// set the direction
-		std::ofstream directionFile("/sys/class/gpio/gpio" + std::to_string(pin) + "/direction");
-		directionFile << "in";
-		directionFile.close();
-	}
-}
-
-void GPIO::CreateDigitalOut(int pin)
-{
-	std::string command = "raspi-gpio set " + std::to_string(pin) + " op";
-	int ret = std::system(command.c_str());
-	std::cout << "Called " << command << " return " << ret << std::endl;
-	pin += Offset;
-	if(pin > 0)
-	{
-		// export the pin
-		std::ofstream exportFile("/sys/class/gpio/export");
-		exportFile << pin;
-		exportFile.close();
-
-		// set the direction
-		std::ofstream directionFile("/sys/class/gpio/gpio" + std::to_string(pin) + "/direction");
-		directionFile << "out";
-		directionFile.close();
-	}
-}
-
-void GPIO::SetDigitalOut(int pin, bool value)
-{
-	pin += Offset;
-	if(pin > 0)
-	{
-		std::ofstream valueFile("/sys/class/gpio/gpio" + std::to_string(pin) + "/value");
-		valueFile << value;
-		valueFile.close();
-	}
-}
-
-bool GPIO::GetDigitalIn(int pin, int& value)
-{
-	pin += Offset;
-	if(pin > 0)
-	{
-		std::ifstream valueFile("/sys/class/gpio/gpio" + std::to_string(pin) + "/value");
-		valueFile >> value;
-		valueFile.close();
-	}
-	return true;
-}
-
-void GPIO::setPullUp(int gpio, GPIO::GPIO_PULL pull)
-{
-
-	std::string command = "raspi-gpio set " + std::to_string(gpio);
-	if(pull == GPIO::GPIO_PULL::OFF)
-	{
-		command += " pn";
-	}
-	else if(pull == GPIO::GPIO_PULL::DOWN)
-	{
-		command += " pd";
-	}
-	else if(pull == GPIO::GPIO_PULL::UP)
-	{
-		command += " pu";
-	}
-	int ret = std::system(command.c_str());
-	std::cout << "Called " << command << " return " << ret << std::endl;
-}
+#include <gpiod.h>
 
 namespace mandeye
 {
@@ -92,7 +10,7 @@ using namespace GPIO;
 bool GpioClient::ButtonData::GetButtonState(const GpioClient::ButtonData& button)
 {
 	int rawButtonState = -1;
-	GetDigitalIn(button.m_pin, rawButtonState);
+	//GetDigitalIn(button.m_pin, rawButtonState);
 	if(button.m_pullMode == GPIO::GPIO_PULL::UP)
 	{
 		return rawButtonState == 0;
@@ -122,32 +40,58 @@ GpioClient::GpioClient(bool sim)
 
 	if(!sim)
 	{
+		const auto& chipPath = mandeye::GetGPIOChip();
+		std::cout << "Opening GPIO chip " << chipPath << std::endl;
+
+		m_chip = gpiod_chip_open(chipPath);
+		if (!m_chip) {
+			std::cerr << "Error: Unable to open GPIO chip." << std::endl;
+			return;
+		}
 		std::lock_guard<std::mutex> lck{m_lock};
 
-		CreateDigitalOut(hardware::GetLED(LED::LED_GPIO_STOP_SCAN));
-		CreateDigitalOut(hardware::GetLED(LED::LED_GPIO_COPY_DATA));
-		CreateDigitalOut(hardware::GetLED(LED::LED_GPIO_CONTINOUS_SCANNING));
-		//
-		CreateDigitalOut(hardware::GetLED(LED::BUZZER));
-		CreateDigitalOut(hardware::GetLED(LED::LIDAR_SYNC_1));
-		CreateDigitalOut(hardware::GetLED(LED::LIDAR_SYNC_2));
-
-		// set pull
-
-		CreateDigitalIn(hardware::GetButton(BUTTON::BUTTON_STOP_SCAN));
-		CreateDigitalIn(hardware::GetButton(BUTTON::BUTTON_CONTINOUS_SCANNING));
-
-		m_buttons[BUTTON::BUTTON_STOP_SCAN].m_pin = hardware::GetButton(BUTTON::BUTTON_STOP_SCAN);
-		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING].m_pin = hardware::GetButton(BUTTON::BUTTON_CONTINOUS_SCANNING);
-
-		m_buttons[BUTTON::BUTTON_STOP_SCAN].m_pullMode = hardware::GetPULL(BUTTON::BUTTON_STOP_SCAN);
-		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING].m_pullMode = hardware::GetPULL(BUTTON::BUTTON_CONTINOUS_SCANNING);
-
-		// set pull
-		for(auto& [_, button] : m_buttons)
+		const std::vector<LED> leds {
+			LED::LED_GPIO_STOP_SCAN,
+			LED::LED_GPIO_COPY_DATA,
+			LED::LED_GPIO_CONTINOUS_SCANNING,
+			LED::BUZZER,
+			LED::LIDAR_SYNC_1,
+			LED::LIDAR_SYNC_2,
+		};
+		for (auto &led : leds)
 		{
-			setPullUp(button.m_pin, button.m_pullMode);
+			LedData ledData;
+			ledData.m_name = LedToName.at(led);
+			ledData.m_pin = hardware::GetLED(led);
+			ledData.m_line = gpiod_chip_get_line(m_chip, ledData.m_pin);
+			if (!ledData.m_line)
+			{
+				std::cerr << "Failed to create line at pin " << ledData.m_pin << " of " << ledData.m_name << std::endl;
+			}
+			int ret = gpiod_line_request_output(ledData.m_line, ledData.m_name.c_str(), 0);
+			if (ret < 0)
+			{
+				std::cerr << "Failed to create line at pin " << ledData.m_pin << " of " << ledData.m_name << std::endl;
+			}
+			m_ledGpio[led] = ledData;
 		}
+
+		// set pull
+
+//		CreateDigitalIn(hardware::GetButton(BUTTON::BUTTON_STOP_SCAN));
+//		CreateDigitalIn(hardware::GetButton(BUTTON::BUTTON_CONTINOUS_SCANNING));
+//
+//		m_buttons[BUTTON::BUTTON_STOP_SCAN].m_pin = hardware::GetButton(BUTTON::BUTTON_STOP_SCAN);
+//		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING].m_pin = hardware::GetButton(BUTTON::BUTTON_CONTINOUS_SCANNING);
+//
+//		m_buttons[BUTTON::BUTTON_STOP_SCAN].m_pullMode = hardware::GetPULL(BUTTON::BUTTON_STOP_SCAN);
+//		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING].m_pullMode = hardware::GetPULL(BUTTON::BUTTON_CONTINOUS_SCANNING);
+//
+//		// set pull
+//		for(auto& [_, button] : m_buttons)
+//		{
+//			setPullUp(button.m_pin, button.m_pullMode);
+//		}
 
 		//		m_buttons[BUTTON::BUTTON_STOP_SCAN] =
 		//			std::make_unique<PushButton>(hardware::GetButton(BUTTON::BUTTON_STOP_SCAN), hardware::GetPULL(BUTTON::BUTTON_STOP_SCAN));
@@ -233,7 +177,7 @@ void GpioClient::setLed(LED led, bool state)
 	m_ledState[led] = state;
 	if(!m_useSimulatedGPIO)
 	{
-		SetDigitalOut(hardware::GetLED(led), state);
+		gpiod_line_set_value(m_ledGpio[led].m_line, state?0:1);
 	}
 }
 
@@ -266,18 +210,18 @@ void GpioClient::beep(const std::vector<int>& durations)
 			const auto sleepDuration = std::chrono::milliseconds(duration);
 			if(!isOn)
 			{
-				SetDigitalOut(buzzerPin, true);
+//				SetDigitalOut(buzzerPin, true);
 				std::this_thread::sleep_for(sleepDuration);
 				isOn = true;
 			}
 			else
 			{
-				SetDigitalOut(buzzerPin, false);
+//				SetDigitalOut(buzzerPin, false);
 				std::this_thread::sleep_for(sleepDuration);
 				isOn = false;
 			}
 		}
-		SetDigitalOut(buzzerPin, false);
+//		SetDigitalOut(buzzerPin, false);
 	}
 }
 

@@ -7,15 +7,9 @@
 
 #include "hardware_config/mandeye.h"
 
-namespace GPIO
-{
-	constexpr int Offset = 512;
-	void CreateDigitalOut(int pin);
-	void CreateDigitalIn(int pin);
-	void SetDigitalOut(int pin, bool value);
-	bool GetDigitalIn(int pin, int& value);
-	void setPullUp(int gpio, GPIO::GPIO_PULL pull);
-}
+// Forward declaration for GPIOD
+struct gpiod_chip;
+struct gpiod_line;
 
 namespace mandeye
 {
@@ -30,6 +24,7 @@ class GpioClient
 struct ButtonData{
 	std::string m_name; //! button name
 	int m_pin; //! pin number
+	gpiod_line *m_line{nullptr};
 	uint32_t m_pressedTime {0}; //! time when button was pressed
 	GPIO::GPIO_PULL m_pullMode; //! pull up or down
 	bool m_pressed; //! is button pressed
@@ -38,8 +33,12 @@ struct ButtonData{
 
 	static bool GetButtonState(const ButtonData& button);
 	void CallUserCallbacks();
+};
 
-
+struct LedData{
+	std::string m_name;
+	int m_pin;
+	gpiod_line *m_line{nullptr};
 };
 
 public:
@@ -62,8 +61,7 @@ public:
 	void beep(const std::vector<int> &durations );
 private:
 	std::thread  m_gpioReadBackThread;
-
-
+	gpiod_chip *m_chip{nullptr}; //!< GPIO chip
 
 	//! use simulated GPIOs instead real one
 	bool m_useSimulatedGPIO{true};
@@ -78,7 +76,7 @@ private:
 	};
 
 	//! available LEDs
-	//std::unordered_map<hardware::LED, std::unique_ptr<GPIO::DigitalOut>> m_ledGpio;
+	std::unordered_map<hardware::LED, LedData> m_ledGpio;
 
 	//! available Buttons
 	std::unordered_map<hardware::BUTTON, ButtonData> m_buttons;

@@ -7,9 +7,6 @@
 [submodule "3rd/pistache"]
 	path = 3rd/pistache
 	url = https://github.com/pistacheio/pistache.git
-[submodule "3rd/CppGPIO"]
-	path = 3rd/CppGPIO
-	url = https://github.com/JoachimSchurig/CppGPIO.git
 [submodule "3rd/libserial"]
 	path = 3rd/libserial
 	url = https://github.com/crayzeewulf/libserial.git
