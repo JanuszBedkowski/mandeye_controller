@@ -24,6 +24,9 @@ public:
 	// mandeye_utils::TimeStampProvider overrides ...
 	double getTimestamp() override;
 
+	//! Return current mapping from serial number to lidar id
+	std::unordered_map<uint32_t, std::string> getSerialNumberToLidarIdMapping() const;
+
 private:
 	uint64_t m_timestamp;
 	uint64_t m_recivedImuMsgs{0};
@@ -31,6 +34,7 @@ private:
 	static std::mutex m_bufferImuMutex;
 	static std::mutex m_bufferLidarMutex;
 	static std::mutex m_lastTimestampMutex;
+	static std::mutex m_lidarIdToHandleMappingMutex;
 
 	static double m_LastTimestamp;
 	static LivoxPointsBufferPtr m_bufferLivoxPtr;
@@ -54,6 +58,8 @@ private:
 	static DeviceItemType devices[kMaxLidarCount];
 	static uint32_t data_recveive_count[kMaxLidarCount];
 	static uint32_t imu_recveive_count[kMaxLidarCount];
+
+	static std::unordered_map<uint32_t, std::string> m_handleToSerialNumber;
 
 
 	/** Connect all the broadcast device. */
@@ -93,7 +99,6 @@ private:
  * You need to add listening device broadcast code and set the point cloud data callback in this function.
  */
 	static void OnDeviceBroadcast(const BroadcastDeviceInfo* info);
-
 
 
 

@@ -264,16 +264,14 @@ void LivoxClient::PointCloudCallback(uint32_t handle,
 		{
 			const auto &p = p_point_data[i];
 			LivoxPoint point;
-<<<<<<< HEAD
-			point.point = p_point_data[i];
-			point.laser_id = laser_id;
-=======
+
 			point.x = p.x;
 			point.y = p.y;
 			point.z = p.z;
 			point.reflectivity = p.reflectivity;
+			point.laser_id = laser_id;
 			point.tag = p.tag;
->>>>>>> 836a49a (Adding support for livox 1)
+
 			point.timestamp = toUint64.data + i * data->time_interval;
 			if(point.timestamp > 0){
 				buffer->push_back(point);

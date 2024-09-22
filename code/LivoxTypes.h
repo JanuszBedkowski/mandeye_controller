@@ -15,6 +15,7 @@ struct LivoxPoint
 	uint8_t tag;          /**< Tag */
 	uint64_t timestamp;
 	uint8_t line_id;
+	uint16_t laser_id;
 };
 
 struct LivoxIMU
@@ -26,6 +27,7 @@ struct LivoxIMU
 	float acc_y;
 	float acc_z;
 	uint64_t timestamp;
+	uint16_t laser_id;
 };
 
 using LivoxPointsBuffer = std::deque<LivoxPoint>;

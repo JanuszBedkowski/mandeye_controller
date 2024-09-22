@@ -1,5 +1,6 @@
 #include "LivoxClientLegacy.h"
 #include <iostream>
+#include <thread>
 namespace mandeye
 {
 
@@ -36,17 +37,19 @@ LivoxLegacyClient::DeviceItemType LivoxLegacyClient::devices[kMaxLidarCount];
 uint32_t LivoxLegacyClient::data_recveive_count[kMaxLidarCount];
 uint32_t LivoxLegacyClient::imu_recveive_count[kMaxLidarCount];
 
+
 int LivoxLegacyClient::lidar_count = 0;
 char LivoxLegacyClient::broadcast_code_list[kMaxLidarCount][kBroadcastCodeSize];
 
 std::mutex LivoxLegacyClient::m_bufferImuMutex;
 std::mutex LivoxLegacyClient::m_bufferLidarMutex;
 std::mutex LivoxLegacyClient::m_lastTimestampMutex;
+std::mutex LivoxLegacyClient::m_lidarIdToHandleMappingMutex;
 
 double LivoxLegacyClient::m_LastTimestamp=0;
 LivoxPointsBufferPtr LivoxLegacyClient::m_bufferLivoxPtr;
 LivoxIMUBufferPtr LivoxLegacyClient::m_bufferIMUPtr;
-
+std::unordered_map<uint32_t, std::string> LivoxLegacyClient::m_handleToSerialNumber;
 
 bool LivoxLegacyClient::Initialize()
 {
@@ -74,6 +77,14 @@ bool LivoxLegacyClient::Initialize()
 	if(!Start())
 	{
 		Uninit();
+		return false;
+	}
+
+	std::this_thread::sleep_for(std::chrono::seconds(1));
+
+	if (lidar_count == 0)
+	{
+		printf("No Livox LiDARs detected!\n");
 		return false;
 	}
 
@@ -354,10 +365,13 @@ void LivoxLegacyClient::LidarConnect(const DeviceInfo* info)
 {
 	uint8_t handle = info->handle;
 	QueryDeviceInformation(handle, OnDeviceInformation, NULL);
+
 	if(devices[handle].device_state == kDeviceStateDisconnect)
 	{
 		devices[handle].device_state = kDeviceStateConnect;
 		devices[handle].info = *info;
+		std::unique_lock<std::mutex> lcK(m_lidarIdToHandleMappingMutex);
+		m_handleToSerialNumber[handle] = info->broadcast_code;
 	}
 }
 
@@ -492,4 +506,12 @@ void LivoxLegacyClient::stopLog()
 	m_bufferLivoxPtr = nullptr;
 	m_bufferIMUPtr = nullptr;
 }
+
+std::unordered_map<uint32_t, std::string> LivoxLegacyClient::getSerialNumberToLidarIdMapping() const
+{
+	std::unique_lock<std::mutex> lcK(m_lidarIdToHandleMappingMutex);
+	return m_handleToSerialNumber;
+}
+
+
 } // namespace mandeye

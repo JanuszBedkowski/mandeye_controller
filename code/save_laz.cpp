@@ -118,12 +118,9 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 		point->intensity = p.reflectivity;
 		point->gps_time = p.timestamp * 1e-9;
 		point->user_data = p.line_id;
-<<<<<<< HEAD
-		point->classification = p.point.tag;
-		point->user_data = p.laser_id;
-=======
 		point->classification = p.tag;
->>>>>>> 836a49a (Adding support for livox 1)
+		point->user_data = p.laser_id;
+		point->classification = p.tag;
 		p_count++;
 		coordinates[0] = 0.001 * p.x;
 		coordinates[1] = 0.001 * p.y;
