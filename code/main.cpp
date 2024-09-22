@@ -84,6 +84,7 @@ const std::map<States, std::string> StatesToString{
 };
 
 std::atomic<bool> isRunning{true};
+std::atomic<bool> isLidarError{false};
 std::mutex livoxClientPtrLock;
 
 std::shared_ptr<LivoxImplementation> livoxCLientPtr;
@@ -370,6 +371,10 @@ void stateWatcher()
 		}
 		else if(app_state == States::IDLE)
 		{
+			if(isLidarError)
+			{
+				app_state = States::LIDAR_ERROR;
+			}
 			if(gpioClientPtr)
 			{
 				mandeye::gpioClientPtr->setLed(mandeye::GpioClient::LED::LED_GPIO_STOP_SCAN, false);
@@ -711,7 +716,6 @@ struct PistacheServerHandler : public Http::Handler
 int main(int argc, char** argv)
 {
 	std::cout << "program: " << argv[0] << " v0.5" << std::endl;
-	bool lidar_error = false;
 	Address addr(Ipv4::any(), SERVER_PORT);
 
 	auto server = std::make_shared<Http::Endpoint>(addr);
@@ -733,13 +737,13 @@ int main(int argc, char** argv)
 #ifdef USE_LIVOX_SDK2
 
 		if(!mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", MANDEYE_LIVOX_LISTEN_IP))){
-			lidar_error = true;
+			mandeye::isLidarError.store(true);
 		}
 #endif
 #ifdef USE_LIVOX_SDK1
 		if(!mandeye::livoxCLientPtr->Initialize())
 		{
-			lidar_error = true;
+			mandeye::isLidarError.store(true);
 		}
 #endif
 
@@ -794,28 +798,23 @@ int main(int argc, char** argv)
 		{
 			mandeye::isRunning.store(false);
 		}
-		if(!lidar_error){
-			std::cout << "Press q -> quit, s -> start scan , e -> end scan" << std::endl;
+		std::cout << "Press q -> quit, s -> start scan , e -> end scan" << std::endl;
 
-			if(ch == 's')
+		if(ch == 's')
+		{
+			if(mandeye::StartScan())
 			{
-				if(mandeye::StartScan())
-				{
-					std::cout << "start scan success!" << std::endl;
-				}
+				std::cout << "start scan success!" << std::endl;
 			}
-			else if(ch == 'e')
-			{
-				if(mandeye::StopScan())
-				{
-					std::cout << "stop scan success!" << std::endl;
-				}
-			}
-		}else{
-			mandeye::app_state = mandeye::States::LIDAR_ERROR;
-			std::cout << "lidar error" << std::endl;
-			std::this_thread::sleep_for(1000ms);
 		}
+		else if(ch == 'e')
+		{
+			if(mandeye::StopScan())
+			{
+				std::cout << "stop scan success!" << std::endl;
+			}
+		}
+
 	}
 
 	server->shutdown();
