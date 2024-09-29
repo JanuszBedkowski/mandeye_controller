@@ -80,7 +80,16 @@ bool LivoxLegacyClient::Initialize()
 		return false;
 	}
 
-	std::this_thread::sleep_for(std::chrono::seconds(1));
+	// wait 30 sec fo new lidar
+	for (int i = 0; i < 30; i++)
+	{
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (lidar_count>0)
+		{
+			break ;
+		}
+	}
+
 
 	if (lidar_count == 0)
 	{
