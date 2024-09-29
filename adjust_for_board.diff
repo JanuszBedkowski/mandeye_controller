@@ -1,0 +1,39 @@
+diff --git a/code/gpios.cpp b/code/gpios.cpp
+index b9e2755..ca2105b 100644
+--- a/code/gpios.cpp
++++ b/code/gpios.cpp
+@@ -19,12 +19,12 @@ GpioClient::GpioClient(bool sim)
+ 	if(!sim)
+ 	{
+ 		std::lock_guard<std::mutex> lck{m_lock};
+-		m_ledGpio[LED::LED_GPIO_STOP_SCAN] = std::make_unique<DigitalOut>(26);
+-		m_ledGpio[LED::LED_GPIO_COPY_DATA] = std::make_unique<DigitalOut>(19);
+-		m_ledGpio[LED::LED_GPIO_CONTINOUS_SCANNING] = std::make_unique<DigitalOut>(13);
++		m_ledGpio[LED::LED_GPIO_STOP_SCAN] = std::make_unique<DigitalOut>(20);
++		m_ledGpio[LED::LED_GPIO_COPY_DATA] = std::make_unique<DigitalOut>(16);
++		m_ledGpio[LED::LED_GPIO_CONTINOUS_SCANNING] = std::make_unique<DigitalOut>(12);
+ 			
+-		m_buttons[BUTTON::BUTTON_STOP_SCAN] = std::make_unique<PushButton>(5, GPIO::GPIO_PULL::UP);
+-		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING] = std::make_unique<PushButton>(6, GPIO::GPIO_PULL::UP);
++		m_buttons[BUTTON::BUTTON_STOP_SCAN] = std::make_unique<PushButton>(25, GPIO::GPIO_PULL::UP);
++		m_buttons[BUTTON::BUTTON_CONTINOUS_SCANNING] = std::make_unique<PushButton>(8, GPIO::GPIO_PULL::UP);
+ 
+ 		for(auto& [buttonID, ptr] : m_buttons)
+ 		{
+@@ -110,4 +110,4 @@ void GpioClient::addButtonCallback(GpioClient::BUTTON btn,
+ 	(it->second)[callbackName] = callback;
+ }
+ 
+-} // namespace mandeye
+\ No newline at end of file
++} // namespace mandeye
+diff --git a/service/start_mandeye_controllel.sh b/service/start_mandeye_controllel.sh
+index 7cc472b..1026312 100755
+--- a/service/start_mandeye_controllel.sh
++++ b/service/start_mandeye_controllel.sh
+@@ -2,4 +2,4 @@
+
+ sleep 20
+
+-/home/mandeye/mandeye_controller/build/control_program
++/home/pi/mandeye_controller/build/control_program
