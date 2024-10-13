@@ -254,10 +254,7 @@ void GpioClient::addButtonCallback(hardware::BUTTON btn, const std::string& call
 
 void GpioClient::beep(const std::vector<int>& durations)
 {
-	std::lock_guard<std::mutex> lck{m_lock};
-
-	std::cerr << "No LED with id " << (int)LED::BUZZER << " in hardware config " << hardware::mandeyeHarwareType() << std::endl;
-	return;
+	//std::lock_guard<std::mutex> lck{m_lock};
 
 	if(!m_useSimulatedGPIO)
 	{
@@ -274,12 +271,11 @@ void GpioClient::beep(const std::vector<int>& durations)
 			}
 			else
 			{
-				setLed(buzzerGpio, true);
+				setLed(buzzerGpio, false);
 				std::this_thread::sleep_for(sleepDuration);
 				isOn = false;
 			}
 		}
-//		SetDigitalOut(buzzerPin, false);
 	}
 }
 

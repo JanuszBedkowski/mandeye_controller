@@ -71,13 +71,13 @@ target_link_libraries(control_program pthread livox_lidar_sdk_static pistache at
 
 add_executable(led_demo code/led_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
-target_link_libraries(led_demo gpiod)
+target_link_libraries(led_demo gpiod pthread)
 
 add_executable(fake_pps code/fake_pps.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
-target_link_libraries(fake_pps ${LIBSERIAL_LIBRARY} gpiod)
+target_link_libraries(fake_pps ${LIBSERIAL_LIBRARY} gpiod pthread)
 
 
 add_executable(button_demo code/button_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
-target_link_libraries(button_demo gpiod)
+target_link_libraries(button_demo gpiod pthread)

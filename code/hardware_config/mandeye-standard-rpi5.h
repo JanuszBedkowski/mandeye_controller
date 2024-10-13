@@ -46,7 +46,7 @@ constexpr int GetLED(LED led)
 	}
 	if(led == LED::BUZZER)
 	{
-		return -1;
+		return 12;
 	}
 	return -1;
 }
