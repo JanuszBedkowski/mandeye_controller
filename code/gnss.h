@@ -9,6 +9,7 @@
 #include "thread"
 #include "utils/TimeStampReceiver.h"
 #include "minmea.h"
+#include <atomic>
 namespace mandeye
 {
 
@@ -20,7 +21,7 @@ public:
 	nlohmann::json produceStatus();
 
 	//! Spins up a thread that reads from the serial port
-	bool startListener(const std::string& portName, int baudRate);
+	bool startListener(const std::string& portName, LibSerial::BaudRate baudRate);
 	bool startListener();
 	//! Start logging into the buffers
 	void startLog();
@@ -30,6 +31,9 @@ public:
 
 	//! Retrieve all data from the buffer, in form of CSV lines
 	std::deque<std::string> retrieveData();
+
+	//! Addcallback on data received
+	void setDataCallback(const std::function<void(const minmea_sentence_gga& gga)>& callback);
 
 private:
 	std::mutex m_bufferMutex;
@@ -49,5 +53,8 @@ private:
 	//! Convert a minmea_sentence_gga to a CSV line
 	std::string GgaToCsvLine(const minmea_sentence_gga& gga, double laserTimestamp);
 
+	//! Callbacks to call when new data is received
+	std::function<void(const minmea_sentence_gga& gga)> m_dataCallback;
+	std::atomic<unsigned uint32_t> m_messageCount{0};
 };
 } // namespace mandeye
