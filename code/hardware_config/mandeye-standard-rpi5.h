@@ -17,7 +17,8 @@ constexpr const char* mandeyeHarwareType()
 
 constexpr const char* GetGPIOChip()
 {
-	return "/dev/gpiochip0";
+	//for raspberry pi 5
+	return "/dev/gpiochip4";
 }
 
 constexpr int GetLED(LED led)
@@ -45,7 +46,7 @@ constexpr int GetLED(LED led)
 	}
 	if(led == LED::BUZZER)
 	{
-		return 12 ;
+		return 12;
 	}
 	return -1;
 }
