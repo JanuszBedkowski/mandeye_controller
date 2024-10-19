@@ -35,6 +35,12 @@ Feel free to reach out if you have any questions or need further assistance!
 
 [Wiring manual](doc/wiring/wiring.md)
 
+
+## Video guide 
+Time-lapse video guide to build and configure the system.
+
+[Youtube video](https://youtu.be/BXBbuSJMFEo)
+
 # Software
 
 # Important notes
