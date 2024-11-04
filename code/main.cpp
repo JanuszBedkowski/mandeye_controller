@@ -12,12 +12,13 @@
 #include <iostream>
 #include <string>
 #include "gnss.h"
+#include "publisher.h"
 #include <chrono>
 
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
 #define MANDEYE_REPO "/media/usb/"
 #define MANDEYE_GPIO_SIM false
-#define SERVER_PORT 8003
+#define SERVER_PORT 8004
 
 
 namespace utils
@@ -71,6 +72,7 @@ std::shared_ptr<GNSSClient> gnssClientPtr;
 std::mutex gpioClientPtrLock;
 std::shared_ptr<GpioClient> gpioClientPtr;
 std::shared_ptr<FileSystemClient> fileSystemClientPtr;
+std::shared_ptr<Publisher> publisherPtr;
 
 mandeye::States app_state{mandeye::States::WAIT_FOR_RESOURCES};
 
@@ -291,9 +293,12 @@ void stateWatcher()
 		app_state = States::USB_IO_ERROR;
 	}
 
-
 	while(isRunning)
 	{
+		if (mandeye::publisherPtr){
+			mandeye::publisherPtr->SetMode(StatesToString.at(app_state));
+
+		}
 		if(oldState != app_state)
 		{
 			std::cout << "State transtion from " << StatesToString.at(oldState) << " to " << StatesToString.at(app_state) << std::endl;
@@ -339,6 +344,10 @@ void stateWatcher()
 				// play hello beep
 				mandeye::gpioClientPtr->beep({100, 50, 100, 50, 100, 50,100, 50,100, 50,100, 50 }); // beep, beep, beeeeeep
 
+			}
+			if (mandeye::publisherPtr)
+			{
+				mandeye::publisherPtr->SetWorkingDirectory(stopScanDirectory, continousScanDirectory);
 			}
 		}
 		else if(app_state == States::IDLE)
@@ -694,6 +703,7 @@ struct PistacheServerHandler : public Http::Handler
 };
 #endif
 
+
 int main(int argc, char** argv)
 {
 	std::cout << "program: " << argv[0] << " v0.5" << std::endl;
@@ -708,6 +718,7 @@ int main(int argc, char** argv)
 	});
 
 	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", MANDEYE_REPO));
+
 
 	std::thread thLivox([&]() {
 		{
@@ -740,6 +751,10 @@ int main(int argc, char** argv)
 			});
 
         }
+		// start zeromq publisher
+		mandeye::publisherPtr = std::make_shared<mandeye::Publisher>();
+		mandeye::publisherPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
+
 	});
 
 
