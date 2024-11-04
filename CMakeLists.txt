@@ -62,11 +62,13 @@ if(NOT GPIOD_LIBRARY)
 endif()
 
 
+
 #executable
 add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h code/LivoxClient.cpp code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp ${PISTACHE_SRC}
-        code/utils/TimeStampReceiver.cpp)
+        code/utils/TimeStampReceiver.cpp code/publisher.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
-target_link_libraries(control_program pthread livox_lidar_sdk_static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod)
+
+target_link_libraries(control_program pthread livox_lidar_sdk_static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod zmq)
 
 
 add_executable(led_demo code/led_demo.cpp code/gpios.cpp)
@@ -81,3 +83,4 @@ target_link_libraries(fake_pps ${LIBSERIAL_LIBRARY} gpiod pthread)
 add_executable(button_demo code/button_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
 target_link_libraries(button_demo gpiod pthread)
+
