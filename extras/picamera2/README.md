@@ -27,7 +27,7 @@ User=mandeye
 StandardOutput=null
 StandardError=null
 ExecStartPre=/bin/sleep 20
-ExecStart=python3 /home/robot/mandeye_controller/build/extras/camera.py
+ExecStart=python3 /home/mandeye/mandeye_controller/extras/picamera2/camera.py 
 Restart=always
 
 [Install]
