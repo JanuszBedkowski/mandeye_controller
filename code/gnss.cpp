@@ -69,6 +69,8 @@ void GNSSClient::worker()
 		bool is_vaild = minmea_check(line.c_str(), true);
 		if (is_vaild)
 		{
+			const double laserTimestamp = GetTimeStamp();
+			m_rawbuffer.emplace_back(RawEntryToLine(line, GetTimeStamp()));
 			minmea_sentence_gga gga;
 			bool isGGA = minmea_parse_gga(&gga, line.c_str());
 			if (isGGA)
@@ -77,7 +79,7 @@ void GNSSClient::worker()
 				{
 					m_dataCallback(gga);
 				}
-				double laserTimestamp = GetTimeStamp();
+
 				std::string csvline = GgaToCsvLine(gga, laserTimestamp);
 				std::lock_guard<std::mutex> lock(m_bufferMutex);
 				std::swap(m_lastLine, line);
@@ -98,6 +100,8 @@ void GNSSClient::worker()
 }
 void GNSSClient::startLog() {
 	std::lock_guard<std::mutex> lock(m_bufferMutex);
+	m_buffer.clear();
+	m_rawbuffer.clear();
 	m_isLogging = true;
 }
 
@@ -114,6 +118,13 @@ std::deque<std::string> GNSSClient::retrieveData()
 	return ret;
 }
 
+std::deque<std::string> GNSSClient::retrieveRawData()
+{
+	std::lock_guard<std::mutex> lock(m_bufferMutex);
+	std::deque<std::string> ret;
+	std::swap(ret, m_rawbuffer);
+	return ret;
+}
 //! Convert a minmea_sentence_gga to a CSV line
 std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double laserTimestamp)
 {
@@ -133,6 +144,19 @@ std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double lase
 	oss << gga.time.hours << ":" << gga.time.minutes << ":" << gga.time.seconds << " ";
 	oss << gga.fix_quality << " ";
 	oss << millis.count() << "\n";
+	return oss.str();
+}
+
+std::string GNSSClient::RawEntryToLine(const std::string& line, double laserTimestamp)
+{
+	auto now = std::chrono::system_clock::now();
+	auto duration = now.time_since_epoch();
+	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+
+	std:std::stringstream oss;
+	oss << std::setprecision(20) << static_cast<uint_least64_t>(laserTimestamp * 1000000000.0) << " ";
+	oss << millis.count() << " ";
+	oss << line << " ";
 	return oss.str();
 }
 
