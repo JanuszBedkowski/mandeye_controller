@@ -266,6 +266,28 @@ void saveGnssData(std::deque<std::string>& buffer, const std::string& directory,
 	return;
 }
 
+void saveGnssRawData(std::deque<std::string>& buffer, const std::string& directory, int chunk)
+{
+	using namespace std::chrono_literals;
+	char lidarName[256];
+	snprintf(lidarName, 256, "gnss%04d.nmea", chunk);
+	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
+	std::cout << "Savig gnss raw buffer of size " << buffer.size() << " to " << lidarFilePath << std::endl;
+	std::ofstream lidarStream(lidarFilePath.c_str());
+	std::stringstream ss;
+
+	for(const auto& p : buffer)
+	{
+		ss << p ;
+	}
+	lidarStream << ss.rdbuf();
+
+	lidarStream.close();
+	system("sync");
+	return;
+}
+
+
 void stateWatcher()
 {
 	using namespace std::chrono_literals;
@@ -430,9 +452,12 @@ void stateWatcher()
 
 				auto [lidarBuffer, imuBuffer] = livoxCLientPtr->retrieveData();
 				std::deque<std::string> gnssBuffer;
+				std::deque<std::string> gnssRawBuffer;
+
 				if (gnssClientPtr)
 				{
 					gnssBuffer = gnssClientPtr->retrieveData();
+					gnssRawBuffer = gnssClientPtr->retrieveRawData();
 				}
 				if(continousScanDirectory == ""){
 					app_state = States::USB_IO_ERROR;
@@ -444,6 +469,7 @@ void stateWatcher()
 					if (gnssClientPtr)
 					{
 						saveGnssData(gnssBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+						saveGnssRawData(gnssRawBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					}
 					mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_COPY_DATA, false);
 					chunksInExperimentCS++;
