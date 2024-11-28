@@ -696,7 +696,7 @@ struct PistacheServerHandler : public Http::Handler
 
 int main(int argc, char** argv)
 {
-	std::cout << "program: " << argv[0] << " v0.5" << std::endl;
+	std::cout << "program: " << argv[0] << " v0.6-dev" << std::endl;
 	Address addr(Ipv4::any(), SERVER_PORT);
 
 	auto server = std::make_shared<Http::Endpoint>(addr);
