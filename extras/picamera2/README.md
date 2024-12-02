@@ -45,3 +45,16 @@ You can check status of the service with:
 ```bash
 sudo systemctl status mandeye_picamera.service
 ```
+
+## Config
+The camera can be configured in runtime loading file from pendrive.
+Place a file `/media/usb/mandeye/mandeye_config.json`:
+```json
+{
+    "picamera":
+    {
+        "ExposureValue": -10,
+        "AnalogueGain": 22
+    }    
+}
+```
