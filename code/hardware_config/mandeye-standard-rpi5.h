@@ -80,13 +80,13 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 
 [[maybe_unused]] inline const std::string GetGNSSPort()
 {
-	return "/dev/S0";
+	return "/dev/ttyAMA0";
 };
 
 
 [[maybe_unused]] inline const LibSerial::BaudRate GetGNSSBaudrate()
 {
-	return LibSerial::BaudRate::BAUD_38400;
+	return LibSerial::BaudRate::BAUD_115200;
 };
 
 
