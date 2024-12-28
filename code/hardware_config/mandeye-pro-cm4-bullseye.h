@@ -15,9 +15,9 @@ constexpr const char* mandeyeHarwareType()
 	return "MandeyePro";
 }
 
-constexpr char* GetGPIOChip()
+constexpr const char* GetGPIOChip()
 {
-	return "gpiochip0";
+	return "/dev/gpiochip0";
 }
 
 

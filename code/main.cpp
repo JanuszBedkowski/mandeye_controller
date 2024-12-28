@@ -82,6 +82,8 @@ std::string produceReport(bool reportUSB = true)
 {
 	json j;
 	j["name"] = "Mandeye";
+	j["hardware"] = MANDEYE_HARDWARE_HEADER;
+
 	j["state"] = StatesToString.at(app_state);
 	if(livoxCLientPtr)
 	{
@@ -706,7 +708,7 @@ struct PistacheServerHandler : public Http::Handler
 
 int main(int argc, char** argv)
 {
-	std::cout << "program: " << argv[0] << " v0.6-dev" << std::endl;
+	std::cout << "program: " << argv[0] << " "<<MANDEYE_VERSION <<" " << MANDEYE_HARDWARE_HEADER << std::endl;
 	Address addr(Ipv4::any(), SERVER_PORT);
 
 	auto server = std::make_shared<Http::Endpoint>(addr);
