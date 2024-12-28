@@ -3,20 +3,11 @@ set(CMAKE_CXX_STANDARD 17)
 
 project (mandeye_multisensor)
 
-option(MANEYE_HARWARE_STANDARD "Standard version using Raspberry pi 4" OFF)
-option(MANEYE_HARWARE_PRO "Pro version using Compute module" OFF)
+set(MANDEYE_HARDWARE_HEADER CACHE STRING "Mandeye hardware setting. Choose one header from 'code/hardware/mandeye-*.h")
+add_compile_definitions(MANDEYE_HARDWARE_HEADER="${MANDEYE_HARDWARE_HEADER}")
+message(STATUS "Mandeye hardware version is : ${MANDEYE_HARDWARE_HEADER}")
 
-if(MANDEYE_HARDWARE_STANDARD)
-    add_definitions(-DMANDEYE_HARDWARE_STANDARD)
-endif()
-
-if(MANDEYE_HARDWARE_STANDARD_RPI5)
-    add_definitions(-DMANDEYE_HARDWARE_STANDARD_RPI5)
-endif()
-
-if(MANDEYE_HARDWARE_PRO)
-    add_definitions(-DMANDEYE_HARDWARE_PRO)
-endif()
+add_compile_definitions(MANDEYE_VERSION="0.6-dev")
 
 message("pistache")
 #pistache

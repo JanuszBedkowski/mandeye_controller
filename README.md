@@ -44,7 +44,8 @@ Time-lapse video guide to build and configure the system.
 # Software
 
 # Important notes
-Currently Raspbian Bullseye is recommended for the system. The system is tested on Raspbian Bullseye.
+Currently Raspbian Bookworm is recommended for the system. The system is tested on Raspbian Bookworm. 
+The version v0.5 supported Bullseye, current main branch supports Bookworm.
 The software can run other distros (e.g. Ubuntu) but it is not tested and maintained.
 
 ## Update system
@@ -69,16 +70,33 @@ static routers=0.0.0.0
 
 ## Clone and build app
 
-Note that, target hardware is defined during compilation time using `-DMANDEYE_HARDWARE_XXX:BOOL=ON` parameter.
-The next example shows how to build the app for Raspberry Pi 4 without custom carrier board.
+Note that, target hardware is defined during compilation time using `-MANDEYE_HARDWARE_HEADER=mandeye-standard-rpi4.h` parameter.
+The `MANDEYE_HARDWARE_HEADER` is one of the headers in `code/hardware_config`:
+```bash
+$ ls ./code/hardware_config/mandeye-*.h
+./code/hardware_config/mandeye-pro-cm4-bookworm.h
+./code/hardware_config/mandeye-pro-cm4-bullseye.h
+./code/hardware_config/mandeye-standard-rpi4.h
+./code/hardware_config/mandeye-standard-rpi5.h
+```
+
+| Hardware header            | What is supported             |
+|----------------------------|-------------------------------|
+|mandeye-standard-rpi4.h     | Raspberry Pi 4                |
+|mandeye-standard-rpi5.h     | Raspberry Pi 5                |
+|mandeye-pro-cm4-bookworm.h  | Raspberry Pi Compute module 4 plus carrier board|
+|mandeye-pro-cm4-bullseye.h  | Deprecated                    |
+
+
+The next example shows how to build the app for Raspberry Pi 4 without custom carrier board at Raspberry Pi 4.
 ```
 git clone https://github.com/JanuszBedkowski/mandeye_controller.git
 cd mandeye_controller
 git submodule init
 git submodule update
 mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DMANDEYE_HARDWARE_STANDARD:BOOL=ON
-make -j4
+cmake .. -DCMAKE_BUILD_TYPE=Release -DMANDEYE_HARDWARE_HEADER=mandeye-standard-rpi4.h 
+make -j1 # -j4 can be used for 8 Gb version
 ```
 
 ## Test wiring and hardware

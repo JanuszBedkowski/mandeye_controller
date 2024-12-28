@@ -7,6 +7,7 @@
 int main(int arc, char *argv[]){
 	using namespace hardware;
     std::cout << "led_demo" << std::endl;
+    std::cout << mandeyeHarwareType << std::endl;
 
     std::shared_ptr<mandeye::GpioClient> gpioClientPtr;
 

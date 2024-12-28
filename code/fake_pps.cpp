@@ -77,14 +77,17 @@ void oneSecondThread()
 	const auto portsNames = hardware::GetLidarSyncPorts();
 	for(const auto& portName : portsNames)
 	{
+		std::cout << "opening port " << portName << std::endl;
 		std::unique_ptr<LibSerial::SerialPort> serialPort = std::make_unique<LibSerial::SerialPort>();
 		serialPort->Open(portName, std::ios_base::out);
 		serialPort->SetBaudRate(LibSerial::BaudRate::BAUD_9600);
 		serialPorts.emplace_back(std::move(serialPort));
 	}
 	const auto ouputs = hardware::GetLidarSyncLEDs();
+	const auto& chipPath = mandeye::GetGPIOChip();
+	std::cout << "Opening GPIO chip " << chipPath << std::endl;
 
-	gpiod_chip *chip = gpiod_chip_open(hardware::GetGPIOChip());
+	gpiod_chip *chip = gpiod_chip_open(chipPath);
 	if (chip == nullptr)
 	{
 		std::cerr << "Error: Unable to open GPIO chip." << std::endl;
