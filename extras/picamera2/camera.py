@@ -30,6 +30,25 @@ def load_json_config(file_path):
         print(f"Error: Failed to read or parse the configuration file. {e}")
         return {}
 
+def create_default_config(file_path):
+    controls = picam2.camera_controls
+    print("Available controls:")
+    data = {}
+    data['note'] = "auto-generated file with default config. Do not edit."
+    data['picamera']={}
+    data['picamera_notes']={}
+    supported_types={float,int,bool}
+    
+    for control, info in controls.items():
+        assert(len(info)==3)
+        if type(info[0]) in supported_types or type(info[1]) in supported_types:
+            data['picamera'][control]=info[2]
+            data['picamera_notes'][control]={"min":info[0],"max":info[1], "def":info[2], "type": str(type(info[0])) }
+    
+        print(f"{control}: {info}")
+    with open(file_path, "w") as file:
+            json.dump(data,file, indent=4)
+        
 def validate_and_apply_config(config):
     """
     Validates and applies a dynamic configuration to Picamera2.
@@ -41,7 +60,9 @@ def validate_and_apply_config(config):
 
     for key, value in config.items():
         try:
-            picam2.set_controls({key: value})
+            if value is not None:
+                print (f"Set param {key} to {value}")
+                picam2.set_controls({key: value})
         except Exception as e:
             print(f"Error: Failed to apply parameter '{key}'. {e}")
 
@@ -63,8 +84,11 @@ picam2.configure(camera_config)
 #picam2.set_controls({"AeEnable": 0, "ExposureTime": 25000})  # Example: 5 ms exposure
 
 # automated exposue, set to small value
-picam2.set_controls({"ExposureValue": -6})
+create_default_config("/media/usb/mandeye_config.json.default")
+
 users_config = load_json_config("/media/usb/mandeye_config.json")
+
+
 print ("User's config:")
 print ("===========================")
 print (users_config)
