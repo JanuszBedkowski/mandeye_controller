@@ -30,6 +30,12 @@ nlohmann::json GNSSClient::produceStatus()
 	return data;
 }
 
+std::array<double, 3> GNSSClient::getBasicCoordinates()
+{
+	std::lock_guard<std::mutex> lock(m_bufferMutex);
+	return {minmea_tocoord(&lastGGA.latitude), minmea_tocoord(&lastGGA.longitude), minmea_tofloat(&lastGGA.height)};
+}
+
 bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate baudRate) {
 
 	try

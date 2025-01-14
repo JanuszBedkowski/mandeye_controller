@@ -38,6 +38,9 @@ void Publisher::worker()
 				data["time"] = static_cast<uint64_t>(time*1e9);
 				data["stopScanDirectory"] = m_stopScanDirectory;
 				data["continousScanDirectory"] = m_continousScanDirectory;
+				data["gnss"]["lat"] = m_lat;
+				data["gnss"]["lon"] = m_lon;
+				data["gnss"]["alt"] = m_alt;
 				data["mode"] = m_mode;
 			}
 			publish(data);
@@ -59,4 +62,12 @@ void Publisher::SetMode(const std::string& mode)
 	m_mode = mode;
 }
 
+
+void Publisher::SetGNSS(double lat, double lon, double alt)
+{
+	std::unique_lock<std::mutex> lock(m_mutex);
+	m_lat = lat;
+	m_lon = lon;
+	m_alt = alt;
+}
 } // namespace mandeye

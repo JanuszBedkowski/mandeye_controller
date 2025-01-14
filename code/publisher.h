@@ -19,6 +19,7 @@ public:
 	void publish(const nlohmann::json& data);
 	void SetWorkingDirectory(const std::string& stopScanDirectory, const std::string& continousScanDirectory);
 	void SetMode(const std::string& mode);
+	void SetGNSS(double lat, double lon, double alt);
 private:
 	void worker();
 	std::atomic<bool> m_running{true};
@@ -30,5 +31,9 @@ private:
 	std::thread m_thread;
 	std::mutex m_mutex;
 	double m_lastTime=0;
+	double m_lat = 0;
+	double m_lon = 0;
+	double m_alt = 0;
+	
 };
 }

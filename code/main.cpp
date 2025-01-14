@@ -775,6 +775,11 @@ int main(int argc, char** argv)
 					mandeye::gpioClientPtr->setLed(hardware::LED::BUZZER, true);
 					std::this_thread::sleep_for(std::chrono::milliseconds(10));
 					mandeye::gpioClientPtr->setLed(hardware::LED::BUZZER, false);
+					if (mandeye::publisherPtr)
+					{
+						const auto gnss = mandeye::gnssClientPtr->getBasicCoordinates();
+						mandeye::publisherPtr->SetGNSS(gnss[0], gnss[1], gnss[2]); 
+					}
 				}
 			});
 
