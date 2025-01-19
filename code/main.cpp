@@ -73,7 +73,7 @@ std::mutex gpioClientPtrLock;
 std::shared_ptr<GpioClient> gpioClientPtr;
 std::shared_ptr<FileSystemClient> fileSystemClientPtr;
 std::shared_ptr<Publisher> publisherPtr;
-
+bool disableBuzzer = false;
 mandeye::States app_state{mandeye::States::WAIT_FOR_RESOURCES};
 
 using json = nlohmann::json;
@@ -340,7 +340,10 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_CONTINOUS_SCANNING, true);
 				std::this_thread::sleep_for(1000ms);
 				std::cout << "app_state == States::LIDAR_ERROR" << std::endl;
-				mandeye::gpioClientPtr->beep({2000, 100, 2000, 100, 2000, 100, 10000});
+				if (!disableBuzzer)
+				{
+					mandeye::gpioClientPtr->beep({2000, 100, 2000, 100, 2000, 100, 10000});
+				}
 			}
 		}if(app_state == States::USB_IO_ERROR){
 			if(mandeye::gpioClientPtr){
@@ -353,8 +356,10 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_CONTINOUS_SCANNING, false);
 				std::this_thread::sleep_for(1000ms);
 				std::cout << "app_state == States::USB_IO_ERROR" << std::endl;
-				mandeye::gpioClientPtr->beep({2000, 100, 2000, 100, 2000,100, 5000});
-
+				if(!disableBuzzer)
+				{
+					mandeye::gpioClientPtr->beep({2000, 100, 2000, 100, 2000,100, 5000});
+				}
 			}
 		}
 		else if(app_state == States::WAIT_FOR_RESOURCES)
@@ -366,7 +371,10 @@ void stateWatcher()
 			{
 				app_state = States::IDLE;
 				// play hello beep
-				mandeye::gpioClientPtr->beep({100, 50, 100, 50, 100, 50,100, 50,100, 50,100, 50 }); // beep, beep, beeeeeep
+				if (!disableBuzzer)
+				{
+					mandeye::gpioClientPtr->beep({100, 50, 100, 50, 100, 50, 100, 50, 100, 50, 100, 50}); // beep, beep, beeeeeep
+				}
 
 			}
 			if (mandeye::publisherPtr)
@@ -737,6 +745,9 @@ int main(int argc, char** argv)
 	std::cout << "program: " << argv[0] << " "<<MANDEYE_VERSION <<" " << MANDEYE_HARDWARE_HEADER << std::endl;
 	Address addr(Ipv4::any(), SERVER_PORT);
 
+	mandeye::disableBuzzer = utils::getEnvBool("MANDEYE_DISABLE_BUZZER", false);
+
+	std::cout << "Buzzer is " << (mandeye::disableBuzzer ? "disabled" : "enabled") << std::endl;
 	auto server = std::make_shared<Http::Endpoint>(addr);
 	std::thread http_thread1([&]() {
 		auto opts = Http::Endpoint::options().threads(2);
@@ -769,7 +780,7 @@ int main(int argc, char** argv)
 			// set callback
 			mandeye::gnssClientPtr->setDataCallback( [&](const minmea_sentence_gga& gga)
 			{
-				if(mandeye::gpioClientPtr && gga.fix_quality > 0 && gga.satellites_tracked > 5) // if any fix quality is available
+				if(mandeye::gpioClientPtr && gga.fix_quality > 0 && gga.satellites_tracked > 5 && !mandeye::disableBuzzer ) // if any fix quality is available
 				{
 					std::lock_guard<std::mutex> l2(mandeye::gpioClientPtrLock);
 					mandeye::gpioClientPtr->setLed(hardware::LED::BUZZER, true);
@@ -793,6 +804,7 @@ int main(int argc, char** argv)
 		std::lock_guard<std::mutex> l2(mandeye::gpioClientPtrLock);
 		using namespace std::chrono_literals;
 		const bool simMode = utils::getEnvBool("MANDEYE_GPIO_SIM", MANDEYE_GPIO_SIM);
+
 		std::cout << "MANDEYE_GPIO_SIM : " << simMode << std::endl;
 		mandeye::gpioClientPtr = std::make_shared<mandeye::GpioClient>(simMode);
 		for(int i = 0; i < 3; i++)
