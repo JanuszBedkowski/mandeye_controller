@@ -106,7 +106,8 @@ for control, info in controls.items():
     print(f"{control}: {info}")
     
 print("Subscriber connected and listening for messages...")
-picam2.capture_file("/tmp/test.jpg")
+os.makedirs("/tmp/camera", exist_ok=True)
+picam2.capture_file("/tmp/camera/test.jpg")
 # Receive messages in a loop and capture an image for each
 while True:
     # Wait for a message
@@ -114,7 +115,7 @@ while True:
     print("Received message:", message)
     try:
         data = json.loads(message)
-        if data.contains('mode') and data.contains('time'):
+        if 'mode' in data and 'time' in data:
             mode = data['mode']
             ts = int(data['time'])
             data_continous = data['continousScanDirectory']
