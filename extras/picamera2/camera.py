@@ -35,8 +35,8 @@ def create_default_config(file_path):
     print("Available controls:")
     data = {}
     data['note'] = "auto-generated file with default config. Do not edit."
-    data['picamera']={}
-    data['picamera_notes']={}
+    data['picamera']={"Note" : "Here User can adjust setting of their camera!"}
+    data['picamera_notes']={"Note" : "This section is more or less comment. It contains range and default value for each and every parameter."}
     supported_types={float,int,bool}
     
     for control, info in controls.items():
@@ -73,7 +73,6 @@ socket = context.socket(zmq.SUB)
 socket.connect("tcp://localhost:5556") 
 socket.setsockopt_string(zmq.SUBSCRIBE, "")
 socket.setsockopt(zmq.CONFLATE,1)
-
 
 # Initialize the Picamera2 camera
 picam2 = Picamera2()
@@ -115,15 +114,15 @@ while True:
     print("Received message:", message)
     try:
         data = json.loads(message)
-
-        mode = data['mode']
-        ts = int(data['time'])
-        data_continous = data['continousScanDirectory']
-        
-  
-        if mode=='SCANNING':
-            filename = f"{data_continous}/photo_{ts}.jpg"
-            picam2.capture_file(filename)
-            print(f"Image saved as {filename}")
+        if data.contains('mode') and data.contains('time'):
+            mode = data['mode']
+            ts = int(data['time'])
+            data_continous = data['continousScanDirectory']
+            
+    
+            if mode=='SCANNING':
+                filename = f"{data_continous}/photo_{ts}.jpg"
+                picam2.capture_file(filename)
+                print(f"Image saved as {filename}")
     except Exception as X:
         print (X)
