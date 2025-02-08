@@ -58,3 +58,6 @@ Place a file `/media/usb/mandeye/mandeye_config.json`:
     }    
 }
 ```
+** Note ** service will create a default camera config `/media/usb/mandeye/mandeye_config.json.default` that User can take as template.
+
+
