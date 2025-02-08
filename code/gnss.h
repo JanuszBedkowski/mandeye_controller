@@ -17,7 +17,9 @@ namespace mandeye
 class GNSSClient : public mandeye_utils::TimeStampReceiver
 {
 public:
-
+	
+	std::array<double, 3> getBasicCoordinates();
+	
 	nlohmann::json produceStatus();
 
 	//! Spins up a thread that reads from the serial port
@@ -39,6 +41,7 @@ public:
 	//! Addcallback on data received
 	void setDataCallback(const std::function<void(const minmea_sentence_gga& gga)>& callback);
 
+	
 private:
 	std::mutex m_bufferMutex;
 	std::deque<std::string> m_buffer;

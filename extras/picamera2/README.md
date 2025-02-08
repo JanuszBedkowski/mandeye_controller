@@ -10,7 +10,7 @@ Prerequisites:
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install python3-zmq python3-systemmd
+sudo apt-get install python3-zmq python3-systemd python3-pil
 ```
 
 Service installation:
