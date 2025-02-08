@@ -222,6 +222,19 @@ void saveLidarList(const std::unordered_map<uint32_t, std::string> &lidars, cons
 	return;
 }
 
+void saveStatusData(const std::string& directory, int chunk)
+{
+	using namespace std::chrono_literals;
+	char statusName[256];
+	snprintf(statusName, 256, "status%04d.json", chunk);
+	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(statusName);
+	std::cout << "Savig status to " << lidarFilePath << std::endl;
+	std::ofstream lidarStream(lidarFilePath);
+	lidarStream << produceReport(false);
+	system("sync");
+	return;
+}
+
 void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chunk)
 {
 	using namespace std::chrono_literals;
@@ -474,6 +487,7 @@ void stateWatcher()
 				}else{
 					savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+					saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
 					saveLidarList(lidarList, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					if (gnssClientPtr)
@@ -559,6 +573,7 @@ void stateWatcher()
 			}else{
 				savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
 				saveLidarList(lidarList, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				if (gnssClientPtr)
@@ -641,6 +656,7 @@ void stateWatcher()
 			}else{
 				savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveImuData(imuBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				saveStatusData(stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
 				saveLidarList(lidarList, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				if (gnssClientPtr)
