@@ -4,7 +4,11 @@ import time
 import json
 import os
 from picamera2 import Picamera2
+import time
+import shutil
 
+CONFIG_PATH_USB = "/media/usb/mandeye_config.json"
+CONFIG_PATH_TMP = "/tmp/camera/mandeye_config.json"
 
 def load_json_config(file_path):
     """
@@ -35,8 +39,8 @@ def create_default_config(file_path):
     print("Available controls:")
     data = {}
     data['note'] = "auto-generated file with default config. Do not edit."
-    data['picamera']={"Note" : "Here User can adjust setting of their camera!"}
-    data['picamera_notes']={"Note" : "This section is more or less comment. It contains range and default value for each and every parameter."}
+    data['picamera']={"_Note" : "Here User can adjust setting of their camera!"}
+    data['picamera_notes']={"_Note" : "This section is more or less comment. It contains range and default value for each and every parameter."}
     supported_types={float,int,bool}
     
     for control, info in controls.items():
@@ -62,68 +66,89 @@ def validate_and_apply_config(config):
         try:
             if value is not None:
                 print (f"Set param {key} to {value}")
-                picam2.set_controls({key: value})
+                if key in controls:
+                    picam2.set_controls({key: value})
+                else:
+                    print(f"Warning: Parameter '{key}' is not supported by the camera.")
         except Exception as e:
             print(f"Error: Failed to apply parameter '{key}'. {e}")
 
+if __name__ == "__main__":
+        
+    # Set up ZeroMQ context and subscriber socket
+    context = zmq.Context()
+    socket = context.socket(zmq.SUB)
+    socket.connect("tcp://localhost:5556") # mandeye controller
+    socket.connect("tcp://localhost:5557") # web client
+    socket.setsockopt_string(zmq.SUBSCRIBE, "")
+    socket.setsockopt(zmq.CONFLATE,1)
 
-# Set up ZeroMQ context and subscriber socket
-context = zmq.Context()
-socket = context.socket(zmq.SUB)
-socket.connect("tcp://localhost:5556") 
-socket.setsockopt_string(zmq.SUBSCRIBE, "")
-socket.setsockopt(zmq.CONFLATE,1)
+    # Initialize the Picamera2 camera
+    picam2 = Picamera2()
+    camera_config = picam2.create_still_configuration(main={"size": picam2.sensor_resolution})
+    picam2.configure(camera_config)
 
-# Initialize the Picamera2 camera
-picam2 = Picamera2()
-camera_config = picam2.create_still_configuration(main={"size": picam2.sensor_resolution})
-picam2.configure(camera_config)
+    # try to copy config file from usb to /tmp/camera
+    os.makedirs("/tmp/camera", exist_ok=True)
+    if os.path.isfile(CONFIG_PATH_USB):
+        shutil.copyfile(CONFIG_PATH_USB, CONFIG_PATH_TMP)
+    else:
+        print(f"Error: File '{CONFIG_PATH_USB}' does not exist.")
+        print(f"Creating default config file at '{CONFIG_PATH_TMP}'")
+        create_default_config(CONFIG_PATH_TMP)
+    # Write a default configuration file if it does not exist
+    create_default_config(CONFIG_PATH_USB+".default")
 
-#Manual exposure time
-#picam2.set_controls({"AeEnable": 0, "ExposureTime": 25000})  # Example: 5 ms exposure
-
-# automated exposue, set to small value
-create_default_config("/media/usb/mandeye_config.json.default")
-
-users_config = load_json_config("/media/usb/mandeye_config.json")
+    # Load the configuration file from the tmp directory
+    users_config = load_json_config(CONFIG_PATH_TMP)
 
 
-print ("User's config:")
-print ("===========================")
-print (users_config)
-print ("===========================")
-validate_and_apply_config(users_config)
+    print ("User's config:")
+    print ("===========================")
+    print (users_config)
+    print ("===========================")
+    validate_and_apply_config(users_config)
 
-#
-#picam2.set_controls({"HdrMode":4});
+    picam2.start()
+    # List the controls and their properties
 
-picam2.start()
-# List the controls and their properties
+    controls = picam2.camera_controls
+    print("Available controls:")
+    for control, info in controls.items():
+        print(f"{control}: {info}")
+        
+    print("Subscriber connected and listening for messages...")
+    picam2.capture_file("/tmp/camera/test.jpg")
+    # Receive messages in a loop and capture an image for each
+    testPhotoCount = 0
+    while True:
+        # Wait for a message
+        message = socket.recv_string()
 
-controls = picam2.camera_controls
-print("Available controls:")
-for control, info in controls.items():
-    print(f"{control}: {info}")
-    
-print("Subscriber connected and listening for messages...")
-os.makedirs("/tmp/camera", exist_ok=True)
-picam2.capture_file("/tmp/camera/test.jpg")
-# Receive messages in a loop and capture an image for each
-while True:
-    # Wait for a message
-    message = socket.recv_string()
-    print("Received message:", message)
-    try:
-        data = json.loads(message)
-        if 'mode' in data and 'time' in data:
-            mode = data['mode']
-            ts = int(data['time'])
-            data_continous = data['continousScanDirectory']
-            
-    
-            if mode=='SCANNING':
-                filename = f"{data_continous}/photo_{ts}.jpg"
-                picam2.capture_file(filename)
-                print(f"Image saved as {filename}")
-    except Exception as X:
-        print (X)
+        try:
+            data = json.loads(message)
+            if 'command' in data:
+                print("Received message:", message)
+                command = data['command']
+                if command == 'RELOAD_CONFIG_TEST_PHOTO':
+                    picam2.stop()
+                    users_config = load_json_config(CONFIG_PATH_TMP)
+                    print ("User's config:")
+                    print ("===========================")
+                    print (users_config)
+                    print ("===========================")
+                    validate_and_apply_config(users_config)
+                    picam2.start()
+                    picam2.capture_file("/tmp/camera/test%03d.jpg"%testPhotoCount)
+                    testPhotoCount += 1
+
+            if 'mode' in data and 'time' in data:
+                mode = data['mode']
+                ts = int(data['time'])
+                data_continous = data['continousScanDirectory']
+                if mode=='SCANNING':
+                    filename = f"{data_continous}/photo_{ts}.jpg"
+                    picam2.capture_file(filename)
+                    print(f"Image saved as {filename}")
+        except Exception as X:
+            print (X)
