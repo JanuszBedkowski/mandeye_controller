@@ -6,9 +6,16 @@ import os
 from picamera2 import Picamera2
 import time
 import shutil
+import threading
 
 CONFIG_PATH_USB = "/media/usb/mandeye_config.json"
 CONFIG_PATH_TMP = "/tmp/camera/mandeye_config.json"
+
+received_lock = threading.Lock()
+received_timestamp = 0
+received_mode = ""
+received_command = None
+received_data_continous = ""
 
 def load_json_config(file_path):
     """
@@ -73,16 +80,40 @@ def validate_and_apply_config(config):
         except Exception as e:
             print(f"Error: Failed to apply parameter '{key}'. {e}")
 
-if __name__ == "__main__":
-        
-    # Set up ZeroMQ context and subscriber socket
+def threadedZmqClient():
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
     socket.connect("tcp://localhost:5556") # mandeye controller
     socket.connect("tcp://localhost:5557") # web client
     socket.setsockopt_string(zmq.SUBSCRIBE, "")
     socket.setsockopt(zmq.CONFLATE,1)
-
+    print("Subscriber connected and listening for messages...")
+    while True:
+        global received_mode
+        global received_command
+        global received_timestamp
+        global received_data_continous
+        # Wait for a message
+        message = socket.recv_string()
+        try:
+            data = json.loads(message)
+            if 'command' in data:
+                with received_lock:
+                    received_command = data['command']
+            if 'time' in data:
+                with received_lock:
+                    received_timestamp = int(data['time'])
+            if 'mode' in data and 'continousScanDirectory' in data:
+                with received_lock:
+                    received_mode = data['mode']
+                    received_data_continous = data['continousScanDirectory']
+       
+        except Exception as X:
+            print (X)
+if __name__ == "__main__":
+        
+    # Set up ZeroMQ context and subscriber socket
+   
     # Initialize the Picamera2 camera
     picam2 = Picamera2()
     camera_config = picam2.create_still_configuration(main={"size": picam2.sensor_resolution})
@@ -102,7 +133,6 @@ if __name__ == "__main__":
     # Load the configuration file from the tmp directory
     users_config = load_json_config(CONFIG_PATH_TMP)
 
-
     print ("User's config:")
     print ("===========================")
     print (users_config)
@@ -116,39 +146,34 @@ if __name__ == "__main__":
     print("Available controls:")
     for control, info in controls.items():
         print(f"{control}: {info}")
-        
-    print("Subscriber connected and listening for messages...")
+
     picam2.capture_file("/tmp/camera/test.jpg")
     # Receive messages in a loop and capture an image for each
     testPhotoCount = 0
+    print("Hello")
+    zmqthread = threading.Thread(target=threadedZmqClient)
+    zmqthread.start()
     while True:
-        # Wait for a message
-        message = socket.recv_string()
+        filename = None
+        with received_lock:
+            if received_mode == 'SCANNING':
+                filename = f"{received_data_continous}/photo_{received_timestamp}.jpg"
+            if received_command == 'RELOAD_CONFIG_TEST_PHOTO':
+                picam2.stop()
+                users_config = load_json_config(CONFIG_PATH_TMP)
+                print ("User's config:")
+                print ("===========================")
+                print (users_config)
+                print ("===========================")
+                validate_and_apply_config(users_config)
+                picam2.start()
+                picam2.capture_file("/tmp/camera/test%03d.jpg"%testPhotoCount)
+                testPhotoCount += 1
+                received_command = None
 
-        try:
-            data = json.loads(message)
-            if 'command' in data:
-                print("Received message:", message)
-                command = data['command']
-                if command == 'RELOAD_CONFIG_TEST_PHOTO':
-                    picam2.stop()
-                    users_config = load_json_config(CONFIG_PATH_TMP)
-                    print ("User's config:")
-                    print ("===========================")
-                    print (users_config)
-                    print ("===========================")
-                    validate_and_apply_config(users_config)
-                    picam2.start()
-                    picam2.capture_file("/tmp/camera/test%03d.jpg"%testPhotoCount)
-                    testPhotoCount += 1
+        if filename is not None:
+            picam2.capture_file(filename)
+            print(f"Image saved as {filename}")
+        time.sleep(2)
+    zmqthread.join()
 
-            if 'mode' in data and 'time' in data:
-                mode = data['mode']
-                ts = int(data['time'])
-                data_continous = data['continousScanDirectory']
-                if mode=='SCANNING':
-                    filename = f"{data_continous}/photo_{ts}.jpg"
-                    picam2.capture_file(filename)
-                    print(f"Image saved as {filename}")
-        except Exception as X:
-            print (X)
