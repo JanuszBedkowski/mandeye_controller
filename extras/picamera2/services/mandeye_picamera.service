@@ -1,0 +1,15 @@
+[Unit]
+Description=Mandeye_Picamera2
+After=multi-user.target
+
+[Service]
+User=pi
+StandardOutput=null
+StandardError=null
+ExecStartPre=/bin/sleep 20
+ExecStart=python3 -u /opt/mandeye/extras/picamera2/camera.py 
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

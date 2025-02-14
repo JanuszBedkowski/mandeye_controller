@@ -1,0 +1,14 @@
+[Unit]
+Description=Mandeye_Picamera2_FTP
+After=multi-user.target
+
+[Service]
+User=pi
+StandardOutput=null
+StandardError=null
+ExecStartPre=/bin/sleep 20
+ExecStart=python3 /opt/mandeye/extras/picamera2/ftp_config_server.py 
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
