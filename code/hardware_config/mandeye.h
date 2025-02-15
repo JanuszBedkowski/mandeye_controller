@@ -1,5 +1,6 @@
 #pragma once
 
+#include "compilation_constants.h"
 #include "hardware_common.h"
 
 #ifndef MANDEYE_HARDWARE_HEADER
