@@ -80,6 +80,10 @@ nlohmann::json LivoxClient::produceStatus()
 	std::lock_guard<std::mutex> lcK1(m_bufferLidarMutex);
 	std::lock_guard<std::mutex> lcK2(m_bufferImuMutex);
 	data["LivoxLidarInfo"]["timestamp"] = m_timestamp;
+	if (m_sessionStart) {
+		data["LivoxLidarInfo"]["m_sessionStart"] = m_timestamp;
+		data["LivoxLidarInfo"]["m_elapsed"] = m_elapsed;
+	}
 
 
 	auto arrayworkMode = nlohmann::json::array();
@@ -224,6 +228,19 @@ union ToUint64
 	uint8_t array[8];
 };
 
+
+void LivoxClient::saveTimeStamp(LivoxClient *client, uint64_t timestamp) {
+	assert(client);
+	std::lock_guard<std::mutex> lcK(client->m_timestampMutex);
+	client->m_timestamp = timestamp;
+	if (client->m_sessionStart == std::nullopt) {
+		client->m_sessionStart = timestamp;
+	}
+	else {
+		client->m_elapsed = client->m_timestamp - client->m_sessionStart.value();
+	}
+}
+
 void LivoxClient::PointCloudCallback(uint32_t handle,
 									 const uint8_t dev_type,
 									 LivoxLidarEthernetPacket* data,
@@ -249,9 +266,10 @@ void LivoxClient::PointCloudCallback(uint32_t handle,
 		ToUint64 toUint64;
 		std::memcpy(toUint64.array, data->timestamp, sizeof(uint64_t));
 		{
-			std::lock_guard<std::mutex> lcK(this_ptr->m_timestampMutex);
-			this_ptr->m_timestamp = toUint64.data;
+			const auto& timestamp = toUint64.data;
+			saveTimeStamp(this_ptr, timestamp);
 			this_ptr->m_handleToLastTimestamp[handle] = toUint64.data;
+
 		}
 
 		if(this_ptr->m_bufferLivoxPtr == nullptr)
@@ -281,6 +299,7 @@ void LivoxClient::PointCloudCallback(uint32_t handle,
 	}
 }
 
+
 void LivoxClient::ImuDataCallback(uint32_t handle,
 								  const uint8_t dev_type,
 								  LivoxLidarEthernetPacket* data,
@@ -303,11 +322,8 @@ void LivoxClient::ImuDataCallback(uint32_t handle,
 		std::lock_guard<std::mutex> lcK(this_ptr->m_bufferImuMutex);
 		ToUint64 toUint64;
 		std::memcpy(toUint64.array, data->timestamp, sizeof(uint64_t));
-		{
-			std::lock_guard<std::mutex> lcK(this_ptr->m_timestampMutex);
-			this_ptr->m_timestamp = toUint64.data;
+		saveTimeStamp(this_ptr,toUint64.data);
 
-		}
 		if(this_ptr->m_bufferIMUPtr == nullptr)
 		{
 			return;
@@ -486,6 +502,21 @@ double LivoxClient::getTimestamp()
 {
 	std::lock_guard<std::mutex> lcK(m_timestampMutex);
 	return double(m_timestamp)/1e9;
+}
+
+double LivoxClient::getSessionDuration()
+{
+	std::lock_guard<std::mutex> lcK(m_timestampMutex);
+	return double(m_elapsed)/1e9;
+}
+
+double LivoxClient::getSessionStart()
+{
+	std::lock_guard<std::mutex> lcK(m_timestampMutex);
+	if (m_sessionStart.has_value()) {
+		return double(*m_sessionStart)/1e9;
+	}
+	return -1;
 }
 
 std::unordered_map<uint32_t, std::string> LivoxClient::getSerialNumberToLidarIdMapping() const

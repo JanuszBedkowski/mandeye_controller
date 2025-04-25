@@ -7,6 +7,7 @@
 #include <thread>
 #include "utils/TimeStampProvider.h"
 #include <set>
+#include <optional>
 namespace mandeye
 {
 struct LivoxPoint
@@ -67,6 +68,8 @@ public:
 
 	// mandeye_utils::TimeStampProvider overrides ...
 	double getTimestamp() override;
+	double getSessionDuration() override;
+	double getSessionStart() override;
 
 	// periodically ask lidars for status
 	void testThread();
@@ -82,7 +85,10 @@ private:
 
 	std::mutex m_timestampMutex;
 	uint64_t m_timestamp;
+	uint64_t m_elapsed;
+	std::optional<uint64_t> m_sessionStart;
 
+	static void saveTimeStamp(LivoxClient *client, uint64_t timestamp);
 	//! Multilovx support
 	mutable std::mutex m_lidarInfoMutex;
 	std::unordered_map<uint32_t, uint64_t> m_recivedImuMsgs;

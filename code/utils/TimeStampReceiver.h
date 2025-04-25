@@ -10,6 +10,9 @@ public:
 	void SetTimeStampProvider(std::shared_ptr<TimeStampProvider> timeStampProvider);
 	//! Returns the current timestamp
 	double GetTimeStamp();
+	double GetSessionDuration();
+	double GetSessionStart();
+
 protected:
 	//! The timestamp provider
 	std::shared_ptr<TimeStampProvider> m_timeStampProvider;
