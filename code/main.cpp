@@ -13,6 +13,7 @@
 #include <string>
 #include "gnss.h"
 #include "publisher.h"
+#include "compilation_constants.h"
 #include <chrono>
 
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
@@ -82,8 +83,10 @@ std::string produceReport(bool reportUSB = true)
 {
 	json j;
 	j["name"] = "Mandeye";
+	j["hash"] = GIT_HASH;
+	j["version"] = MANDEYE_VERSION;
 	j["hardware"] = MANDEYE_HARDWARE_HEADER;
-
+	j["arch"] = SYSTEM_ARCH;
 	j["state"] = StatesToString.at(app_state);
 	if(livoxCLientPtr)
 	{

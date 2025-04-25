@@ -1,0 +1,12 @@
+[Unit]
+Description=Mandeye
+After=multi-user.target
+
+[Service]
+User=pi
+ExecStartPre=/bin/sleep 20
+ExecStart=/opt/mandeye/fake_pps
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

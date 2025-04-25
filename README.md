@@ -187,4 +187,47 @@ You can check status of the service with:
 sudo systemctl status mandeye_controller.service
 ```
 
+# Buildinng DEB package
+To build DEB package, you need to install additional packages:
+```bash
+sudo apt-get install debhelper
+```
 
+Then you can build the package:
+```bash
+cd mandeye_controller
+mkdir -p build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DMANDEYE_HARDWARE_HEADER=mandeye-standard-rpi4.h
+make -j1 # -j4 can be used for 8 Gb version
+make package
+```
+
+The package will be available in the build directory.
+
+# Installation and usage of the package
+To install the package, you need to copy it to the target device and install it with `dpkg`:
+```bash
+sudo dpkg -i mandeye_controller-0.1.0-Linux.deb
+```
+
+The package will be installed in `/opt/mandeye/` directory, the service will be added to `/usr/lib/systemd/system/`.
+Note that the service will not start automatically, you need to start it manually or enable it with `systemctl`.
+There is a helper script `/opt/mandeye/helper.sh` that contains some useful commands to start, stop, and restart the service.
+
+Add it to bashrc:
+```bash
+echo "source /opt/mandeye/helper.sh" >> ~/.bashrc
+```
+
+After that start required services:
+
+```shell
+mandeye_start
+```
+
+There are optional services that can be started:
+```shell
+mandeye_fakepps_start
+mandeye_camera_start
+mandeye_camera_ftp_start
+```
