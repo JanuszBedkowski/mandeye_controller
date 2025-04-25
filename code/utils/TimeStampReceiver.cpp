@@ -18,5 +18,18 @@ double TimeStampReceiver::GetTimeStamp()
 }
 
 
+double TimeStampReceiver::GetSessionDuration() {
+	if (m_timeStampProvider) {
+		return m_timeStampProvider->getSessionDuration();
+	}
+	return 0.0;
+}
+double TimeStampReceiver::GetSessionStart() {
+	if (m_timeStampProvider) {
+		return m_timeStampProvider->getSessionStart();
+	}
+	return 0.0;
+}
+
 }
 

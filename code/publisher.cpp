@@ -30,12 +30,14 @@ void Publisher::worker()
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(25));
 		const double time = GetTimeStamp();
+		const double elapsed = GetSessionDuration();
 		nlohmann::json data;
 		if(std::floor(time) != std::floor(m_lastTime))
 		{
 			// longer report
 			std::unique_lock<std::mutex> lock(m_mutex);
 			data["time"] = static_cast<uint64_t>(time*1e9);
+			data["dur"] = static_cast<uint64_t>(elapsed*1e9);
 			data["stopScanDirectory"] = m_stopScanDirectory;
 			data["continousScanDirectory"] = m_continousScanDirectory;
 			data["mode"] = m_mode;
@@ -46,6 +48,7 @@ void Publisher::worker()
 			// short report
 			std::unique_lock<std::mutex> lock(m_mutex);
 			data["time"] = static_cast<uint64_t>(time*1e9);
+			data["dur"] = static_cast<uint64_t>(elapsed*1e9);
 		}
 		publish(data);
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
