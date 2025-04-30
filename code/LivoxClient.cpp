@@ -81,7 +81,7 @@ nlohmann::json LivoxClient::produceStatus()
 	std::lock_guard<std::mutex> lcK2(m_bufferImuMutex);
 	data["LivoxLidarInfo"]["timestamp"] = m_timestamp;
 	if (m_sessionStart) {
-		data["LivoxLidarInfo"]["m_sessionStart"] = m_timestamp;
+		data["LivoxLidarInfo"]["m_sessionStart"] = *m_sessionStart;
 		data["LivoxLidarInfo"]["m_elapsed"] = m_elapsed;
 	}
 
