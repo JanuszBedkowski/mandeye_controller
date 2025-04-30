@@ -26,6 +26,7 @@
 #define LIVOX_FILE_MANAGER_
 
 #include <string>
+#include <cstdint>
 
 namespace livox {
 namespace lidar {
