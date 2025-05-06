@@ -137,7 +137,7 @@ void oneSecondThread()
 
 		waKeUpTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(millisFromEpoch));
 
-		const uint64_t secs = startFromZero ? (millisFromEpoch - millisFromEpochStart / 1000) : (millisFromEpoch / 1000);
+		const uint64_t secs = startFromZero ? ((millisFromEpoch - millisFromEpochStart) / 1000) : (millisFromEpoch / 1000);
 		NMEA::timestamp ts = NMEA::GetTimestampFromSec(secs);
 
 		for (auto& syncOut : syncOutsLines)
