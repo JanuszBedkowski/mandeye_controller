@@ -68,6 +68,7 @@ NMEA::timestamp GetTimestampFromSec(time_t secsElapsed)
 } // namespace NMEA
 
 std::atomic<bool> stop{false};
+bool startFromZero = true;
 void oneSecondThread()
 {
 	// setup serial port
@@ -120,9 +121,11 @@ void oneSecondThread()
 	constexpr uint64_t Rate = 1000;
 	const auto now = std::chrono::system_clock::now();
 	uint64_t millisFromEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+	const uint64_t millisFromEpochStart = millisFromEpoch;
 	millisFromEpoch += Rate;
 
 	//round to next second
+
 	millisFromEpoch = (millisFromEpoch / Rate) * Rate;
 	auto waKeUpTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(millisFromEpoch));
 
@@ -134,7 +137,7 @@ void oneSecondThread()
 
 		waKeUpTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(millisFromEpoch));
 
-		const uint64_t secs = millisFromEpoch / 1000;
+		const uint64_t secs = startFromZero ? (millisFromEpoch - millisFromEpochStart / 1000) : (millisFromEpoch / 1000);
 		NMEA::timestamp ts = NMEA::GetTimestampFromSec(secs);
 
 		for (auto& syncOut : syncOutsLines)
@@ -165,6 +168,13 @@ int main(int arc, char* argv[])
 {
 	std::cout << "fake pps" << std::endl;
 
+	if (arc > 1)
+	{
+		if (strcmp(argv[1], "useEpoch") == 0)
+		{
+			startFromZero = false;
+		}
+	}
 	std::thread t1(oneSecondThread);
 	while(!stop)
 	{
