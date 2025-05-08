@@ -21,7 +21,6 @@
 #define MANDEYE_GPIO_SIM false
 #define SERVER_PORT 8003
 
-
 namespace utils
 {
 std::string getEnvString(const std::string& env, const std::string& def);
@@ -157,6 +156,12 @@ std::chrono::steady_clock::time_point stoppingStage2StartDeadlineChangeLed;
 
 bool TriggerContinousScanning(){
 	if(app_state == States::IDLE || app_state == States::STOPPED){
+
+		// intiliaze duration count
+		if (livoxCLientPtr) {
+			livoxCLientPtr->initializeDuration();
+		}
+
 		app_state = States::STARTING_SCAN;
 		return true;
 	}else if(app_state == States::SCANNING)

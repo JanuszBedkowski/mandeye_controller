@@ -80,10 +80,11 @@ nlohmann::json LivoxClient::produceStatus()
 	std::lock_guard<std::mutex> lcK1(m_bufferLidarMutex);
 	std::lock_guard<std::mutex> lcK2(m_bufferImuMutex);
 	data["LivoxLidarInfo"]["timestamp"] = m_timestamp;
-	if (m_sessionStart) {
-		data["LivoxLidarInfo"]["m_sessionStart"] = *m_sessionStart;
-		data["LivoxLidarInfo"]["m_elapsed"] = m_elapsed;
-	}
+	data["LivoxLidarInfo"]["timestamp_s"] = double(m_timestamp)/1e9;
+	data["LivoxLidarInfo"]["m_sessionStart"] = m_sessionStart.value_or(-1.f);
+	data["LivoxLidarInfo"]["m_sessionStart_s"] = double(m_sessionStart.value_or(-1.f))/1e9;
+	data["LivoxLidarInfo"]["m_elapsed"] = m_elapsed;
+	data["LivoxLidarInfo"]["m_elapsed_s"] = double(m_elapsed)/1e9;
 
 
 	auto arrayworkMode = nlohmann::json::array();
@@ -233,10 +234,8 @@ void LivoxClient::saveTimeStamp(LivoxClient *client, uint64_t timestamp) {
 	assert(client);
 	std::lock_guard<std::mutex> lcK(client->m_timestampMutex);
 	client->m_timestamp = timestamp;
-	if (client->m_sessionStart == std::nullopt) {
-		client->m_sessionStart = timestamp;
-	}
-	else {
+	
+	if (client->m_sessionStart != std::nullopt) {
 		client->m_elapsed = client->m_timestamp - client->m_sessionStart.value();
 	}
 }
@@ -517,6 +516,14 @@ double LivoxClient::getSessionStart()
 		return double(*m_sessionStart)/1e9;
 	}
 	return -1;
+}
+
+void LivoxClient::initializeDuration()
+{
+	std::lock_guard<std::mutex> lcK(m_timestampMutex);
+	if (m_sessionStart == std::nullopt) {
+		m_sessionStart = m_timestamp;
+	}
 }
 
 std::unordered_map<uint32_t, std::string> LivoxClient::getSerialNumberToLidarIdMapping() const
