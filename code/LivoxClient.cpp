@@ -5,8 +5,6 @@
 #include <iostream>
 #include <thread>
 
-extern bool first;
-
 namespace mandeye
 {
 
@@ -236,23 +234,7 @@ void LivoxClient::saveTimeStamp(LivoxClient *client, uint64_t timestamp) {
 	std::lock_guard<std::mutex> lcK(client->m_timestampMutex);
 	client->m_timestamp = timestamp;
 	
-	static bool started = false;
-	
-	
-	
-	if (client->m_sessionStart == std::nullopt) {
-		client->m_sessionStart = timestamp;
-	}
-	else {
-		if(!started){
-			if(first){
-				client->m_sessionStart = timestamp;
-				started = true;
-			}else{
-				client->m_sessionStart = timestamp;
-			}
-		}
-		
+	if (client->m_sessionStart != std::nullopt) {
 		client->m_elapsed = client->m_timestamp - client->m_sessionStart.value();
 	}
 }
@@ -533,6 +515,14 @@ double LivoxClient::getSessionStart()
 		return double(*m_sessionStart)/1e9;
 	}
 	return -1;
+}
+
+void LivoxClient::initializeDuration()
+{
+	std::lock_guard<std::mutex> lcK(m_timestampMutex);
+	if (m_sessionStart == std::nullopt) {
+		m_sessionStart = m_timestamp;
+	}
 }
 
 std::unordered_map<uint32_t, std::string> LivoxClient::getSerialNumberToLidarIdMapping() const

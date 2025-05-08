@@ -70,7 +70,7 @@ public:
 	double getTimestamp() override;
 	double getSessionDuration() override;
 	double getSessionStart() override;
-
+	void initializeDuration() override;
 	// periodically ask lidars for status
 	void testThread();
 
