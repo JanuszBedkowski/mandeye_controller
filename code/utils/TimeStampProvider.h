@@ -11,6 +11,9 @@ public:
 	//! Retrieve relative timestamp to start
 	virtual double getSessionDuration() = 0;
 
+	//! Initializes duration count, can be called once
+	virtual void initializeDuration() = 0;
+
 	virtual double getSessionStart() = 0;
 };
 } // namespace mandeye_utils
