@@ -5,6 +5,8 @@
 #include <iostream>
 #include <thread>
 
+extern bool first;
+
 namespace mandeye
 {
 
@@ -233,10 +235,24 @@ void LivoxClient::saveTimeStamp(LivoxClient *client, uint64_t timestamp) {
 	assert(client);
 	std::lock_guard<std::mutex> lcK(client->m_timestampMutex);
 	client->m_timestamp = timestamp;
+	
+	static bool started = false;
+	
+	
+	
 	if (client->m_sessionStart == std::nullopt) {
 		client->m_sessionStart = timestamp;
 	}
 	else {
+		if(!started){
+			if(first){
+				client->m_sessionStart = timestamp;
+				started = true;
+			}else{
+				client->m_sessionStart = timestamp;
+			}
+		}
+		
 		client->m_elapsed = client->m_timestamp - client->m_sessionStart.value();
 	}
 }
