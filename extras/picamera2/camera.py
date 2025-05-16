@@ -16,7 +16,7 @@ received_timestamp = 0
 received_mode = ""
 received_command = None
 received_data_continous = ""
-
+Blacklisted = ['FrameDurationLimits']
 def load_json_config(file_path):
     """
     Loads and parses the JSON configuration from the specified file.
@@ -52,7 +52,7 @@ def create_default_config(file_path):
     
     for control, info in controls.items():
         assert(len(info)==3)
-        if type(info[0]) in supported_types or type(info[1]) in supported_types:
+        if type(info[0]) in supported_types or type(info[1]) in supported_types and contol not in Blacklisted:
             data['picamera'][control]=info[2]
             data['picamera_notes'][control]={"min":info[0],"max":info[1], "def":info[2], "type": str(type(info[0])) }
     
@@ -71,7 +71,7 @@ def validate_and_apply_config(config):
 
     for key, value in config.items():
         try:
-            if value is not None:
+            if value is not None and key not in Blacklisted:
                 print (f"Set param {key} to {value}")
                 if key in controls:
                     picam2.set_controls({key: value})
@@ -176,4 +176,5 @@ if __name__ == "__main__":
             print(f"Image saved as {filename}")
         time.sleep(2)
     zmqthread.join()
+
 
