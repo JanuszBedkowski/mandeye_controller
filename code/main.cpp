@@ -1,4 +1,5 @@
 
+#include <stdint.h>
 #include <chrono>
 #include <json.hpp>
 #include <ostream>
@@ -6,7 +7,11 @@
 
 #include "save_laz.h"
 #include <FileSystemClient.h>
-#include <LivoxClient.h>
+
+
+#include "lidars/BaseLidarClient.h"
+#include "lidars/LidarImplementations.h"
+
 #include <fstream>
 #include <gpios.h>
 #include <iostream>
@@ -14,12 +19,16 @@
 #include "gnss.h"
 #include "publisher.h"
 #include "compilation_constants.h"
+
 #include <chrono>
 
+
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
+#define MANDEYE_LIDAR_SKD "LIVOX_SDK2"
 #define MANDEYE_REPO "/media/usb/"
 #define MANDEYE_GPIO_SIM false
 #define SERVER_PORT 8003
+
 
 namespace utils
 {
@@ -67,7 +76,7 @@ const std::map<States, std::string> StatesToString{
 std::atomic<bool> isRunning{true};
 std::atomic<bool> isLidarError{false};
 std::mutex livoxClientPtrLock;
-std::shared_ptr<LivoxClient> livoxCLientPtr;
+std::shared_ptr<BaseLidarClient> livoxCLientPtr;
 std::shared_ptr<GNSSClient> gnssClientPtr;
 std::mutex gpioClientPtrLock;
 std::shared_ptr<GpioClient> gpioClientPtr;
@@ -78,6 +87,8 @@ double usbWriteSpeed10Mb = 0.0;
 double usbWriteSpeed1Mb = 0.0;
 
 bool disableBuzzer = false;
+std::string lidarSDKToUse;
+nlohmann::json configJson;
 mandeye::States app_state{mandeye::States::WAIT_FOR_RESOURCES};
 
 using json = nlohmann::json;
@@ -90,14 +101,16 @@ std::string produceReport(bool reportUSB = true)
 	j["version"] = MANDEYE_VERSION;
 	j["hardware"] = MANDEYE_HARDWARE_HEADER;
 	j["arch"] = SYSTEM_ARCH;
+	j["lidar_sdk"] = lidarSDKToUse;
+	j["buzzer"] = !disableBuzzer;
 	j["state"] = StatesToString.at(app_state);
 	if(livoxCLientPtr)
 	{
-		j["livox"] = livoxCLientPtr->produceStatus();
+		j["lidar"] = livoxCLientPtr->produceStatus();
 	}
 	else
 	{
-		j["livox"] = {};
+		j["lidar"] = {};
 	}
 
 	if(gpioClientPtr)
@@ -210,7 +223,7 @@ bool TriggerContinousScanning(){
 	return false;
 }
 
-void savePointcloudData(LivoxPointsBufferPtr buffer, const std::string& directory, int chunk)
+void savePointcloudData(LidarPointsBufferPtr buffer, const std::string& directory, int chunk)
 {
 	using namespace std::chrono_literals;
 	char lidarName[256];
@@ -259,7 +272,7 @@ void saveStatusData(const std::string& directory, int chunk)
 	system("sync");
 }
 
-void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chunk)
+void saveImuData(LidarIMUBufferPtr buffer, const std::string& directory, int chunk)
 {
 	using namespace std::chrono_literals;
 	char lidarName[256];
@@ -273,8 +286,8 @@ void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chu
 	for(const auto& p : *buffer)
 	{
 		if(p.timestamp > 0){
-			ss << p.timestamp << " " << p.point.gyro_x << " " << p.point.gyro_y << " " << p.point.gyro_z << " " << p.point.acc_x << " "
-					<< p.point.acc_y << " " << p.point.acc_z << " " << p.laser_id  << " " <<p.epoch_time << "\n";
+			ss << p.timestamp << " " << p.gyro_x << " " << p.gyro_y << " " << p.gyro_z << " " << p.acc_x << " "
+					<< p.acc_y << " " << p.acc_z << " " << p.laser_id  << " " <<p.epoch_time << "\n";
 		}
 	}
 	lidarStream << ss.rdbuf();
@@ -521,8 +534,12 @@ void stateWatcher()
 					savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+
+
 					auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
 					saveLidarList(lidarList, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+
+
 					if (gnssClientPtr)
 					{
 						saveGnssData(gnssBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
@@ -607,8 +624,12 @@ void stateWatcher()
 				savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
-				auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
-				saveLidarList(lidarList, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+
+
+				// TODO - move to livox client implementation
+				// auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
+				// saveLidarList(lidarList, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+
 				if (gnssClientPtr)
 				{
 					saveGnssData(gnssData, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
@@ -690,8 +711,10 @@ void stateWatcher()
 				savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveImuData(imuBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveStatusData(stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+
 				auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
 				saveLidarList(lidarList, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+
 				if (gnssClientPtr)
 				{
 					saveGnssData(gnssData, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
@@ -789,14 +812,20 @@ struct PistacheServerHandler : public Http::Handler
 #endif
 
 
+
 int main(int argc, char** argv)
 {
+
 	std::cout << "program: " << argv[0] << " "<<MANDEYE_VERSION <<" " << MANDEYE_HARDWARE_HEADER << std::endl;
 	Address addr(Ipv4::any(), SERVER_PORT);
 
 	mandeye::disableBuzzer = utils::getEnvBool("MANDEYE_DISABLE_BUZZER", false);
+	mandeye::lidarSDKToUse = utils::getEnvString("MANDEYE_LIDAR_SDK", MANDEYE_LIDAR_SKD);
+
 
 	std::cout << "Buzzer is " << (mandeye::disableBuzzer ? "disabled" : "enabled") << std::endl;
+	std::cout << "Lidar SDK to use: " << mandeye::lidarSDKToUse << std::endl;
+
 	auto server = std::make_shared<Http::Endpoint>(addr);
 	std::thread http_thread1([&]() {
 		auto opts = Http::Endpoint::options().threads(2);
@@ -806,18 +835,28 @@ int main(int argc, char** argv)
 	});
 
 	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", MANDEYE_REPO));
-	std::thread thLivox([&]() {
-		{
-			std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
-			mandeye::livoxCLientPtr = std::make_shared<mandeye::LivoxClient>();
-		}
-		if(!mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", MANDEYE_LIVOX_LISTEN_IP))){
-			mandeye::isLidarError.store(true);
-		}
 
-		// intialize in this thread to prevent initialization fiasco
+        mandeye::configJson = mandeye::fileSystemClientPtr->GetConfig();
+        if (mandeye::configJson.is_object() && mandeye::configJson.contains("lidar_sdk"))
+	{
+		mandeye::lidarSDKToUse = mandeye::configJson["lidar_sdk"].get<std::string>();
+	}
+
+	std::cout << "Lidar SDK to use from config: " << mandeye::lidarSDKToUse << std::endl;
+
+	std::thread thLivox([&]() {
+	{
+		std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
+		mandeye::livoxCLientPtr = mandeye::createLidarClient(mandeye::lidarSDKToUse, mandeye::configJson);
+	}
+	if(!mandeye::livoxCLientPtr->startListener(utils::getEnvString("MANDEYE_LIVOX_LISTEN_IP", MANDEYE_LIVOX_LISTEN_IP)))
+	{
+		mandeye::isLidarError.store(true);
+	}
+
+	// intialize in this thread to prevent initialization fiasco
         const std::string portName = hardware::GetGNSSPort();
-		const auto baud = hardware::GetGNSSBaudrate();
+	const auto baud = hardware::GetGNSSBaudrate();
         if (!portName.empty())
         {
             mandeye::gnssClientPtr = std::make_shared<mandeye::GNSSClient>();
@@ -837,9 +876,9 @@ int main(int argc, char** argv)
 			});
 
         }
-		// start zeromq publisher
-		mandeye::publisherPtr = std::make_shared<mandeye::Publisher>();
-		mandeye::publisherPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
+	// start zeromq publisher
+	mandeye::publisherPtr = std::make_shared<mandeye::Publisher>();
+	mandeye::publisherPtr->SetTimeStampProvider(mandeye::livoxCLientPtr);
 
 	});
 

@@ -225,6 +225,38 @@ bool FileSystemClient::GetIsWritable()
 	}
 }
 
+nlohmann::json FileSystemClient::GetConfig()
+{
+	std::filesystem::path configPath = std::filesystem::path(m_repository) / std::filesystem::path(config);
+	if (!std::filesystem::exists(configPath))
+	{
+		std::cerr << "Config file does not exist at " << configPath.string() << std::endl;
+		return nlohmann::json();
+	}
+
+	nlohmann::json configJson;
+	std::ifstream configFile(configPath);
+	if (configFile.is_open())
+	{
+		try
+		{
+			configFile >> configJson;
+		}
+		catch (nlohmann::json::parse_error& e)
+		{
+			std::cerr << "Error parsing config file: " << e.what() << std::endl;
+			return nlohmann::json();
+		}
+		configFile.close();
+		return configJson;
+	}
+	else
+	{
+		std::cerr << "Failed to open config file at " << configPath.string() << std::endl;
+		return nlohmann::json();
+	}
+	return nlohmann::json();
+}
 double FileSystemClient::BenchmarkWriteSpeed(const std::string& filename, size_t fileSizeMB) {
 	const size_t bufferSize = 1024 * 1024; // 1 MB buffer
 	std::vector<char> buffer(bufferSize, 0xAA);
