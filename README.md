@@ -56,8 +56,8 @@ sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-ess
 ```
 
 
-## Static IP for eth0
-
+## Static IP for eth0 
+### Systems without network manager [Raspbian Bullseye]
 ```bash
 sudo nano /etc/dhcpcd.conf
 ```
@@ -68,6 +68,24 @@ static ip_address=192.168.1.5/24
 static routers=0.0.0.0    
 ```
 
+### Systems with network manager [Raspbian Bookwork]
+
+```bash
+sudo nmcli connection add type ethernet ifname eth0 con-name static-eth0 \
+  ipv4.addresses 192.168.1.5/24 \
+  ipv4.gateway 0.0.0.0 \
+  ipv4.method manual 
+```
+
+verify with :
+```bash
+nmcli device show eth0
+```
+
+eventually you can use
+```bash
+nmtui
+```
 ## Clone and build app
 
 Note that, target hardware is defined during compilation time using `-MANDEYE_HARDWARE_HEADER=mandeye-standard-rpi4.h` parameter.

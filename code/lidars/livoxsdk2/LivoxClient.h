@@ -8,23 +8,9 @@
 #include "utils/TimeStampProvider.h"
 #include <set>
 #include <optional>
+#include "lidars/BaseLidarClient.h"
 namespace mandeye
 {
-struct LivoxPoint
-{
-	LivoxLidarCartesianHighRawPoint point;
-	uint64_t timestamp;
-	uint8_t line_id;
-	uint16_t laser_id;
-};
-
-struct LivoxIMU
-{
-	LivoxLidarImuRawPoint point;
-	uint64_t timestamp;
-	uint16_t laser_id;
-	uint64_t  epoch_time;
-};
 
 const std::unordered_map<int32_t, const char*> WorkModeToStr{
 	{LivoxLidarWorkMode::kLivoxLidarNormal, "kLivoxLidarNormal"},
@@ -39,29 +25,22 @@ const std::unordered_map<int32_t, const char*> WorkModeToStr{
 
 };
 
-using LivoxPointsBuffer = std::deque<LivoxPoint>;
-using LivoxPointsBufferPtr = std::shared_ptr<std::deque<LivoxPoint>>;
-using LivoxPointsBufferConstPtr = std::shared_ptr<const std::deque<LivoxPoint>>;
 
-using LivoxIMUBuffer = std::deque<LivoxIMU>;
-using LivoxIMUBufferPtr = std::shared_ptr<std::deque<LivoxIMU>>;
-using LivoxIMUBufferConstPtr = std::shared_ptr<const std::deque<LivoxIMU>>;
-
-class LivoxClient : public mandeye_utils::TimeStampProvider
+class LivoxClient : public BaseLidarClient
 {
 public:
-	nlohmann::json produceStatus();
+	nlohmann::json produceStatus() override;
 
 	//! starts LivoxSDK2, interface is IP of listen interface (IP of network cards with Livox connected
-	bool startListener(const std::string& interfaceIp);
+	bool startListener(const std::string& interfaceIp) override;
 
 	//! Start log to memory data from Lidar and IMU
-	void startLog();
+	void startLog() override;
 
 	//! Stops log to memory data from Lidar and IMU
-	void stopLog();
+	void stopLog() override;
 
-	std::pair<LivoxPointsBufferPtr, LivoxIMUBufferPtr> retrieveData();
+	std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> retrieveData() override;
 
 	//! Return current mapping from serial number to lidar id
 	std::unordered_map<uint32_t, std::string> getSerialNumberToLidarIdMapping() const;
@@ -80,8 +59,8 @@ private:
 	std::mutex m_bufferImuMutex;
 	std::mutex m_bufferLidarMutex;
 
-	LivoxPointsBufferPtr m_bufferLivoxPtr{nullptr};
-	LivoxIMUBufferPtr m_bufferIMUPtr{nullptr};
+	LidarPointsBufferPtr m_bufferLivoxPtr{nullptr};
+	LidarIMUBufferPtr m_bufferIMUPtr{nullptr};
 
 	std::mutex m_timestampMutex;
 	uint64_t m_timestamp;

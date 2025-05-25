@@ -150,8 +150,8 @@ void LivoxClient::startLog()
 {
 	std::lock_guard<std::mutex> lcK1(m_bufferLidarMutex);
 	std::lock_guard<std::mutex> lcK2(m_bufferImuMutex);
-	m_bufferLivoxPtr = std::make_shared<LivoxPointsBuffer>();
-	m_bufferIMUPtr = std::make_shared<LivoxIMUBuffer>();
+	m_bufferLivoxPtr = std::make_shared<LidarPointsBuffer>();
+	m_bufferIMUPtr = std::make_shared<LidarIMUBuffer>();
 }
 
 void LivoxClient::stopLog()
@@ -162,15 +162,15 @@ void LivoxClient::stopLog()
 	m_bufferIMUPtr = nullptr;
 }
 
-std::pair<LivoxPointsBufferPtr, LivoxIMUBufferPtr> LivoxClient::retrieveData()
+std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> LivoxClient::retrieveData()
 {
 	std::lock_guard<std::mutex> lck1(m_bufferLidarMutex);
 	std::lock_guard<std::mutex> lck2(m_bufferImuMutex);
-	LivoxPointsBufferPtr returnPointerLidar{std::make_shared<LivoxPointsBuffer>()};
-	LivoxIMUBufferPtr returnPointerImu{std::make_shared<LivoxIMUBuffer>()};
+	LidarPointsBufferPtr returnPointerLidar{std::make_shared<LidarPointsBuffer>()};
+	LidarIMUBufferPtr returnPointerImu{std::make_shared<LidarIMUBuffer>()};
 	std::swap(m_bufferIMUPtr, returnPointerImu);
 	std::swap(m_bufferLivoxPtr, returnPointerLidar);
-	return std::pair<LivoxPointsBufferPtr, LivoxIMUBufferPtr>(returnPointerLidar, returnPointerImu);
+	return std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr>(returnPointerLidar, returnPointerImu);
 }
 void LivoxClient::testThread()
 {
@@ -279,8 +279,10 @@ void LivoxClient::PointCloudCallback(uint32_t handle,
 		//buffer->resize(buffer->size() + data->dot_num);
 		for(uint32_t i = 0; i < data->dot_num; i++)
 		{
-			LivoxPoint point;
-			point.point = p_point_data[i];
+			LidarPoint point;
+			point.x = 0.001 * p_point_data[i].x;
+			point.y = 0.001 * p_point_data[i].y;
+			point.x = 0.001 * p_point_data[i].z;
 			point.laser_id = laser_id;
 			point.timestamp = toUint64.data + i * data->time_interval;
 			if(point.timestamp > 0){
@@ -329,8 +331,14 @@ void LivoxClient::ImuDataCallback(uint32_t handle,
 		}
 		auto& buffer = this_ptr->m_bufferIMUPtr;
 		//buffer->resize(buffer->size() + 1);
-		LivoxIMU point;
-		point.point = *p_imu_data;
+		LidarIMU point;
+		point.acc_x = p_imu_data->acc_x;
+		point.acc_y = p_imu_data->acc_y;
+		point.acc_z = p_imu_data->acc_z;
+		point.gyro_x = p_imu_data->gyro_x;
+		point.gyro_y = p_imu_data->gyro_y;
+		point.gyro_z = p_imu_data->gyro_z;
+
 		point.timestamp = toUint64.data;
 		point.laser_id = laser_id;
 		point.epoch_time = millis.count();

@@ -12,6 +12,7 @@ namespace mandeye
 class FileSystemClient
 {
 	constexpr static char manifestFilename[]{"mandala_manifest.txt"};
+	constexpr static char config[]{"mandeye_config.json"};
 	constexpr static char versionFilename[]{"version.txt"};
 
 public:
@@ -36,7 +37,7 @@ public:
 
 	bool CreateDirectoryForStopScans(std::string &, int &id_manifest);
 
-
+	nlohmann::json GetConfig();
 private:
 	int32_t m_nextId{0};
 	std::string ConvertToText(float mb);

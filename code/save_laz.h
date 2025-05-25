@@ -1,7 +1,7 @@
 #pragma once
-#include <LivoxClient.h>
+#include "lidars/BaseLidarClient.h"
 #include <string>
 namespace mandeye
 {
-bool saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer);
+bool saveLaz(const std::string& filename, LidarPointsBufferPtr buffer);
 }
