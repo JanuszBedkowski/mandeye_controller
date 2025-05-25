@@ -12,7 +12,7 @@ nlohmann::json mandeye::LazStats::produceStatus() const {
 	status["decimation_step"] = m_decimationStep;
 	return status;
 }
-std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
+std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, LidarPointsBufferPtr buffer)
 {
 	mandeye::LazStats stats;
 	stats.m_filename = filename;
@@ -29,9 +29,9 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 
 	for(auto& p : *buffer)
 	{
-		double x = 0.001 * p.point.x;
-		double y = 0.001 * p.point.y;
-		double z = 0.001 * p.point.z;
+		double x = p.x;
+		double y = p.y;
+		double z = p.z;
 
 		max_x = std::max(max_x, x);
 		max_y = std::max(max_y, y);
@@ -130,15 +130,14 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 	{
 
 		const auto& p = buffer->at(i);
-		point->intensity = p.point.reflectivity;
+		point->intensity = p.intensity;
 		point->gps_time = p.timestamp * 1e-9;
-		point->user_data = p.line_id;
-		point->classification = p.point.tag;
+		point->classification = p.tag;
 		point->user_data = p.laser_id;
 		p_count++;
-		coordinates[0] = 0.001 * p.point.x;
-		coordinates[1] = 0.001 * p.point.y;
-		coordinates[2] = 0.001 * p.point.z;
+		coordinates[0] = p.x;
+		coordinates[1] = p.y;
+		coordinates[2] = p.z;
 		if(laszip_set_coordinates(laszip_writer, coordinates))
 		{
 			fprintf(stderr, "DLL ERROR: setting coordinates for point %I64d\n", p_count);
