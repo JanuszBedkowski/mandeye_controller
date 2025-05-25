@@ -13,3 +13,6 @@
 [submodule "3rd/minmea"]
     path = 3rd/minmea
     url = https://github.com/kosma/minmea.git
+[submodule "3rd/ouster-sdk"]
+	path = 3rd/ouster-sdk
+	url = https://github.com/ouster-lidar/ouster-sdk.git

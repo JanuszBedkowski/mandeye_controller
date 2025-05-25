@@ -29,13 +29,12 @@ message("JSON")
 #JSON
 include_directories(3rd/json)
 
-message("Livox SDK2")
-# Livox SDK2
-add_subdirectory(3rd/Livox-SDK2)
-
 
 
 include_directories(code/)
+
+set(MANDEYE_USE_OUSTER_SDK ON CACHE BOOL  "Use Ouster SDK ")
+set(MANDEYE_USE_LIVOX_SDK2 ON CACHE BOOL "Use Livox SDK (HAP/Mid360)")
 
 # NMEA and libserial
 find_path(LIBSERIAL_INCLUDE_DIR SerialPort.h
@@ -73,11 +72,57 @@ configure_file(
 # Include the generated file in the project
 include_directories(${CMAKE_BINARY_DIR})
 #executable
-add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h code/LivoxClient.cpp code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp ${PISTACHE_SRC}
-        code/utils/TimeStampReceiver.cpp code/publisher.cpp)
-set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
+set(LIDAR_SOURCES
+    code/lidars/dummy/ButterLidar.cpp
+    code/lidars/LidarImplementation.cpp
+)
+set(LIDAR_LIBRARIES )
 
-target_link_libraries(control_program pthread livox_lidar_sdk_static pistache atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod zmq)
+if (${MANDEYE_USE_OUSTER_SDK})
+    # We need to separate the Ouster SDK from the main project to avoid conflicts with SPDLOG in LIVOX SDK2
+    message("Ouster SDK")
+    add_subdirectory(3rd/ouster-sdk)
+    add_executable(ouster_client_example code/ouster_client_example.cpp)
+    target_link_libraries(ouster_client_example PRIVATE OusterSDK::ouster_client)
+
+    # Create isolated static library for Ouster integration
+    add_library(ouster_lib STATIC
+        code/lidars/ouster/OusterClient.cpp
+    )
+    target_link_libraries(ouster_lib PRIVATE OusterSDK::ouster_client)
+    target_include_directories(ouster_lib PRIVATE 3rd/ouster-sdk/ouster_client/include)
+
+    list(APPEND LIDAR_LIBRARIES ouster_lib)
+    add_compile_definitions(MANDEYE_USE_OUSTER_SDK)
+endif ()
+
+if (${MANDEYE_USE_LIVOX_SDK2})
+    message("Livox SDK2")
+    # Livox SDK2
+
+    add_subdirectory(3rd/Livox-SDK2)
+    add_library(livox2_lib STATIC
+            code/lidars/livoxsdk2/LivoxClient.cpp
+    )
+    target_link_libraries(livox2_lib PRIVATE livox_lidar_sdk_static)
+    target_include_directories(livox2_lib PRIVATE 3rd/Livox-SDK2/include)
+    include_directories(3rd/Livox-SDK2/include)
+    list(APPEND LIDAR_LIBRARIES livox2_lib)
+    # add defines
+    add_compile_definitions(MANDEYE_USE_LIVOX_SDK2)
+endif()
+
+
+add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h
+        ${LIDAR_SOURCES}
+        ${LIDAR_SOURCES}
+        code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp
+        code/utils/TimeStampReceiver.cpp code/publisher.cpp)
+
+set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic " )
+
+
+target_link_libraries(control_program pthread ${LIDAR_LIBRARIES} pistache_static atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod zmq)
 
 
 add_executable(led_demo code/led_demo.cpp code/gpios.cpp)
