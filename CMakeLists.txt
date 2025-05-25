@@ -37,6 +37,14 @@ add_subdirectory(extras)
 
 include_directories(code/)
 
+set(MANDEYE_USE_OUSTER_SDK CACHE BOOL "Use Ouster SDK as alternative to Livox SDK")
+
+if (${MANDEYE_USE_OUSTER_SDK})
+    add_subdirectory(3rd/ouster-sdk)
+    add_executable(ouster_client_example code/ouster_client_example.cpp)
+    target_link_libraries(ouster_client_example PRIVATE OusterSDK::ouster_client)
+endif ()
+
 # NMEA and libserial
 find_path(LIBSERIAL_INCLUDE_DIR SerialPort.h
         PATH_SUFFIXES include
