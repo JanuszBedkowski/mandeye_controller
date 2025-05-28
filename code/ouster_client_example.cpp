@@ -144,12 +144,18 @@ int main(int argc, char* argv[]) {
         std::ofstream out;
         out.open(filename);
         out << std::fixed << std::setprecision(4);
-
+        auto tsRef = scan.timestamp();
+        auto statusRef = scan.status();
         // write each point, filtering out points without returns
+        std::cout << "CLoud size : " << cloud.rows() << " ts size : "
+                  << tsRef.size() << " status size : " << statusRef.size()
+                  << std::endl;
         for (int i = 0; i < cloud.rows(); i++) {
+            int column = i % scan.w;
+            double ts =double(tsRef[column]) / 1e9;
             auto xyz = cloud.row(i);
             if (!xyz.isApproxToConstant(0.0))
-                out << xyz(0) << ", " << xyz(1) << ", " << xyz(2) << std::endl;
+            out << xyz(0) << ", " << xyz(1) << ", " << xyz(2) << ", " << ts << std::endl;
         }
 
         out.close();

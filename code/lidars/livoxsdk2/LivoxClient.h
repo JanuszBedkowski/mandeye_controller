@@ -43,7 +43,7 @@ public:
 	std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> retrieveData() override;
 
 	//! Return current mapping from serial number to lidar id
-	std::unordered_map<uint32_t, std::string> getSerialNumberToLidarIdMapping() const;
+	std::unordered_map<uint32_t, std::string> getSerialNumberToLidarIdMapping() const override;
 
 	// mandeye_utils::TimeStampProvider overrides ...
 	double getTimestamp() override;

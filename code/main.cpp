@@ -511,9 +511,8 @@ void stateWatcher()
 					saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 
 
-					// TODO - move to livox client implementation
-					// auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
-					// saveLidarList(lidarList, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+					auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
+					saveLidarList(lidarList, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 
 
 					if (gnssClientPtr)
@@ -688,9 +687,8 @@ void stateWatcher()
 				saveImuData(imuBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveStatusData(stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 
-				// TODO - move to livox client implementation
-				// auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
-				// saveLidarList(lidarList, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				auto lidarList = livoxCLientPtr->getSerialNumberToLidarIdMapping();
+				saveLidarList(lidarList, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 
 				if (gnssClientPtr)
 				{
