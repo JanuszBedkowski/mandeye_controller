@@ -1,6 +1,5 @@
 #pragma once
 
-#include "livox_lidar_def.h"
 #include <deque>
 #include <json.hpp>
 #include <mutex>
