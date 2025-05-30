@@ -12,18 +12,6 @@
 namespace mandeye
 {
 
-const std::unordered_map<int32_t, const char*> WorkModeToStr{
-	{LivoxLidarWorkMode::kLivoxLidarNormal, "kLivoxLidarNormal"},
-	{LivoxLidarWorkMode::kLivoxLidarWakeUp, "kLivoxLidarWakeUp"},
-	{LivoxLidarWorkMode::kLivoxLidarSleep, "kLivoxLidarSleep"},
-	{LivoxLidarWorkMode::kLivoxLidarError, "kLivoxLidarError"},
-	{LivoxLidarWorkMode::kLivoxLidarPowerOnSelfTest, "kLivoxLidarPowerOnSelfTest"},
-	{LivoxLidarWorkMode::kLivoxLidarMotorStarting, "kLivoxLidarMotorStarting"},
-	{LivoxLidarWorkMode::kLivoxLidarMotorStoping, "kLivoxLidarMotorStoping"},
-	{LivoxLidarWorkMode::kLivoxLidarUpgrade, "kLivoxLidarUpgrade"},
-	{-1, "FailedToGetWorkMode"},
-
-};
 
 
 class LivoxClient : public BaseLidarClient

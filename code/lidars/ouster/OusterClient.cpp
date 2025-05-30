@@ -54,7 +54,8 @@ public:
     mutable std::mutex m_statsMutex;
     std::unordered_map<uint32_t, uint64_t> m_receivedScans;
     std::unordered_map<uint32_t, uint64_t> m_droppedScans;
-    
+
+    std::unordered_map<uint32_t, uint64_t> m_imu_packets_received;
     // Sensor info mapping
     mutable std::mutex m_sensorInfoMutex;
     std::unordered_map<uint32_t, std::string> m_sensorIdToSerial;
@@ -134,6 +135,7 @@ nlohmann::json OusterClient::produceStatus()
         std::lock_guard<std::mutex> lock(m_impl->m_statsMutex);
         status["counters"]["received_scans"] = m_impl->m_receivedScans;
         status["counters"]["dropped_scans"] = m_impl->m_droppedScans;
+        status["counters"]["imu"] = m_impl->m_imu_packets_received;
     }
 
     // Timestamp information
@@ -147,6 +149,7 @@ nlohmann::json OusterClient::produceStatus()
         status["session_elapsed"] = m_impl->m_sessionElapsed;
         status["session_elapsed_s"] = double(m_impl->m_sessionElapsed) / 1e9;
     }
+
 
     // Buffer status
     {
@@ -318,6 +321,7 @@ void OusterClientImpl::dataThreadFunction()
             size_t h = info.format.pixels_per_column;
             m_scans.push_back(std::make_unique<ouster::LidarScan>(w, h, m_fields[i].begin(), m_fields[i].end()));
             m_luts.push_back(ouster::make_xyz_lut(info, true));
+            m_imu_packets_received[i] =0;
         }
 
         m_initSuccess = true;
@@ -335,6 +339,7 @@ void OusterClientImpl::dataThreadFunction()
 
                 // Process IMU data if logging is active
                 {
+                    m_imu_packets_received[p.source]++;
                     std::lock_guard<std::mutex> lock(m_imuBufferMutex);
                     if (m_imuBuffer) {
                         LidarIMU imuData{};
@@ -406,7 +411,13 @@ void OusterClientImpl::processScan(const ouster::LidarScan& scan)
     // Get timestamp data
     auto tsRef = scan.timestamp();
     auto statusRef = scan.status();
-    
+    bool hasReflectivity = scan.has_field(ouster::sensor::ChanField::REFLECTIVITY);
+
+    std::optional<ouster::img_t<uint8_t>> reflectivityField;
+    if (hasReflectivity) {
+        reflectivityField = scan.field<uint8_t>(ouster::sensor::ChanField::REFLECTIVITY);
+    }
+
     // Process each point
     for (size_t i = 0; i < static_cast<size_t>(cloud.rows()); i++)
     {
@@ -428,21 +439,8 @@ void OusterClientImpl::processScan(const ouster::LidarScan& scan)
         point.line_id = static_cast<uint8_t>(static_cast<size_t>(i) / scan.w); // Row index
         point.tag = 0;
         point.intensity = 0;
-        
-        // // Add additional fields if available
-        // try {
-        //     auto reflectivity = scan.field<uint32_t>(ouster::sensor::ChanField::REFLECTIVITY);
-        //     point.intensity = static_cast<float>(reflectivity(i));
-        // } catch (...) {
-        //     // Field not available
-        // }
-        //
-        try {
-            auto range = scan.field<uint32_t>(ouster::sensor::ChanField::RANGE);
-            // Range field is available but we don't have a field for it in LidarPoint
-            // Could be used for validation if needed
-        } catch (...) {
-            // Field not available
+        if (reflectivityField) {
+            point.intensity = reflectivityField->reshaped()[i];
         }
         
         m_lidarBuffer->push_back(point);

@@ -12,8 +12,9 @@ message(STATUS "Mandeye version is : ${MANDEYE_VERSION}")
 set(SYSTEM_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 message("pistache")
 #pistache
-find_package(PkgConfig)
-pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+set(PISTACHE_BUILD_TESTS OFF CACHE BOOL "Disable Pistache tests")
+add_subdirectory(3rd/pistache)
+
 
 message("LASzip library")
 # LASzip library
@@ -35,8 +36,8 @@ add_subdirectory(extras)
 
 include_directories(code/)
 
-set(MANDEYE_USE_OUSTER_SDK CACHE BOOL "Use Ouster SDK ")
-set(MANDEYE_USE_LIVOX_SDK2 CACHE BOOL "Use Livox SDK (HAP/Mid360)")
+set(MANDEYE_USE_OUSTER_SDK ON CACHE BOOL  "Use Ouster SDK ")
+set(MANDEYE_USE_LIVOX_SDK2 ON CACHE BOOL "Use Livox SDK (HAP/Mid360)")
 
 # NMEA and libserial
 find_path(LIBSERIAL_INCLUDE_DIR SerialPort.h
@@ -124,7 +125,7 @@ add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic " )
 
 
-target_link_libraries(control_program pthread ${LIDAR_LIBRARIES} PkgConfig::Pistache atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod zmq)
+target_link_libraries(control_program pthread ${LIDAR_LIBRARIES} pistache_static atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod zmq)
 
 
 add_executable(led_demo code/led_demo.cpp code/gpios.cpp)

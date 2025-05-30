@@ -27,7 +27,7 @@
 #define MANDEYE_LIDAR_SKD "LIVOX_SDK2"
 #define MANDEYE_REPO "/media/usb/"
 #define MANDEYE_GPIO_SIM false
-#define SERVER_PORT 8003
+#define SERVER_PORT 8004
 
 
 namespace utils
