@@ -180,11 +180,15 @@ bool OusterClient::startListener(const std::string& interfaceIp)
         m_impl->m_isDone = false;
         m_impl->m_dataThread = std::thread(&OusterClientImpl::dataThreadFunction, m_impl.get());
 
+        std::this_thread::sleep_for(std::chrono::seconds(5)); // Allow some time for the thread to start
+        if (!m_impl->m_initSuccess) {
+            std::cerr << "Ouster client thread did not start successfully." << std::endl;
+            return false;
+        }
         return true;
 
     } catch (const std::exception& e) {
         std::cerr << "Failed to start Ouster client: " << e.what() << std::endl;
-        m_impl->m_initSuccess = false;
         return false;
     }
 }
@@ -321,7 +325,7 @@ void OusterClientImpl::dataThreadFunction()
             size_t h = info.format.pixels_per_column;
             m_scans.push_back(std::make_unique<ouster::LidarScan>(w, h, m_fields[i].begin(), m_fields[i].end()));
             m_luts.push_back(ouster::make_xyz_lut(info, true));
-            m_imu_packets_received[i] =0;
+            m_imu_packets_received[i] = 0;
         }
 
         m_initSuccess = true;
