@@ -284,6 +284,7 @@ void OusterClientImpl::dataThreadFunction()
         ouster::sensor::sensor_config config;
         config.udp_profile_lidar = ouster::sensor::UDPProfileLidar::PROFILE_LIDAR_LEGACY;
         config.timestamp_mode = ouster::sensor::TIME_FROM_INTERNAL_OSC;
+        config.azimuth_window = {0, 360000}; // Full azimuth window
         ouster::sensor::Sensor sen(m_sensorHostname, config);
         m_sensors.push_back(sen);
 
@@ -295,7 +296,7 @@ void OusterClientImpl::dataThreadFunction()
         {
             std::lock_guard<std::mutex> lock(m_sensorInfoMutex);
             for (size_t i = 0; i < m_sensorInfos.size(); ++i) {
-                m_sensorIdToSerial[i] = m_sensorInfos[i].sn;
+                m_sensorIdToSerial[i] = std::to_string(m_sensorInfos[i].sn);
             }
         }
         
