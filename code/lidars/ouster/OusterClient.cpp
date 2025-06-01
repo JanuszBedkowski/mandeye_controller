@@ -9,9 +9,11 @@
 #include "ouster/impl/cartesian.h"
 #include <ouster/impl/logging.h>
 
+#include <Eigen/Geometry>
 #include <chrono>
-#include <iostream>
 #include <deque>
+#include <iostream>
+#include <ostream>
 
 namespace mandeye
 {
@@ -33,6 +35,7 @@ public:
     std::vector<std::unique_ptr<ouster::LidarScan>> m_scans;
     std::vector<ouster::ScanBatcher> m_batchers;
     std::vector<ouster::XYZLut> m_luts;
+    std::vector<Eigen::Affine3d> m_lidarToSensorTransforms;
 
     // Threading
     std::thread m_dataThread;
@@ -49,7 +52,7 @@ public:
     uint64_t m_currentTimestamp{0};
     std::optional<uint64_t> m_sessionStart;
     uint64_t m_sessionElapsed{0};
-    
+
     // Statistics
     mutable std::mutex m_statsMutex;
     std::unordered_map<uint32_t, uint64_t> m_receivedScans;
@@ -126,9 +129,19 @@ nlohmann::json OusterClient::produceStatus()
             sensorStatus["firmware_version"] = m_impl->m_sensorInfos[i].image_rev;
             sensorStatus["columns"] = m_impl->m_sensorInfos[i].format.columns_per_frame;
             sensorStatus["pixels_per_column"] = m_impl->m_sensorInfos[i].format.pixels_per_column;
+            sensorStatus["status"] = m_impl->m_sensorInfos[i].status;
+            sensorStatus["build_date"] = m_impl->m_sensorInfos[i].build_date;
+            std::stringstream oss;
+            oss << m_impl->m_lidarToSensorTransforms[i].matrix();
+            sensorStatus["lidar_to_sensor_transform"] = oss.str();
             status["sensors"].push_back(sensorStatus);
         }
+        for (const auto& [serial, id] : m_impl->m_sensorIdToSerial) {
+            status["serial_to_lidar_id"][serial] = id;
+        }
+
     }
+
 
     // Statistics
     {
@@ -291,7 +304,7 @@ void OusterClientImpl::dataThreadFunction()
         ouster::sensor::SensorClient m_client(m_sensors);
 
         m_sensorInfos = m_client.get_sensor_info();
-        
+
         // Initialize sensor info mapping
         {
             std::lock_guard<std::mutex> lock(m_sensorInfoMutex);
@@ -329,6 +342,35 @@ void OusterClientImpl::dataThreadFunction()
             m_imu_packets_received[i] = 0;
         }
 
+        // query the sensor for the lidar to sensor transform
+        for (size_t i = 0; i < m_sensors.size(); i++)
+        {
+            const auto& sensor = m_sensors[i];
+            const auto httpClient = sensor.http_client();
+            assert(httpClient);
+
+            Eigen::Matrix4d transform = Eigen::Matrix4d::Identity();
+            const std::string stringIntrinsicJson = httpClient->lidar_intrinsics();
+            nlohmann::json intrinsicJson = nlohmann::json::parse(stringIntrinsicJson);
+            // Parse the transform from the JSON
+            if (intrinsicJson.contains("lidar_to_sensor_transform") && intrinsicJson["lidar_to_sensor_transform"].is_array())
+            {
+                const auto& arr = intrinsicJson["lidar_to_sensor_transform"];
+                if (arr.size() != 16) {
+                    throw std::runtime_error("Invalid lidar_to_sensor_transform size, expected 16 elements.");
+                }
+
+                //clang-format off
+                transform << arr[0],  arr[1],  arr[2],  arr[3],
+                       arr[4],  arr[5],  arr[6],  arr[7],
+                       arr[8],  arr[9],  arr[10], arr[11],
+                       arr[12], arr[13], arr[14], arr[15];
+                //clang-format on
+                transform.block<3,1>(0,3) /= 1000.0; // Convert mm to m
+            }
+
+            m_lidarToSensorTransforms.push_back(Eigen::Affine3d(transform));
+        }
         m_initSuccess = true;
         
         // Main data processing loop
@@ -348,13 +390,14 @@ void OusterClientImpl::dataThreadFunction()
                     std::lock_guard<std::mutex> lock(m_imuBufferMutex);
                     if (m_imuBuffer) {
                         LidarIMU imuData{};
+
                         imuData.timestamp = ip.accel_ts();
                         imuData.acc_x = static_cast<float>(ip.la_x());
                         imuData.acc_y = static_cast<float>(ip.la_y());
                         imuData.acc_z = static_cast<float>(ip.la_z());
-                        imuData.gyro_x = static_cast<float>(ip.av_x());
-                        imuData.gyro_y = static_cast<float>(ip.av_y());
-                        imuData.gyro_z = static_cast<float>(ip.av_z());
+                        imuData.gyro_x = M_PI*static_cast<float>(ip.av_x())/180.0f;
+                        imuData.gyro_y = M_PI*static_cast<float>(ip.av_y())/180.0f;
+                        imuData.gyro_z = M_PI*static_cast<float>(ip.av_z())/180.0f;
                         imuData.laser_id = static_cast<uint16_t>(p.source);
                         imuData.epoch_time = ip.accel_ts();
                         m_imuBuffer->emplace_back(imuData);
@@ -423,17 +466,21 @@ void OusterClientImpl::processScan(const ouster::LidarScan& scan)
         reflectivityField = scan.field<uint8_t>(ouster::sensor::ChanField::REFLECTIVITY);
     }
 
+    const Eigen::Affine3d& transform = m_lidarToSensorTransforms[sourceIndex];
     // Process each point
     for (size_t i = 0; i < static_cast<size_t>(cloud.rows()); i++)
     {
         const int column = i % scan.w;
-        auto xyz = cloud.row(i);
+        const int row = i / scan.w;
+        const auto xyz = cloud.row(i).reshaped();
         
         // Skip points with no valid return
         if (xyz.isApproxToConstant(0.0)) {
             continue;
         }
-        
+
+        //const auto sxyz = transform * Eigen::Vector3d(xyz);
+
         // Create lidar point
         LidarPoint point{};
         point.x = static_cast<float>(xyz(0));
@@ -445,7 +492,7 @@ void OusterClientImpl::processScan(const ouster::LidarScan& scan)
         point.tag = 0;
         point.intensity = 0;
         if (reflectivityField) {
-            point.intensity = reflectivityField->reshaped()[i];
+            point.intensity = reflectivityField->coeff(row, column);
         }
         
         m_lidarBuffer->push_back(point);
