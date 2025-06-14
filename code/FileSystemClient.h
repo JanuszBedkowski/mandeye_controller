@@ -36,6 +36,8 @@ public:
 
 	bool CreateDirectoryForStopScans(std::string &, int &id_manifest);
 
+	double BenchmarkWriteSpeed(const std::string& filename, size_t fileSizeMB);
+
 
 private:
 	int32_t m_nextId{0};
@@ -43,5 +45,6 @@ private:
 	std::string m_repository;
 	std::string m_error;
 	std::mutex m_mutex;
+	double m_benchmarkWriteSpeed{-1.f};
 };
 } // namespace mandeye
