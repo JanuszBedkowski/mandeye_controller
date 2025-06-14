@@ -9,6 +9,8 @@
 namespace hardware
 {
 #define PISTACHE_SERVER
+#define MANDEYE_BENCHMARK_WRITE_SPEED
+#define MANDEYE_COUNTINOUS_SCANNING_STOP_1_CLICK
 constexpr int Offset = 0;
 constexpr const char* mandeyeHarwareType()
 {

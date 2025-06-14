@@ -2,9 +2,21 @@
 #include <iostream>
 #include <laszip/laszip_api.h>
 
-bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
+nlohmann::json mandeye::LazStats::produceStatus() const {
+	nlohmann::json status;
+	status["filename"] = m_filename;
+	status["points_count"] = m_pointsCount;
+	status["save_duration_sec1"] = m_saveDurationSec1;
+	status["save_duration_sec2"] = m_saveDurationSec2;
+	status["size_mb"] = m_sizeMb;
+	status["decimation_step"] = m_decimationStep;
+	return status;
+}
+std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 {
-
+	mandeye::LazStats stats;
+	stats.m_filename = filename;
+	stats.m_pointsCount = buffer->size();
 	constexpr float scale = 0.0001f; // one tenth of milimeter
 	// find max
 	double max_x{std::numeric_limits<double>::lowest()};
@@ -36,7 +48,7 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 	if(laszip_create(&laszip_writer))
 	{
 		fprintf(stderr, "DLL ERROR: creating laszip writer\n");
-		return false;
+		return  nullopt;
 	}
 
 	// get a pointer to the header of the writer so we can populate it
@@ -46,10 +58,12 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 	if(laszip_get_header_pointer(laszip_writer, &header))
 	{
 		fprintf(stderr, "DLL ERROR: getting header pointer from laszip writer\n");
-		return false;
+		return nullopt;
 	}
 
 	// populate the header
+
+	// heuristically determine the decimation step
 	int step = 1;
 	if(buffer->size() > 4000000){
 		step = ceil((double)buffer->size() / 2000000.0);
@@ -62,6 +76,7 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 	for(int i = 0; i < buffer->size(); i += step){
 		num_points ++;
 	}
+	stats.m_decimationStep = step;
 
 	header->file_source_ID = 4711;
 	header->global_encoding = (1 << 0); // see LAS specification for details
@@ -89,11 +104,11 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 	// optional: use the bounding box and the scale factor to create a "good" offset
 	// open the writer
 	laszip_BOOL compress = (strstr(filename.c_str(), ".laz") != 0);
-
+	const auto start = std::chrono::high_resolution_clock::now();
 	if(laszip_open_writer(laszip_writer, filename.c_str(), compress))
 	{
 		fprintf(stderr, "DLL ERROR: opening laszip writer for '%s'\n", filename.c_str());
-		return false;
+		return  nullopt;
 	}
 
 	fprintf(stderr, "writing file '%s' %scompressed\n", filename.c_str(), (compress ? "" : "un"));
@@ -104,7 +119,7 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 	if(laszip_get_point_pointer(laszip_writer, &point))
 	{
 		fprintf(stderr, "DLL ERROR: getting point pointer from laszip writer\n");
-		return false;
+		return nullopt;
 	}
 
 	laszip_I64 p_count = 0;
@@ -127,30 +142,30 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 		if(laszip_set_coordinates(laszip_writer, coordinates))
 		{
 			fprintf(stderr, "DLL ERROR: setting coordinates for point %I64d\n", p_count);
-			return false;
+			return nullopt;
 		}
 
 		if(laszip_write_point(laszip_writer))
 		{
 			fprintf(stderr, "DLL ERROR: writing point %I64d\n", p_count);
-			return false;
+			return nullopt;
 		}
 	}
 
 	if(laszip_get_point_count(laszip_writer, &p_count))
 	{
 		fprintf(stderr, "DLL ERROR: getting point count\n");
-		return false;
+		return nullopt;
 	}
 
 	fprintf(stderr, "successfully written %I64d points\n", p_count);
-
+	stats.m_pointsCount = p_count;
 	// close the writer
 
 	if(laszip_close_writer(laszip_writer))
 	{
 		fprintf(stderr, "DLL ERROR: closing laszip writer\n");
-		return false;
+		return nullopt;
 	}
 
 	// destroy the writer
@@ -158,9 +173,19 @@ bool mandeye::saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer)
 	if(laszip_destroy(laszip_writer))
 	{
 		fprintf(stderr, "DLL ERROR: destroying laszip writer\n");
-		return false;
+		return nullopt;
 	}
 
 	std::cout << "exportLaz DONE" << std::endl;
-	return true;
+
+	const auto end = std::chrono::high_resolution_clock::now();
+	const std::chrono::duration<float> elapsed_seconds = end - start;
+	stats.m_saveDurationSec1 = elapsed_seconds.count();
+
+	if (std::filesystem::exists(filename)) {
+		std::uintmax_t size = std::filesystem::file_size(filename);
+		stats.m_sizeMb = static_cast<float>(size)/(1024*1024);
+	}
+
+	return stats;
 }

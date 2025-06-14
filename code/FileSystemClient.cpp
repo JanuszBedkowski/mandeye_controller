@@ -29,7 +29,7 @@ nlohmann::json FileSystemClient::produceStatus()
 	}
 	data["FileSystemClient"]["free_megabytes"] = free_mb;
 	data["FileSystemClient"]["free_str"] = ConvertToText(free_mb);
-
+	data["FileSystemClient"]["benchmarkWriteSpeed"] = m_benchmarkWriteSpeed;
 	try
 	{
 		data["FileSystemClient"]["m_nextId"] = m_nextId;
@@ -223,6 +223,37 @@ bool FileSystemClient::GetIsWritable()
 	{
 		return false;
 	}
+}
+
+double FileSystemClient::BenchmarkWriteSpeed(const std::string& filename, size_t fileSizeMB) {
+	const size_t bufferSize = 1024 * 1024; // 1 MB buffer
+	std::vector<char> buffer(bufferSize, 0xAA);
+	std::filesystem::path fileName = std::filesystem::path(m_repository)/ std::filesystem::path(filename);
+	std::ofstream out(fileName.string(), std::ios::binary);
+	if (!out) {
+		std::cerr << "Failed to open file for writing\n";
+		return 0.0;
+	}
+
+	auto start = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < fileSizeMB; ++i) {
+		out.write(buffer.data(), bufferSize);
+	}
+	out.close();
+	auto end = std::chrono::high_resolution_clock::now();
+	system("sync");
+	std::chrono::duration<double> elapsed = end - start;
+	double mbps = fileSizeMB / elapsed.count();
+
+	std::cout << "Wrote " << fileSizeMB << " MB in " << elapsed.count() << " seconds (" << mbps << " MB/s)\n";
+	// clear file
+	// Remove the file after benchmarking
+//	std::error_code ec;
+//	std::filesystem::remove(fileName, ec);
+//	if (ec) {
+//		std::cerr << "Failed to remove benchmark file: " << ec.message() << std::endl;
+//	}
+	return mbps;
 }
 
 } // namespace mandeye

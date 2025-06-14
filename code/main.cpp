@@ -73,6 +73,10 @@ std::mutex gpioClientPtrLock;
 std::shared_ptr<GpioClient> gpioClientPtr;
 std::shared_ptr<FileSystemClient> fileSystemClientPtr;
 std::shared_ptr<Publisher> publisherPtr;
+mandeye::LazStats lastFileSaveStats;
+double usbWriteSpeed10Mb = 0.0;
+double usbWriteSpeed1Mb = 0.0;
+
 bool disableBuzzer = false;
 mandeye::States app_state{mandeye::States::WAIT_FOR_RESOURCES};
 
@@ -100,6 +104,8 @@ std::string produceReport(bool reportUSB = true)
 	{
 		j["gpio"] = gpioClientPtr->produceStatus();
 	}
+	j["fs_benchmark"]["write_speed_10mb"] = std::round(usbWriteSpeed10Mb * 100) / 100.0;
+	j["fs_benchmark"]["write_speed_1mb"] = std::round(usbWriteSpeed1Mb * 100) / 100.0;
 
 	if(fileSystemClientPtr && reportUSB)
 	{
@@ -109,8 +115,10 @@ std::string produceReport(bool reportUSB = true)
 	{
 		j["gnss"] = gnssClientPtr->produceStatus();
 	}else{
-        j["gnss"] = {};
-    }
+		j["gnss"] = {};
+	}
+
+	j["lastLazStatus"] = lastFileSaveStats.produceStatus();
 
 	std::ostringstream s;
 	s << std::setw(4) << j;
@@ -166,6 +174,10 @@ bool TriggerContinousScanning(){
 		return true;
 	}else if(app_state == States::SCANNING)
 	{
+#ifdef MANDEYE_COUNTINOUS_SCANNING_STOP_1_CLICK
+		app_state = States::STOPPING;
+		return true;
+#endif //MANDEYE_COUNTINOUS_SCANNING_STOP_1_CLICK
 		app_state = States::STOPPING_STAGE_1;
 		//stoppingStage1Start = std::chrono::steady_clock::now();
 		stoppingStage1StartDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(2000);
@@ -202,15 +214,20 @@ void savePointcloudData(LivoxPointsBufferPtr buffer, const std::string& director
 {
 	using namespace std::chrono_literals;
 	char lidarName[256];
+
+	const auto start = std::chrono::steady_clock::now();
 	snprintf(lidarName, 256, "lidar%04d.laz", chunk);
 	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
 	std::cout << "Savig lidar buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
-	saveLaz(lidarFilePath.string(), buffer);
-	//        std::ofstream lidarStream(lidarFilePath.c_str());
-	//        for (const auto &p : *buffer){
-	//            lidarStream<<p.point.x << " "<<p.point.y <<"  "<<p.point.z << " "<< p.point.tag << " " << p.timestamp << "\n";
-	//        }
+	auto saveStatus = saveLaz(lidarFilePath.string(), buffer);
+
 	system("sync");
+	const auto end = std::chrono::steady_clock::now();
+	const std::chrono::duration<float> elapsed_seconds = end - start;
+	if (saveStatus) {
+		saveStatus->m_saveDurationSec2 = elapsed_seconds.count();
+		mandeye::lastFileSaveStats = *saveStatus;
+	}
 	return;
 }
 
@@ -240,7 +257,6 @@ void saveStatusData(const std::string& directory, int chunk)
 	std::ofstream lidarStream(lidarFilePath);
 	lidarStream << produceReport(false);
 	system("sync");
-	return;
 }
 
 void saveImuData(LivoxIMUBufferPtr buffer, const std::string& directory, int chunk)
@@ -336,6 +352,15 @@ void stateWatcher()
 
 	if(!fileSystemClientPtr->CreateDirectoryForContinousScanning(continousScanDirectory, id_manifest)){
 		app_state = States::USB_IO_ERROR;
+	}
+	if(fileSystemClientPtr){
+#ifdef MANDEYE_BENCHMARK_WRITE_SPEED
+		std::cout << "Benchmarking write speed" << std::endl;
+		mandeye::usbWriteSpeed10Mb=fileSystemClientPtr->BenchmarkWriteSpeed("benchmark10.bin", 10);
+		mandeye::usbWriteSpeed1Mb=fileSystemClientPtr->BenchmarkWriteSpeed("benchmark1.bin", 1);
+		std::cout << "Benchmarking write speed done" << std::endl;
+#endif
+
 	}
 
 	while(isRunning)
@@ -781,8 +806,6 @@ int main(int argc, char** argv)
 	});
 
 	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", MANDEYE_REPO));
-
-
 	std::thread thLivox([&]() {
 		{
 			std::lock_guard<std::mutex> l1(mandeye::livoxClientPtrLock);
