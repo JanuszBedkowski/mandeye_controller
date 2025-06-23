@@ -43,6 +43,9 @@ private:
 	int32_t m_nextId{0};
 	std::string ConvertToText(float mb);
 	std::string m_repository;
+	std::string m_currentContinousScanDirectory;
+	std::string m_currentStopScanDirectory;
+
 	std::string m_error;
 	std::mutex m_mutex;
 	double m_benchmarkWriteSpeed{-1.f};

@@ -149,6 +149,7 @@ bool FileSystemClient::CreateDirectoryForContinousScanning(std::string &writable
 		{
 			if(!newDirPath.string().empty()){
 				writable_dir = newDirPath.string();
+			        m_currentContinousScanDirectory = writable_dir;
 				return true;
 			}else{
 				return false;
@@ -179,6 +180,7 @@ bool FileSystemClient::CreateDirectoryForStopScans(std::string &writable_dir, in
 		{
 			if(!newDirPath.string().empty()){
 				writable_dir = newDirPath.string();
+			        m_currentStopScanDirectory = writable_dir;
 				return true;
 			}else{
 				return false;
@@ -195,20 +197,17 @@ std::vector<std::string> FileSystemClient::GetDirectories()
 {
 	std::unique_lock<std::mutex> lck(m_mutex);
 	std::vector<std::string> fn;
-
-	for(const auto& entry : std::filesystem::recursive_directory_iterator(m_repository))
+	for(const auto& entry : std::filesystem::directory_iterator(m_currentContinousScanDirectory))
 	{
-		if(entry.is_regular_file())
-		{
-			auto size = std::filesystem::file_size(entry);
-			float fsize = static_cast<float>(size) / (1024 * 1204);
-			fn.push_back(entry.path().string() + " " + std::to_string(fsize) + " Mb");
-		}
-		else
-		{
-			fn.push_back(entry.path().string());
-		}
+	    if(entry.is_regular_file() )
+	    {
+		auto size = std::filesystem::file_size(entry);
+		float fsize = static_cast<float>(size) / (1024 * 1204);
+		fn.push_back(entry.path().string() + " " + std::to_string(fsize) + " Mb");
+	    }
+
 	}
+
 	std::sort(fn.begin(), fn.end());
 	return fn;
 }

@@ -42,4 +42,13 @@ private:
     std::unique_ptr<OusterClientImpl> m_impl;
 };
 
+
 } // namespace mandeye
+
+extern "C" void* create_ouster_client() {
+    return new mandeye::OusterClient();
+}
+
+extern "C" void destroy_ouster_client(void* ptr) {
+    delete static_cast<mandeye::OusterClient*>(ptr);
+}

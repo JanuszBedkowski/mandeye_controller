@@ -163,4 +163,12 @@ R"(
 	static void
 	LidarInfoChangeCallback(const uint32_t handle, const LivoxLidarInfo* info, void* client_data);
 };
+
 } // namespace mandeye
+extern "C" void* create_livox_client() {
+	return new mandeye::LivoxClient();
+}
+
+extern "C" void destroy_livox_client(void* ptr) {
+	delete static_cast<mandeye::LivoxClient*>(ptr);
+}
