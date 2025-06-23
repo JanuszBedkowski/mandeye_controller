@@ -51,8 +51,8 @@
             }).then(function(data) {
                 var obj = jQuery.parseJSON(data);
 
-                $('.msgs_lidar').text( obj.livox.counters.lidar);
-                $('.msgs_imu').text( obj.livox.counters.imu);
+                $('.msgs_livox').text( obj.lidar.counters.lidar);
+                $('.msgs_imu').text( obj.lidar.counters.imu);
                 $('.state').text( obj.state);
 
                 if (obj.hasOwnProperty('gnss'))

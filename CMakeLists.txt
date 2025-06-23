@@ -86,7 +86,7 @@ if (${MANDEYE_USE_OUSTER_SDK})
     target_link_libraries(ouster_client_example PRIVATE OusterSDK::ouster_client)
 
     # Create isolated static library for Ouster integration
-    add_library(ouster_lib STATIC
+    add_library(ouster_lib
         code/lidars/ouster/OusterClient.cpp
     )
     target_link_libraries(ouster_lib PRIVATE OusterSDK::ouster_client)
@@ -101,12 +101,11 @@ if (${MANDEYE_USE_LIVOX_SDK2})
     # Livox SDK2
 
     add_subdirectory(3rd/Livox-SDK2)
-    add_library(livox2_lib STATIC
+    add_library(livox2_lib
             code/lidars/livoxsdk2/LivoxClient.cpp
     )
     target_link_libraries(livox2_lib PRIVATE livox_lidar_sdk_static)
     target_include_directories(livox2_lib PRIVATE 3rd/Livox-SDK2/include)
-    include_directories(3rd/Livox-SDK2/include)
     list(APPEND LIDAR_LIBRARIES livox2_lib)
     # add defines
     add_compile_definitions(MANDEYE_USE_LIVOX_SDK2)
