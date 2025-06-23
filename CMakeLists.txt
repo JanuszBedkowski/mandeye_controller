@@ -93,6 +93,7 @@ if (${MANDEYE_USE_OUSTER_SDK})
     target_include_directories(ouster_lib PRIVATE 3rd/ouster-sdk/ouster_client/include)
 
     list(APPEND LIDAR_LIBRARIES ouster_lib)
+    install(TARGETS ouster_lib LIBRARY DESTINATION /opt/mandeye/)
     add_compile_definitions(MANDEYE_USE_OUSTER_SDK)
 endif ()
 
@@ -106,6 +107,7 @@ if (${MANDEYE_USE_LIVOX_SDK2})
     )
     target_link_libraries(livox2_lib PRIVATE livox_lidar_sdk_static)
     target_include_directories(livox2_lib PRIVATE 3rd/Livox-SDK2/include)
+    install(TARGETS livox2_lib LIBRARY DESTINATION /opt/mandeye/)
     list(APPEND LIDAR_LIBRARIES livox2_lib)
     # add defines
     add_compile_definitions(MANDEYE_USE_LIVOX_SDK2)
