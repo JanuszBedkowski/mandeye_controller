@@ -149,7 +149,7 @@ nlohmann::json OusterClient::produceStatus()
         status["counters"]["received_scans"] = m_impl->m_receivedScans;
         status["counters"]["dropped_scans"] = m_impl->m_droppedScans;
         status["counters"]["imu"] = m_impl->m_imu_packets_received;
-        status["counters"]["lidar"] = m_impl->m_droppedScans; // for compatibility
+        status["counters"]["lidar"] = m_impl->m_receivedScans; // for compatibility
     }
 
     // Timestamp information

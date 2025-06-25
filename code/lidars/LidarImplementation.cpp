@@ -23,7 +23,12 @@ std::shared_ptr<ClientType> make_dynamic_client(const std::string& libPath,
 {
     void* handle = dlopen(libPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
     if (!handle) {
-        throw std::runtime_error("Failed to load " + libPath + ": " + dlerror());
+        //try again with global install path
+        std::cerr << "Failed to load library: " << dlerror() << " trying to load from default install" << std::endl;
+        handle = dlopen(("/opt/mandeye/" + libPath).c_str(), RTLD_LAZY | RTLD_GLOBAL);
+        if (!handle) {
+            throw std::runtime_error("Failed to load library: " + std::string(dlerror()));
+        }
     }
 
     auto create = reinterpret_cast<CreateFunc*>(dlsym(handle, createSym.c_str()));
