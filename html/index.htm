@@ -51,7 +51,7 @@
             }).then(function(data) {
                 var obj = jQuery.parseJSON(data);
 
-                $('.msgs_livox').text( obj.lidar.counters.lidar);
+                $('.msgs_lidar').text( obj.lidar.counters.lidar);
                 $('.msgs_imu').text( obj.lidar.counters.imu);
                 $('.state').text( obj.state);
 
@@ -195,7 +195,7 @@
 
     <table>
         <tr>
-            <th>Livox</th>
+            <th>Lidar</th>
             <th>IMU</th>
             <th>Disk</th>
             <th>State</th>
@@ -204,7 +204,7 @@
 
         </tr>
         <tr>
-            <td class="msgs_livox">-1</td>
+            <td class="msgs_lidar">-1</td>
             <td class="msgs_imu">-1</td>
             <td class="disk">-1</td>
             <td class="state">-1</td>

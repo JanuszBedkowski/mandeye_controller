@@ -222,6 +222,25 @@ make package
 
 The package will be available in the build directory.
 
+# Choosing Lidar SDK
+The software supports different SDKs for the Lidar:
+
+| SDK | Variable | Description                                                                      |                                                               
+|-----|----------|----------------------------------------------------------------------------------|
+| Livox SDK | `LIVOX_SDK2` | Livox SDK version 2 tested with Mid360 and HAP                                   |
+| Ouster SDK | `OUSTER` | Ouster SDK tested with OS-0-64 (ousteros-image-prod-aries-v2.5.3+20240111055903) |
+| Butter Lidar | `BUTTER_LIDAR` | Dummy SDK for documentation and testing purposes                                 |
+
+Those are shared libraries that are loaded at runtime.
+You can set the SDK to use in two ways:
+1. By setting the `MANDEYE_LIDAR_SDK` environment variable to `LIVOX_SDK2` or `OUSTER`.
+2. By putting the config in location '/media/usb/mandeye_config.json' with the following content:
+```json
+{
+  "lidar_sdk": "LIVOX_SDK2"
+}
+```
+
 # Installation and usage of the package
 To install the package, you need to copy it to the target device and install it with `dpkg`:
 ```bash
