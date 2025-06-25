@@ -15,44 +15,58 @@ namespace {
 using CreateFunc = void*();
 using DestroyFunc = void(void*);
 
+void * GetLibHandle(const std::string& libPath)
+{
+    void* handle = dlopen(libPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
+    if (!handle)
+    {
+        std::cerr << dlerror() << std::endl;
+    }
+    if (handle)
+    {
+        return handle;
+    }
+    const std::filesystem::path exe_path = std::filesystem::canonical("/proc/self/exe"); // Linux only
+    const std::filesystem::path parent_path = exe_path.parent_path();
+    std::cerr << "exe_path path: " << exe_path << std::endl;
+    std::vector< std::filesystem::path> paths ={
+        "/usr/local/lib/",
+        "/opt/mandeye/",
+        parent_path
+    };
+    for (const auto& path : paths)
+    {
+        auto p = (path / libPath);
+        std::cerr << "Trying to load from " << p << std::endl;
+        handle = dlopen(p.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+        if (!handle)
+        {
+            std::cerr << dlerror() << std::endl;
+        }
+        if (handle)
+        {
+            std::cerr << "=================================================" << std::endl;
+            std::cerr << "SUCCESS loading library from :" << std::endl;
+            std::cerr << p << std::endl;
+            std::cerr << "=================================================" << std::endl;
+            return handle;
+        }
+    }
+    std::cerr << "Failed to load from any path" << std::endl;
+    std::abort();
+    throw std::runtime_error("Failed to load library: " + std::string(dlerror()));
+    return nullptr;
+}
+
+
 // Wrapper for a dynamically loaded lidar client
 template <typename ClientType>
 std::shared_ptr<ClientType> make_dynamic_client(const std::string& libPath,
                                                 const std::string& createSym,
                                                 const std::string& destroySym)
 {
-    std::string effectiveLibPath = libPath;
-    void* handle = dlopen(libPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
-    if (!handle) {
-        std::cerr << "Failed to load library: " << dlerror() << std::endl;
-    }
-    if (!handle) {
-        //try again with global install path
-        effectiveLibPath = "/opt/mandeye/" + libPath;
-        handle = dlopen(effectiveLibPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-        if (!handle) {
-            std::cerr << "Failed to load library from global install path: " << dlerror() << std::endl;
-        }
-    }
+    void* handle = GetLibHandle(libPath);
 
-    if (!handle) {
-        //try executable directory
-        std::filesystem::path exe_path = std::filesystem::canonical("/proc/self/exe"); // Linux only
-        std::filesystem::path parent_path = exe_path.parent_path();
-        effectiveLibPath = parent_path / libPath;
-        handle = dlopen(effectiveLibPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-
-        if (!handle) {
-            std::cerr << "Failed to load library: " << dlerror() << " from " << (parent_path / libPath) << std::endl;
-            std::cerr << "Am I giving up." << std::endl;
-            throw std::runtime_error("Failed to load library: " + std::string(dlerror()));
-        }
-    }
-
-    if (handle)
-    {
-        std::cout << "Successfully loaded library: " << effectiveLibPath << std::endl;
-    }
     auto create = reinterpret_cast<CreateFunc*>(dlsym(handle, createSym.c_str()));
     auto destroy = reinterpret_cast<DestroyFunc*>(dlsym(handle, destroySym.c_str()));
 
@@ -123,6 +137,19 @@ BaseLidarClientPtr createLidarClient(const std::string& lidarType, const nlohman
             return nullptr;
         }
     }
+    else if (lidarType == "HESAI")
+    {
+        try
+        {
+            return make_dynamic_client<BaseLidarClient>("libhesai_lib.so", "create_client", "destroy_client");
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "[HESAI] " << e.what() << std::endl;
+            return nullptr;
+        }
+    }
+
     else
     {
         throw std::runtime_error("Unknown lidar type: " + lidarType);

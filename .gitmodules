@@ -16,3 +16,6 @@
 [submodule "3rd/ouster-sdk"]
 	path = 3rd/ouster-sdk
 	url = https://github.com/ouster-lidar/ouster-sdk.git
+[submodule "3rd/hesai_sdk"]
+	path = 3rd/hesai_sdk
+	url = https://github.com/HesaiTechnology/HesaiLidar_SDK_2.0.git
