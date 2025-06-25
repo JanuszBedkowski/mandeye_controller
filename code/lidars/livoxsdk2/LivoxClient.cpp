@@ -286,6 +286,7 @@ namespace mandeye
                 point.x = 0.001 * p_point_data[i].x;
                 point.y = 0.001 * p_point_data[i].y;
                 point.z = 0.001 * p_point_data[i].z;
+                point.intensity = p_point_data[i].reflectivity;
                 point.laser_id = laser_id;
                 point.timestamp = toUint64.data + i * data->time_interval;
                 if (point.timestamp > 0)
