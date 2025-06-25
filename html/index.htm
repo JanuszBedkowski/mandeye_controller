@@ -51,7 +51,7 @@
             }).then(function(data) {
                 var obj = jQuery.parseJSON(data);
 
-                $('.msgs_livox').text( obj.lidar.counters.lidar);
+                $('.msgs_lidar').text( obj.lidar.counters.lidar);
                 $('.msgs_imu').text( obj.lidar.counters.imu);
                 $('.state').text( obj.state);
 
