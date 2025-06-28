@@ -1,0 +1,15 @@
+[Unit]
+Description=Mandeye_BG51
+After=multi-user.target
+
+[Service]
+User=pi
+StandardOutput=null
+StandardError=null
+ExecStartPre=/bin/sleep 20
+ExecStart=python3 -u /opt/mandeye/extras/bg51/camera.py 
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
