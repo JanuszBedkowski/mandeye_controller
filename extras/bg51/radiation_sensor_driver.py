@@ -18,8 +18,45 @@ import serial
 import binascii
 import time
 
-# from radiation_msgs.msg import Radiation
+import threading
+import zmq
+import json
 
+received_lock = threading.Lock()
+received_timestamp = 0
+received_mode = ""
+received_command = None
+received_data_continous = ""
+
+def threadedZmqClient():
+    context = zmq.Context()
+    socket = context.socket(zmq.SUB)
+    socket.connect("tcp://localhost:5556") # mandeye controller
+    socket.setsockopt_string(zmq.SUBSCRIBE, "")
+    socket.setsockopt(zmq.CONFLATE,1)
+    print("Subscriber connected and listening for messages...")
+    while True:
+        global received_mode
+        global received_command
+        global received_timestamp
+        global received_data_continous
+        # Wait for a message
+        message = socket.recv_string()
+        try:
+            data = json.loads(message)
+            if 'command' in data:
+                with received_lock:
+                    received_command = data['command']
+            if 'time' in data:
+                with received_lock:
+                    received_timestamp = int(data['time'])
+            if 'mode' in data and 'continousScanDirectory' in data:
+                with received_lock:
+                    received_mode = data['mode']
+                    received_data_continous = data['continousScanDirectory']
+       
+        except Exception as X:
+            print (X)
 
 PACKET_FORMAT = "<IfI"  # Little-endian
 PACKET_SIZE = struct.calcsize(PACKET_FORMAT)
@@ -74,7 +111,10 @@ class RadiationSensorDriver():
         try:
             packet_data = self.read_full_packet()
             cpm, siverts = self.process_packet(packet_data)
-
+            if (received_mode == "SCANNING" and received_timestamp is not None and received_data_continous is not None):
+                filename = received_data_continous+"/bg51.csv"
+                with open(filename, "a") as file:
+                    file.write(f"{received_timestamp} {cpm} {siverts}\n")
             print(f"CPM: {cpm}, Siverts: {siverts}")
 
         except serial.SerialException as e:
@@ -107,6 +147,9 @@ class RadiationSensorDriver():
 def main(args=None):
 
     radiation_sensor_driver = RadiationSensorDriver()
+    zmqthread = threading.Thread(target=threadedZmqClient)
+    zmqthread.start()
+
     while True:
         radiation_sensor_driver.read_serial_data()
         time.sleep(0.1)
