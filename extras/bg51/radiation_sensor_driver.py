@@ -16,33 +16,28 @@
 import struct
 import serial
 import binascii
-import rclpy
 import time
-from rclpy.node import Node
 
-from radiation_msgs.msg import Radiation
+# from radiation_msgs.msg import Radiation
 
 
 PACKET_FORMAT = "<IfI"  # Little-endian
 PACKET_SIZE = struct.calcsize(PACKET_FORMAT)
 
 
-class RadiationSensorDriver(Node):
+class RadiationSensorDriver():
     def __init__(self):
-        super().__init__("radiation_sensor_driver")
-        self.declare_parameter("serial_port", "/dev/ttyACM0")
-        self.declare_parameter("frame_id", "BG51")
+        # self.declare_parameter("serial_port", "/dev/ttyACM0")
+        # self.declare_parameter("frame_id", "BG51")
 
-        self.serial_port = self.get_parameter("serial_port").value
-        self.frame_id = self.get_parameter("frame_id").value
+        self.serial_port = "/dev/ttyACM0"
         self.baud_rate = 115200
 
-        self.radiation_pub = self.create_publisher(Radiation, "radiation", 10)
 
         # Serial connection setup
         self.wait_for_serial_and_setup()
 
-        self.get_logger().info("Radiation sensor driver initialized.")
+        print("Radiation sensor driver initialized.")
 
     def wait_for_serial_and_setup(self):
         while not self.setup_usb():
@@ -52,8 +47,8 @@ class RadiationSensorDriver(Node):
     def setup_usb(self):
         try:
             self.ser = serial.Serial(self.serial_port, self.baud_rate, timeout=1)
-            self.get_logger().info(f"Connected to {self.serial_port}")
-            self.timer = self.create_timer(0.1, self.read_serial_data)
+            print(f"Connected to {self.serial_port}")
+            # self.timer = self.create_timer(0.1, self.read_serial_data)
             return True
         except serial.SerialException as e:
             self.get_logger().error(f"Serial error: {e}")
@@ -80,24 +75,16 @@ class RadiationSensorDriver(Node):
             packet_data = self.read_full_packet()
             cpm, siverts = self.process_packet(packet_data)
 
-            self.get_logger().debug(f"CPM: {cpm}, Siverts: {siverts}")
-
-            ratiation_msg = Radiation()
-            ratiation_msg.header.frame_id = self.frame_id
-            ratiation_msg.header.stamp = self.get_clock().now().to_msg()
-            ratiation_msg.cpm = cpm
-            ratiation_msg.dose = siverts
-
-            self.radiation_pub.publish(ratiation_msg)
+            print(f"CPM: {cpm}, Siverts: {siverts}")
 
         except serial.SerialException as e:
-            self.get_logger().error(f"Serial error: {e}")
+            print(f"Serial error: {e}")
             self.ser.close()
             self.timer.cancel()
             self.wait_for_serial_and_setup()
 
         except ValueError as e:
-            self.get_logger().error(f"Error: {e}")
+            print(f"Error: {e}")
 
     def process_packet(self, data):
         """Unpack and validate packet."""
@@ -118,17 +105,12 @@ class RadiationSensorDriver(Node):
 
 
 def main(args=None):
-    rclpy.init(args=args)
 
     radiation_sensor_driver = RadiationSensorDriver()
+    while True:
+        radiation_sensor_driver.read_serial_data()
+        time.sleep(0.1)
 
-    try:
-        rclpy.spin(radiation_sensor_driver)
-    except KeyboardInterrupt:
-        pass
-
-    radiation_sensor_driver.destroy_node()
-    rclpy.try_shutdown()
 
 
 if __name__ == "__main__":
