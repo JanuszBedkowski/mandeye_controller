@@ -32,7 +32,33 @@
                 }
                 if (obj.hasOwnProperty('gnss'))
                 {
-                    $('.gnss').text( obj.gnss.gga.satellites_tracked);
+                    var satellites = obj.gnss.gga.satellites_tracked;
+                    var fixQuality = obj.gnss.gga.fix_quality;
+                    if (fixQuality == 0)
+                    {
+                        $('.gnss').text( satellites + " (No Fix)");
+                    }
+                    else if (fixQuality == 1)
+                    {
+                        $('.gnss').text( satellites + " (GPS)");
+                    }
+                    else if (fixQuality == 2)
+                    {
+                        $('.gnss').text( satellites + " (DGPS)");
+                    }
+                    else if (fixQuality == 4)
+                    {
+                        $('.gnss').text( satellites + " (RTK Fixed)");
+                    }
+                    else if (fixQuality == 5)
+                    {
+                        $('.gnss').text( satellites + " (RTK Float)");
+                    }
+                    else
+                    {
+                        $('.gnss').text( satellites + " (Unknown fix: " + fixQuality + ")");
+                    }
+
                 }
                 else
                 {
@@ -54,16 +80,6 @@
                 $('.msgs_lidar').text( obj.lidar.counters.lidar);
                 $('.msgs_imu').text( obj.lidar.counters.imu);
                 $('.state').text( obj.state);
-
-                if (obj.hasOwnProperty('gnss'))
-                {
-                    $('.gnss').text( obj.gnss.gga.satellites_tracked);
-                }
-                else
-                {
-                    $('.gnss').text( "N/A");
-                }
-
 
             });
         };
@@ -208,7 +224,7 @@
             <td class="msgs_imu">-1</td>
             <td class="disk">-1</td>
             <td class="state">-1</td>
-            <td class="gnss">-1</td>
+            <td class="gnss"></td>
             <td class="filesystem"></td>
         </tr>
     </table>

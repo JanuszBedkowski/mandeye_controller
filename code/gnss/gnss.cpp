@@ -1,8 +1,8 @@
 #include "gnss.h"
+#include "../3rd/minmea/minmea.h"
+#include <exception>
 #include <iostream>
 #include <thread>
-#include <exception>
-#include "minmea.h"
 
 namespace mandeye
 {
@@ -27,6 +27,8 @@ nlohmann::json GNSSClient::produceStatus()
 	data["is_logging"] = m_isLogging;
 	data["message_count"] = m_messageCount.load();
 	data["buffer_size"] = m_buffer.size();
+        data["ntrip_client"]["number_of_rtcm3_messages"] = m_numberOfRTCM3Messages.load();
+        data["ntrip_client"]["number_of_gga_messages"] = m_numberOfGGAMessagesToCaster.load();
 	return data;
 }
 
@@ -42,7 +44,7 @@ bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate 
 		{
 			m_serialPort.Close();
 		}
-		m_serialPort.Open(portName, std::ios_base::in);
+		m_serialPort.Open(portName, std::ios_base::in|std::ios_base::out);
 		m_serialPort.SetBaudRate(baudRate);
 		init_succes = true;
 		m_serialPortThread = std::thread(&GNSSClient::worker, this);
@@ -81,13 +83,18 @@ void GNSSClient::worker()
 				}
 
 				std::string csvline = GgaToCsvLine(gga, laserTimestamp);
+				{
+				    std::lock_guard<std::mutex> lockLastGGA(m_ggaMutex);
+				    lastGGA = gga;
+				    m_lastGGARaw = line;
+				}
 				std::lock_guard<std::mutex> lock(m_bufferMutex);
 				std::swap(m_lastLine, line);
-				lastGGA = gga;
+
 				m_messageCount++;
 				if(m_isLogging)
 				{
-					m_buffer.emplace_back(csvline);
+				    m_buffer.emplace_back(csvline);
 				}
 			}
 		}
@@ -164,4 +171,63 @@ void GNSSClient::setDataCallback(const std::function<void(const minmea_sentence_
 {
 	m_dataCallback = callback;
 }
+
+void GNSSClient::setNtripClient(
+    const std::string& userName,
+    const std::string& password,
+    const std::string& mountPoint,
+    const std::string& host,
+    const std::string& port)
+{
+    std::thread t(
+        [this, userName, password, mountPoint, host, port]()
+        {
+            boost::asio::io_context io;
+            m_ntripClient = std::make_unique<NtripClient>(
+                io,
+                host,
+                port,
+                mountPoint,
+                userName,
+                password,
+                [this](const uint8_t* data, size_t size)
+                {
+                    m_numberOfRTCM3Messages++;
+                    std::vector<uint8_t> dataVec(data, data + size);
+                    if (m_serialPort.IsOpen())
+                    {
+                        m_serialPort.Write(dataVec);
+                    }
+                });
+            m_ntripClient->start();
+            boost::asio::steady_timer timer(io);
+            sheduleGgaSend(timer);
+            io.run();
+        });
+
+    m_ntripThread = std::move(t);
+}
+
+void GNSSClient::setNtripClient(const nlohmann::json& ntripClientConfig)
+{
+    if (!ntripClientConfig.is_object())
+    {
+        return;
+    }
+
+    std::string userName = ntripClientConfig.value("user_name", "");
+    std::string password = ntripClientConfig.value("password", "");
+    std::string mountPoint = ntripClientConfig.value("mount_point", "");
+    std::string host = ntripClientConfig.value("host", "");
+    std::string port = ntripClientConfig.value("port", "2101");
+    if (userName.empty() || password.empty() || mountPoint.empty() || host.empty() || port.empty())
+    {
+            std::cerr << "NTRIP client configuration is incomplete." << std::endl;
+            return;
+    }
+    setNtripClient(userName, password, mountPoint, host, port);
+}
+
+
+
 } // namespace mandeye

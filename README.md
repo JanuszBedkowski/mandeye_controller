@@ -52,7 +52,7 @@ The software can run other distros (e.g. Ubuntu) but it is not tested and mainta
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev
+sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev libboost-dev
 ```
 
 
@@ -268,3 +268,21 @@ mandeye_fakepps_start
 mandeye_camera_start
 mandeye_camera_ftp_start
 ```
+
+# Ntrip client
+
+The Ntrip client is used to connect to a Ntrip server and receive corrections for the GPS data. 
+The client is implemented in the `ntrip_client` directory. If there is a `ntrip` section in the config file `/media/usb/mandeye_config.json` with the following content:
+```json
+{
+  "ntrip":{
+    "user_name": "SomeUser",
+    "password": "SomePassword",
+    "mount_point": "JOZ2_RTCM_3_2",
+    "host": "system.asgeupos.pl",
+    "port": "8086"
+  }
+}
+
+
+``` 

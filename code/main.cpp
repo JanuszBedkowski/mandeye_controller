@@ -16,7 +16,7 @@
 #include <gpios.h>
 #include <iostream>
 #include <string>
-#include "gnss.h"
+#include "gnss/gnss.h"
 #include "publisher.h"
 #include "compilation_constants.h"
 
@@ -855,6 +855,8 @@ int main(int argc, char** argv)
         if (!portName.empty())
         {
             mandeye::gnssClientPtr = std::make_shared<mandeye::GNSSClient>();
+            //configure NTRIP
+
             mandeye::gnssClientPtr->SetTimeStampProvider(mandeye::lidarClientPtr);
             mandeye::gnssClientPtr->startListener(portName, baud);
 
@@ -869,6 +871,11 @@ int main(int argc, char** argv)
 					mandeye::gpioClientPtr->setLed(hardware::LED::BUZZER, false);
 				}
 			});
+            if (mandeye::configJson.is_object() && mandeye::configJson.contains("ntrip"))
+            {
+                nlohmann::json ntripConfig = mandeye::configJson["ntrip"];
+                mandeye::gnssClientPtr->setNtripClient(ntripConfig);
+            }
 
         }
 	// start zeromq publisher
