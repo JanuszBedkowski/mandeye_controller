@@ -32,6 +32,7 @@ set(MANDEYE_USE_OUSTER_SDK OFF CACHE BOOL  "Use Ouster SDK ")
 set(MANDEYE_USE_LIVOX_SDK2 ON CACHE BOOL "Use Livox SDK (HAP/Mid360)")
 set(MANDEYE_USE_SICK OFF CACHE BOOL "Use SICK SCAN XD SDK (Multiscan MRS1000), requires SICK SDK to be installed")
 set(MANDEYE_USE_HESAI_SDK2 OFF CACHE BOOL "Use Hesai SDK2 (PandarXT/GT)")
+set(MANDEYE_NTRIP ON CACHE BOOL "Build NTRIP client")
 
 # NMEA and libserial
 find_path(LIBSERIAL_INCLUDE_DIR SerialPort.h
@@ -144,7 +145,7 @@ if (${MANDEYE_USE_HESAI_SDK2})
     add_compile_definitions(MANDEYE_USE_HESAI_SDK2)
 endif()
 
-add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h
+add_executable(control_program code/main.cpp code/gnss/gnss.cpp code/gnss/ntrip.cpp code/web_page.h
         ${LIDAR_SOURCES}
         ${LIDAR_SOURCES}
         code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp code/save_data.cpp

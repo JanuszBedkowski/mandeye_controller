@@ -794,6 +794,11 @@ int main(int argc, char** argv)
 					mandeye::gpioClientPtr->setLed(hardware::LED::BUZZER, false);
 				}
 			});
+			if (mandeye::configJson.is_object() && mandeye::configJson.contains("ntrip"))
+			{
+				nlohmann::json ntripConfig = mandeye::configJson["ntrip"];
+				mandeye::gnssClientPtr->setNtripClient(ntripConfig);
+			}
 		}
 		// start zeromq publisher
 		mandeye::publisherPtr = std::make_shared<mandeye::Publisher>();

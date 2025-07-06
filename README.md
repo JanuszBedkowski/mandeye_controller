@@ -305,3 +305,21 @@ List state of services:
 ```shell
 mandeye_services_status
 ```
+
+# Ntrip client
+
+The Ntrip client is used to connect to a Ntrip server and receive corrections for the GPS data. 
+The client is implemented in the `ntrip_client` directory. If there is a `ntrip` section in the config file `/media/usb/mandeye_config.json` with the following content:
+```json
+{
+  "ntrip":{
+    "user_name": "SomeUser",
+    "password": "SomePassword",
+    "mount_point": "JOZ2_RTCM_3_2",
+    "host": "system.asgeupos.pl",
+    "port": "8086"
+  }
+}
+
+
+``` 
