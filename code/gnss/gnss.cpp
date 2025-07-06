@@ -6,12 +6,23 @@
 
 namespace mandeye
 {
+    std::string sanitize_ascii(const std::string& input) {
+        std::string output;
+        for (char c : input) {
+            // Keep only printable ASCII and basic control chars like \r and \n
+            if ((c >= 32 && c <= 126) || c == '\r' || c == '\n') {
+                output += c;
+            }
+        }
+        return output;
+    }
+
 nlohmann::json GNSSClient::produceStatus()
 {
 	nlohmann::json data;
 	data["init_success"] = init_succes;
 	std::lock_guard<std::mutex> lock(m_bufferMutex);
-	data["nmea"]["last_line"] = m_lastLine;
+	data["nmea"]["last_line"] = sanitize_ascii(m_lastLine);
 	data["gga"]["time"]["h"] = lastGGA.time.hours;
 	data["gga"]["time"]["m"] = lastGGA.time.minutes;
 	data["gga"]["time"]["s"] = lastGGA.time.seconds;
