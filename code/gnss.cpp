@@ -8,7 +8,7 @@ namespace mandeye
 {
 
 
-//! removes all non-printable characters from the line, replaces them with <>
+//! Removes all non-printable characters from the line, replacing them with the format <0xXX>, where XX is the hexadecimal value of the character.
 std::string sanitizeLine(const std::string& line)
 {
 	std::string sanitizedLine;
