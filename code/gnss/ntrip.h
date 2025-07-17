@@ -1,13 +1,17 @@
 #pragma once
+
 #include <boost/asio.hpp>
 #include <functional>
 #include <string>
-namespace mandeye
-{
+#include <vector>
+#include <chrono>
+
+namespace mandeye {
+
+  using RtcmCallback = std::function<void(const uint8_t* data, std::size_t size)>;
+
   class NtripClient {
   public:
-    using RtcmCallback = std::function<void(const uint8_t*, std::size_t)>;
-
     NtripClient(boost::asio::io_context& io,
                 const std::string& host,
                 const std::string& port,
@@ -25,12 +29,24 @@ namespace mandeye
     void send_request();
     void read_headers();
     void read_stream();
+    void schedule_reconnect();
+    void start_watchdog();
+    void stop_watchdog();
 
     boost::asio::ip::tcp::resolver resolver_;
     boost::asio::ip::tcp::socket socket_;
+    boost::asio::steady_timer timer_;
+    boost::asio::steady_timer watchdog_timer_;
+
     boost::asio::streambuf response_;
+
     std::string host_, port_, mountpoint_, user_, pass_;
     RtcmCallback callback_;
+
+    std::chrono::seconds retry_delay_;
+    std::chrono::seconds watchdog_timeout_;
+
     bool header_parsed_ = false;
   };
-}
+
+} // namespace mandeye
