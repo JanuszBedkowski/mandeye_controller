@@ -11,21 +11,21 @@ namespace mandeye
 //! Removes all non-printable characters from the line, replacing them with the format <0xXX>, where XX is the hexadecimal value of the character.
 std::string sanitizeLine(const std::string& line)
 {
-	std::string sanitizedLine;
+	std::ostringstream sanitizedLine;
 	for (char c : line)
 	{
 		if (std::isprint(c) || std::isspace(c))
 		{
-			sanitizedLine += c;
+			sanitizedLine << c;
 		}
 		else
 		{
 			char sanitizedChar[12];
 			snprintf(sanitizedChar, sizeof(sanitizedChar), "<0x%02X>", static_cast<unsigned char>(c));
-			sanitizedLine += sanitizedChar;
+			sanitizedLine << sanitizedChar;
 		}
 	}
-	return sanitizedLine;
+	return sanitizedLine.str();
 }
 
 nlohmann::json GNSSClient::produceStatus()
