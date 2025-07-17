@@ -6,12 +6,34 @@
 
 namespace mandeye
 {
+
+
+//! removes all non-printable characters from the line, replaces them with <>
+std::string sanitizeLine(const std::string& line)
+{
+	std::string sanitizedLine;
+	for (char c : line)
+	{
+		if (std::isprint(c) || std::isspace(c))
+		{
+			sanitizedLine += c;
+		}
+		else
+		{
+			char sanitizedChar[12];
+			snprintf(sanitizedChar, sizeof(sanitizedChar), "<0x%02X>", static_cast<unsigned char>(c));
+			sanitizedLine += sanitizedChar;
+		}
+	}
+	return sanitizedLine;
+}
+
 nlohmann::json GNSSClient::produceStatus()
 {
 	nlohmann::json data;
 	data["init_success"] = init_succes;
 	std::lock_guard<std::mutex> lock(m_bufferMutex);
-	data["nmea"]["last_line"] = m_lastLine;
+	data["nmea"]["last_line"] = sanitizeLine(m_lastLine);
 	data["gga"]["time"]["h"] = lastGGA.time.hours;
 	data["gga"]["time"]["m"] = lastGGA.time.minutes;
 	data["gga"]["time"]["s"] = lastGGA.time.seconds;
