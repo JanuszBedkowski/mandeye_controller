@@ -7,12 +7,12 @@
 #include <vector>
 #include <fstream>
 #include <cassert>
+#include <iomanip>
 
 
 
 std::string launchfile = R"xml(<?xml version="1.0"?>
 <launch>
-
     <!-- Launch multiScan -->
     <!-- env name="ROSCONSOLE_CONFIG_FILE" value="/tmp/rosconsole_loglevel_warn.conf" / -->
     <arg name="hostname" default="192.168.0.1"/>                                    <!-- IP address of sensor -->
@@ -34,7 +34,7 @@ std::string launchfile = R"xml(<?xml version="1.0"?>
     <arg name="host_set_LFPlayerFilter" default="False" />                          <!-- If true, LFPlayerFilter is set at startup (default: false) -->
     <arg name="host_LFPintervalFilter" default="0 1" />                             <!-- Optionally set LFPintervalFilter to "<enabled> <N>" with 1 for enabled and 0 for disabled and N to reduce output to every N-th scan -->
     <arg name="host_set_LFPintervalFilter" default="False" />                       <!-- If true, LFPintervalFilter is set at startup (default: false) -->
-    <arg name="custom_pointclouds" default="cloud_unstructured_segments cloud_unstructured_fullframe cloud_polar_unstructured_segments cloud_polar_unstructured_fullframe cloud_all_fields_fullframe"/> <!-- Default pointclouds: segmented and fullframe pointclouds, with all layers and echos in both cartesian and polar coordinates -->
+    <arg name="custom_pointclouds" default="cloud_unstructured_segments"/> <!-- Default pointclouds: segmented and fullframe pointclouds, with all layers and echos in both cartesian and polar coordinates -->
     <arg name="tf_publish_rate" default="10.0" />                                   <!-- Rate to publish TF messages in hz, use 0 to deactivate TF messages -->
     <node name="$(arg nodename)" pkg="sick_scan_xd" type="sick_generic_caller" respawn="false" output="screen" required="true">
         <param name="scanner_type" type="string" value="sick_multiscan"/>
@@ -214,7 +214,7 @@ std::string launchfile = R"xml(<?xml version="1.0"?>
         <!-- param name="custom_pointclouds" type="string" value="cloud_unstructured_segments cloud_polar_unstructured_segments cloud_unstructured_fullframe cloud_unstructured_echo1 cloud_unstructured_echo1_segments cloud_unstructured_echo2 cloud_unstructured_echo2_segments cloud_unstructured_echo3 cloud_unstructured_echo3_segments cloud_unstructured_reflector cloud_unstructured_reflector_segments cloud_structured_hires0 cloud_structured_hires0_segments cloud_structured_hires1 cloud_structured_hires1_segments cloud_structured cloud_structured_segments cloud_all_fields_segments cloud_all_fields_fullframe"/ -->
 
         <!-- cloud_unstructured_segments: cartesian coordinates, segmented, all echos, all layers, range filter on, max. 2700 points, mean ca. 1000 points per cloud -->
-        <param name="cloud_unstructured_segments" type="string" value="coordinateNotation=0 updateMethod=1 echos=0,1,2 layers=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 reflectors=0,1 infringed=0,1 rangeFilter=0.05,999,1 topic=/cloud_unstructured_segments frameid=world publish=1"/>
+        <param name="cloud_unstructured_segments" type="string" value="coordinateNotation=0 updateMethod=1 echos=0,1,2 fields=x,y,z,i,lidar_sec,lidar_nsec,ring,echo layers=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 reflectors=0,1 infringed=0,1 rangeFilter=0.05,999,1 topic=/cloud_unstructured_segments frameid=world publish=1"/>
 
         <!-- cloud_unstructured_fullframe: cartesian coordinates, fullframe, all echos, all layers, range filter on, max. 32400 points, mean ca. 10000 points per cloud -->
         <param name="cloud_unstructured_fullframe" type="string" value="coordinateNotation=0 updateMethod=0 echos=0,1,2 layers=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 reflectors=0,1 infringed=0,1 rangeFilter=0.05,999,1 topic=/cloud_unstructured_fullframe frameid=world publish=1"/>
@@ -294,13 +294,33 @@ std::string launchfile = R"xml(<?xml version="1.0"?>
         Note: Using tick_to_timestamp_mode = 2, the timestamps in ROS message headers will be in lidar time, not in system time. Lidar and system time can be very different.
         Using tick_to_timestamp_mode = 2 might cause unexpected results or error messages. We recommend using tick_to_timestamp_mode = 2 for special test cases only.
         -->
-        <param name="tick_to_timestamp_mode" type="int" value="0"/>
+        <param name="tick_to_timestamp_mode" type="int" value="2"/>
 
     </node>
 
 </launch>
 )xml";
 
+std::string_view typeToString(uint8_t type)
+{
+    switch (type)
+    {
+        case SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_FLOAT32:
+            return "float32";
+        case SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_INT32:
+            return "int32";
+        case SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_UINT8:
+            return "uint8";
+        case SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_INT8:
+            return "int8";
+        case SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_UINT16:
+            return "uint16";
+        case SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_INT16:
+            return "int16";
+        default:
+            return "unknown";
+    }
+}
 inline float bytesToFloat(const uint8_t* bytes)
 {
     float value;
@@ -312,12 +332,23 @@ inline float bytesToFloat(const uint8_t* bytes)
 std::ofstream  pc;
 void customizedPointCloudMsgCb(SickScanApiHandle apiHandle, const SickScanPointCloudMsg* msg)
 {
-    std::cout << "C++ PointCloudMsgCb: " << msg->width << " x " << msg->height << " pointcloud message received" << std::endl; // data processing to be done
-
+    std::cout << "Received point cloud " << msg->topic << std::endl;
+    for (int i =0; i < msg->fields.size; i++)
+    {
+        const std::string_view fieldName{ msg->fields.buffer[i].name} ;
+        const auto type =  msg->fields.buffer[i].datatype;
+        std::cout << "    -  Field: " << fieldName << " " << typeToString(type) << " offset: " << msg->fields.buffer[i].offset << std::endl;
+    }
     int offsetX = -1;
     int offsetY = -1;
     int offsetZ = -1;
     int offsetI = -1;
+    constexpr auto TypeX = SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_FLOAT32;
+    constexpr auto TypeY = SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_FLOAT32;
+    constexpr auto TypeZ = SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_FLOAT32;
+
+
+
     for (int i =0; i < msg->fields.size; i++)
     {
         const std::string_view fieldName{ msg->fields.buffer[i].name} ;
@@ -346,6 +377,8 @@ void customizedPointCloudMsgCb(SickScanApiHandle apiHandle, const SickScanPointC
     assert(offsetY >= 0);
     assert(offsetZ >= 0);
     assert(offsetI >= 0);
+    double ts = 0;
+    ts = msg->header.timestamp_sec + static_cast<double>(msg->header.timestamp_nsec) * 1e-9;
 
 
     for (int rowId  = 0; rowId <  msg->height; rowId++)
@@ -362,7 +395,9 @@ void customizedPointCloudMsgCb(SickScanApiHandle apiHandle, const SickScanPointC
             float y = offsetY>=0 ? bytesToFloat(pointPtr+offsetY) : -1;
             float z = offsetZ>=0 ? bytesToFloat(pointPtr+offsetZ) : -1;
             float i  = offsetI>=0 ? bytesToFloat(pointPtr+offsetI) : -1;
-            pc<< x <<" "<< y <<" "<< z << " " << i <<std::endl;
+
+
+            pc<< x <<" "<< y <<" "<< z << " " << i <<" " << ts << std::endl;
         }
     }
 
@@ -370,7 +405,9 @@ void customizedPointCloudMsgCb(SickScanApiHandle apiHandle, const SickScanPointC
 
 void imuCallback( SickScanApiHandle apiHandle,  const SickScanImuMsg* msg)
 {
-    std::cout << msg->linear_acceleration.z << std::endl;
+    double ts = 0;
+    ts = msg->header.timestamp_sec + static_cast<double>(msg->header.timestamp_nsec) * 1e-9;
+    std::cout << std::fixed << std::setprecision(6)  << " " << ts << msg->linear_acceleration.z << std::endl;
 }
 int main(int argc, char** argv)
 {
