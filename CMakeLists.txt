@@ -126,13 +126,12 @@ if (${MANDEYE_USE_SICK})
         add_executable(sick_client_example code/lidars/sick/sick_client_example.cpp)
         target_link_libraries(sick_client_example PRIVATE sick_scan_xd::sick_scan_xd_shared_lib )
 
-#        add_library(sick_lib
-#            code/lidars/sick/SickClient.cpp
-#        )
-#        target_link_libraries(sick_lib PRIVATE SickScanXD::sick_scan_xd)
-#        target_include_directories(sick_lib PRIVATE ${SICKSCANXD_INCLUDE_DIRS})
-#        install(TARGETS sick_lib LIBRARY DESTINATION /opt/mandeye/)
-#        list(APPEND LIDAR_LIBRARIES sick_lib)
+        add_library(sick_lib
+            code/lidars/sick/SickClient.cpp
+        )
+        target_link_libraries(sick_lib PRIVATE sick_scan_xd::sick_scan_xd_shared_lib)
+        install(TARGETS sick_lib LIBRARY DESTINATION /opt/mandeye/)
+        list(APPEND LIDAR_LIBRARIES sick_lib)
         add_compile_definitions(MANDEYE_USE_SICK)
     else()
         message(FATAL_ERROR "SICK SDK not found. Install SICK SDK to use this feature.")
