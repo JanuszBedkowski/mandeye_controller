@@ -88,7 +88,19 @@ BaseLidarClientPtr createLidarClient(const std::string& lidarType, const nlohman
             return nullptr;
         }
     }
-
+    else if (lidarType == "SICK")
+    {
+        try {
+            return make_dynamic_client<BaseLidarClient>(
+                "libsick_lib.so",
+                "create_sick_client",
+                "destroy_sick_client"
+            );
+        } catch (const std::exception& e) {
+            std::cerr << "[OUSTER] " << e.what() << std::endl;
+            return nullptr;
+        }
+    }
     else
     {
         throw std::runtime_error("Unknown lidar type: " + lidarType);
