@@ -63,8 +63,8 @@ namespace mandeye
         std::lock_guard<std::mutex> lock(m_bufferMutex);
         // Simulate starting the listener
         m_watchThread = std::thread(&SickClient::DataThreadFunction, this);
-        // wait 5 seconds for the API to initialize
-        std::this_thread::sleep_for(std::chrono::seconds(5));
+        // wait 10 seconds for the API to initialize
+        std::this_thread::sleep_for(std::chrono::seconds(10));
         int status = -1;
         char statusMesssage[256];
         m_apiStatus = SickScanApiGetStatus(m_apiHandle, &status, statusMesssage, 256);
@@ -128,6 +128,12 @@ namespace mandeye
         std::memcpy(&value, bytes, sizeof(float));
         return value;
     }
+    inline uint32_t bytesToUInt32(const uint8_t* bytes)
+    {
+        uint32_t value;
+        std::memcpy(&value, bytes, sizeof(uint32_t));
+        return value;
+    }
 
     void SickClient::customizedPointCloudMsgCb(SickScanApiHandle apiHandle, const SickScanPointCloudMsg* msg)
     {
@@ -139,7 +145,15 @@ namespace mandeye
             std::cerr << "SickClient: Instance not found for apiHandle" << std::endl;
             return;
         }
-
+//#define DEV
+#ifdef DEV
+        for (int i =0; i < msg->fields.size; i++)
+        {
+            const std::string_view fieldName{ msg->fields.buffer[i].name} ;
+            const auto type =  msg->fields.buffer[i].datatype;
+            std::cout << "    -  Field: " << fieldName << " " << int(type) << " offset: " << msg->fields.buffer[i].offset << std::endl;
+        }
+#endif
         // log for debugging
         instance->m_recivedPointMessages ++;
         if (instance->m_bufferLidarPtr)
@@ -148,40 +162,51 @@ namespace mandeye
             int offsetY = -1;
             int offsetZ = -1;
             int offsetI = -1;
+            int offsetLidarSec = -1;
+            int offsetLidarNsec = -1;
             constexpr auto TypeX = SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_FLOAT32;
             constexpr auto TypeY = SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_FLOAT32;
             constexpr auto TypeZ = SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_FLOAT32;
             constexpr auto TypeI = SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_FLOAT32;
-
+            constexpr auto TypeLidarSec = SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_UINT32;
+            constexpr auto TypeLidarNsec = SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_UINT32;
 
             for (int i =0; i < msg->fields.size; i++)
             {
                 const std::string_view fieldName{ msg->fields.buffer[i].name} ;
                 const auto type =  msg->fields.buffer[i].datatype;
-                if (type == SickScanNativeDataType::SICK_SCAN_POINTFIELD_DATATYPE_FLOAT32 )
+
+                if (fieldName == "x" && type == TypeX)
                 {
-                    if (fieldName == "x" && type == TypeX)
-                    {
-                        offsetX = msg->fields.buffer[i].offset;
-                    }
-                    if (fieldName == "y"  && type == TypeY)
-                    {
-                        offsetY = msg->fields.buffer[i].offset;
-                    }
-                    if (fieldName == "z"  && type == TypeZ)
-                    {
-                        offsetZ = msg->fields.buffer[i].offset;
-                    }
-                    if (fieldName == "i" && type == TypeI)
-                    {
-                        offsetI = msg->fields.buffer[i].offset;
-                    }
+                    offsetX = msg->fields.buffer[i].offset;
+                }
+                else if (fieldName == "y"  && type == TypeY)
+                {
+                    offsetY = msg->fields.buffer[i].offset;
+                }
+                else if (fieldName == "z"  && type == TypeZ)
+                {
+                    offsetZ = msg->fields.buffer[i].offset;
+                }
+                else if (fieldName == "i" && type == TypeI)
+                {
+                    offsetI = msg->fields.buffer[i].offset;
+                }
+                else if (fieldName == "lidar_sec" && type == TypeLidarSec)
+                {
+                    offsetLidarSec = msg->fields.buffer[i].offset;
+                }
+                else if (fieldName == "lidar_nsec" && type == TypeLidarNsec)
+                {
+                    offsetLidarNsec = msg->fields.buffer[i].offset;
                 }
             }
             assert(offsetX >= 0);
             assert(offsetY >= 0);
             assert(offsetZ >= 0);
             assert(offsetI >= 0);
+            assert(offsetLidarNsec >=0);
+            assert(offsetLidarSec >=0);
 
             for (int rowId  = 0; rowId <  msg->height; rowId++)
             {
@@ -197,12 +222,15 @@ namespace mandeye
                     const float y = offsetY>=0 ? bytesToFloat(pointPtr+offsetY) : -1;
                     const float z = offsetZ>=0 ? bytesToFloat(pointPtr+offsetZ) : -1;
                     const float i  = offsetI>=0 ? bytesToFloat(pointPtr+offsetI) : -1;
+                    const uint32_t lidar_sec = offsetLidarSec >= 0 ? bytesToUInt32(pointPtr + offsetLidarSec) : 0;
+                    const uint32_t lidar_nsec = offsetLidarNsec >= 0 ? bytesToUInt32(pointPtr + offsetLidarNsec) : 0;
+
                     LidarPoint point;
                     point.x = x;
                     point.y = y;
                     point.z = z;
                     point.intensity = i;
-                    point.timestamp = ts;
+                    point.timestamp = uint64_t(lidar_sec) * 1e9 + lidar_nsec; // Convert to nanoseconds
                     point.laser_id = 0;
 
                     std::lock_guard<std::mutex> lock(instance->m_bufferMutex);

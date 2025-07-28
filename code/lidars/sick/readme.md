@@ -4,10 +4,10 @@
 Clone and build the `sick_scan_xd` SDK.
 ```bash
 ```shell
-git clone https://github.com/SICKAG/sick_scan_xd.git -b master
+git clone https://github.com/michalpelka/sick_scan_xd.git -b mp/fix_candidate_504
 mkdir -p sick_scan_xd/build
 cd sick_scan_xd/build
-cmake -DROS_VERSION=0 -DLDMRS=0  -DCMAKE_BUILD_TYPE=Release ..
+cmake -DROS_VERSION=0 -DLDMRS=0  -DBUILD_DEBUG_TARGET=OFF ..
 make -j
 ```
 
