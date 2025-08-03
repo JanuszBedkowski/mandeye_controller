@@ -4,15 +4,25 @@ set(CMAKE_CXX_STANDARD 17)
 project (mandeye_multisensor)
 
 set(MANDEYE_HARDWARE_HEADER CACHE STRING "Mandeye hardware setting. Choose one header from 'code/hardware/mandeye-*.h")
+set(MANDEYE_USE_SYSTEM_PISTACHE CACHE BOOL ON)
 #add_compile_definitions(MANDEYE_HARDWARE_HEADER="${MANDEYE_HARDWARE_HEADER}")
 message(STATUS "Mandeye hardware version is : ${MANDEYE_HARDWARE_HEADER}")
 set (MANDEYE_VERSION "0.6-dev")
 message(STATUS "Mandeye version is : ${MANDEYE_VERSION}")
 
+if (MANDEYE_USE_SYSTEM_PISTACHE)
+message(STATUS "Using system Pistache") 
 set(SYSTEM_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 message("pistache")
-#pistache
+elseif()
 add_subdirectory(3rd/pistache)
+endif()
+#pistache
+
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+
+#add_subdirectory(3rd/pistache)
 
 
 message("LASzip library")
