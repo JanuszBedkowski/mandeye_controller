@@ -4,17 +4,21 @@ set(CMAKE_CXX_STANDARD 17)
 project (mandeye_multisensor)
 
 set(MANDEYE_HARDWARE_HEADER CACHE STRING "Mandeye hardware setting. Choose one header from 'code/hardware/mandeye-*.h")
+set(MANDEYE_USE_SYSTEM_PISTACHE CACHE BOOL ON)
 #add_compile_definitions(MANDEYE_HARDWARE_HEADER="${MANDEYE_HARDWARE_HEADER}")
 message(STATUS "Mandeye hardware version is : ${MANDEYE_HARDWARE_HEADER}")
 set (MANDEYE_VERSION "0.7-dev")
 message(STATUS "Mandeye version is : ${MANDEYE_VERSION}")
-
 set(SYSTEM_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
-message("pistache")
-#pistache
+
+if (MANDEYE_USE_SYSTEM_PISTACHE)
+message(STATUS "Using system Pistache")
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+elseif()
 set(PISTACHE_BUILD_TESTS OFF CACHE BOOL "Disable Pistache tests")
 add_subdirectory(3rd/pistache)
-
+endif()
 
 message("LASzip library")
 # LASzip library
@@ -91,14 +95,14 @@ if (${MANDEYE_USE_OUSTER_SDK})
     add_subdirectory(3rd/ouster-sdk)
     add_executable(ouster_client_example code/lidars/ouster/ouster_client_example.cpp)
     target_link_libraries(ouster_client_example PRIVATE OusterSDK::ouster_client)
-    
+
     # Create isolated static library for Ouster integration
     add_library(ouster_lib
         code/lidars/ouster/OusterClient.cpp
     )
     target_link_libraries(ouster_lib PRIVATE OusterSDK::ouster_client)
     target_include_directories(ouster_lib PRIVATE 3rd/ouster-sdk/ouster_client/include)
-    
+
     list(APPEND LIDAR_LIBRARIES ouster_lib)
     install(TARGETS ouster_lib LIBRARY DESTINATION /opt/mandeye/)
     add_compile_definitions(MANDEYE_USE_OUSTER_SDK)
@@ -109,7 +113,7 @@ if (${MANDEYE_USE_LIVOX_SDK2})
     # Livox SDK2
 
     add_subdirectory(3rd/Livox-SDK2)
-    add_library(livox2_lib 
+    add_library(livox2_lib
             code/lidars/livoxsdk2/LivoxClient.cpp
     )
     target_link_libraries(livox2_lib PRIVATE livox_lidar_sdk_static)
