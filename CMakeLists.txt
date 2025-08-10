@@ -38,6 +38,8 @@ include_directories(code/)
 
 set(MANDEYE_USE_OUSTER_SDK ON CACHE BOOL  "Use Ouster SDK ")
 set(MANDEYE_USE_LIVOX_SDK2 ON CACHE BOOL "Use Livox SDK (HAP/Mid360)")
+set(MANDEYE_USE_SICK ON CACHE BOOL "Use SICK SCAN XD SDK (Multiscan MRS1000), requires SICK SDK to be installed")
+
 
 # NMEA and libserial
 find_path(LIBSERIAL_INCLUDE_DIR SerialPort.h
@@ -85,7 +87,7 @@ if (${MANDEYE_USE_OUSTER_SDK})
     # We need to separate the Ouster SDK from the main project to avoid conflicts with SPDLOG in LIVOX SDK2
     message("Ouster SDK")
     add_subdirectory(3rd/ouster-sdk)
-    add_executable(ouster_client_example code/ouster_client_example.cpp)
+    add_executable(ouster_client_example code/lidars/ouster/ouster_client_example.cpp)
     target_link_libraries(ouster_client_example PRIVATE OusterSDK::ouster_client)
     
     # Create isolated static library for Ouster integration
@@ -116,6 +118,25 @@ if (${MANDEYE_USE_LIVOX_SDK2})
     add_compile_definitions(MANDEYE_USE_LIVOX_SDK2)
 endif()
 
+if (${MANDEYE_USE_SICK})
+    message("SICK SDK")
+    # SICK SDK
+    find_package(sick_scan_xd REQUIRED)
+    if (TARGET sick_scan_xd::sick_scan_xd_shared_lib)
+        add_executable(sick_client_example code/lidars/sick/sick_client_example.cpp)
+        target_link_libraries(sick_client_example PRIVATE sick_scan_xd::sick_scan_xd_shared_lib )
+
+        add_library(sick_lib
+            code/lidars/sick/SickClient.cpp
+        )
+        target_link_libraries(sick_lib PRIVATE sick_scan_xd::sick_scan_xd_shared_lib)
+        install(TARGETS sick_lib LIBRARY DESTINATION /opt/mandeye/)
+        list(APPEND LIDAR_LIBRARIES sick_lib)
+        add_compile_definitions(MANDEYE_USE_SICK)
+    else()
+        message(FATAL_ERROR "SICK SDK not found. Install SICK SDK to use this feature.")
+    endif()
+endif()
 
 add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h
         ${LIDAR_SOURCES}

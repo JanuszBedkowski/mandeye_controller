@@ -3,6 +3,9 @@ Description=Mandeye
 After=multi-user.target
 
 [Service]
+#Environment=MANDEYE_LIDAR_SDK=SICK
+#Environment=MANDEYE_DISABLE_BUZZER=0
+
 User=pi
 ExecStartPre=/bin/sleep 20
 ExecStart=/opt/mandeye/control_program
