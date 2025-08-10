@@ -532,8 +532,6 @@ void stateWatcher()
 					saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					auto lidarList = lidarClientPtr->getSerialNumberToLidarIdMapping();
 					saveLidarList(lidarList, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
-
-
 					if (gnssClientPtr)
 					{
 						saveGnssData(gnssBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
@@ -830,13 +828,11 @@ int main(int argc, char** argv)
 	});
 
 	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", MANDEYE_REPO));
-
-        mandeye::configJson = mandeye::fileSystemClientPtr->GetConfig();
-        if (mandeye::configJson.is_object() && mandeye::configJson.contains("lidar_sdk"))
+	mandeye::configJson = mandeye::fileSystemClientPtr->GetConfig();
+	if (mandeye::configJson.is_object() && mandeye::configJson.contains("lidar_sdk"))
 	{
 		mandeye::lidarSDKToUse = mandeye::configJson["lidar_sdk"].get<std::string>();
 	}
-
 	std::cout << "Lidar SDK to use from config: " << mandeye::lidarSDKToUse << std::endl;
 
 	std::thread thLivox([&]() {

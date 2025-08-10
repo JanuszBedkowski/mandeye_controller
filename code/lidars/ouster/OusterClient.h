@@ -28,6 +28,9 @@ public:
     bool startListener(const std::string& interfaceIp) override;
     void startLog() override;
     void stopLog() override;
+    bool isSynced() override {
+        return false;
+    }
     std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> retrieveData() override;
     std::unordered_map<uint32_t, std::string> getSerialNumberToLidarIdMapping() const override;
 

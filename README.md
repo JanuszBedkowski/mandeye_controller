@@ -59,8 +59,8 @@ sudo apt-get upgrade
 sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev libpistache-dev libcamera-dev linuxptp debhelper libopencv-dev
 ```
 
-## Static IP for eth0 
-### Systems without network manager [Raspbian Bullseye]
+## Static IP for eth0
+
 ```bash
 sudo nano /etc/dhcpcd.conf
 ```
