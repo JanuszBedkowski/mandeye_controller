@@ -3,7 +3,7 @@
 
 Clone and build the `sick_scan_xd` SDK.
 ```bash
-```shell
+```bash
 git clone https://github.com/michalpelka/sick_scan_xd.git -b mp/fix_candidate_504
 mkdir -p sick_scan_xd/build
 cd sick_scan_xd/build

@@ -44,8 +44,9 @@ namespace mandeye
 
         std::vector<char*> cli;
         cli.push_back("test_app");
-        cli.push_back(configFilePath.data());
-        cli.push_back("udp_receiver_ip:=192.168.99.100");
+        cli.push_back(const_cast<char*>(configFilePath.c_str()));
+        std::string receiverIpArg = "udp_receiver_ip:=" + interfaceIp;
+        cli.push_back(const_cast<char*>(receiverIpArg.c_str()));
 
         m_apiHandle = SickScanApiCreate(cli.size(), cli.data());
         assert(m_apiHandle != nullptr && "Failed to create SickScanApiHandle");
@@ -86,8 +87,9 @@ namespace mandeye
 
     void SickClient::stopListener()
     {
+        std::lock_guard<std::mutex> lock(m_instancesMutex);
         m_instance = nullptr; // Clear the static instance pointer
-        isDone.store(false);
+        isDone.store(true);
     }
 
 
@@ -249,7 +251,7 @@ namespace mandeye
         m_bufferLidarPtr = std::make_shared<LidarPointsBuffer>();
         m_bufferIMUPtr = std::make_shared<LidarIMUBuffer>();
         // Simulate starting log
-        std::cout << "SickLiSickClientdar: Logging started" << std::endl;
+        std::cout << "SickClient: Logging started" << std::endl;
     }
 
     void SickClient::stopLog()

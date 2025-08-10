@@ -119,7 +119,7 @@ BaseLidarClientPtr createLidarClient(const std::string& lidarType, const nlohman
                 "destroy_sick_client"
             );
         } catch (const std::exception& e) {
-            std::cerr << "[OUSTER] " << e.what() << std::endl;
+            std::cerr << "[SICK] " << e.what() << std::endl;
             return nullptr;
         }
     }
