@@ -34,7 +34,7 @@ public:
 	std::unordered_map<uint32_t, std::string> getSerialNumberToLidarIdMapping() const override;
 
 	//! Returns if Lidar is synced (PPS or PTP)
-	bool isSynced() const;
+	bool isSynced() override;
 
 
 	// mandeye_utils::TimeStampProvider overrides ...

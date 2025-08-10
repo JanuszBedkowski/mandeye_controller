@@ -21,16 +21,38 @@ std::shared_ptr<ClientType> make_dynamic_client(const std::string& libPath,
                                                 const std::string& createSym,
                                                 const std::string& destroySym)
 {
+    std::string effectiveLibPath = libPath;
     void* handle = dlopen(libPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
     if (!handle) {
+        std::cerr << "Failed to load library: " << dlerror() << std::endl;
+    }
+    if (!handle) {
         //try again with global install path
-        std::cerr << "Failed to load library: " << dlerror() << " trying to load from default install" << std::endl;
-        handle = dlopen(("/opt/mandeye/" + libPath).c_str(), RTLD_LAZY | RTLD_GLOBAL);
+        effectiveLibPath = "/opt/mandeye/" + libPath;
+        handle = dlopen(effectiveLibPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
         if (!handle) {
+            std::cerr << "Failed to load library from global install path: " << dlerror() << std::endl;
+        }
+    }
+
+    if (!handle) {
+        //try executable directory
+        std::filesystem::path exe_path = std::filesystem::canonical("/proc/self/exe"); // Linux only
+        std::filesystem::path parent_path = exe_path.parent_path();
+        effectiveLibPath = parent_path / libPath;
+        handle = dlopen(effectiveLibPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+
+        if (!handle) {
+            std::cerr << "Failed to load library: " << dlerror() << " from " << (parent_path / libPath) << std::endl;
+            std::cerr << "Am I giving up." << std::endl;
             throw std::runtime_error("Failed to load library: " + std::string(dlerror()));
         }
     }
 
+    if (handle)
+    {
+        std::cout << "Successfully loaded library: " << effectiveLibPath << std::endl;
+    }
     auto create = reinterpret_cast<CreateFunc*>(dlsym(handle, createSym.c_str()));
     auto destroy = reinterpret_cast<DestroyFunc*>(dlsym(handle, destroySym.c_str()));
 
@@ -88,7 +110,19 @@ BaseLidarClientPtr createLidarClient(const std::string& lidarType, const nlohman
             return nullptr;
         }
     }
-
+    else if (lidarType == "SICK")
+    {
+        try {
+            return make_dynamic_client<BaseLidarClient>(
+                "libsick_lib.so",
+                "create_sick_client",
+                "destroy_sick_client"
+            );
+        } catch (const std::exception& e) {
+            std::cerr << "[SICK] " << e.what() << std::endl;
+            return nullptr;
+        }
+    }
     else
     {
         throw std::runtime_error("Unknown lidar type: " + lidarType);

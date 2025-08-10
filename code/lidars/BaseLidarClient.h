@@ -56,11 +56,16 @@ namespace mandeye
         //! Start the listener on a specific interface IP
         virtual bool startListener(const std::string& interfaceIp) = 0;
 
+        //! Stops the listener on a specific interface IP
+        virtual void stopListener() {};
+
         //! Start logging data from the Lidar and IMU
         virtual void startLog() = 0;
 
         //! Stop logging data from the Lidar and IMU
         virtual void stopLog() = 0;
+
+        virtual bool isSynced() = 0;
 
         //! Move the data from the internal buffers to the caller, preparing new buffers
         virtual std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> retrieveData() = 0;

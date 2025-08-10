@@ -9,13 +9,13 @@
 #include <iostream>
 #include <vector>
 
-#include "ouster/client.h"
-#include "ouster/impl/build.h"
-#include "ouster/lidar_scan.h"
-#include "ouster/sensor_scan_source.h"
-#include "ouster/types.h"
+#include "../../../3rd/ouster-sdk/ouster_client/include/ouster/client.h"
+#include "../../../3rd/ouster-sdk/ouster_client/include/ouster/lidar_scan.h"
+#include "../../../3rd/ouster-sdk/ouster_client/include/ouster/sensor_scan_source.h"
+#include "../../../3rd/ouster-sdk/ouster_client/include/ouster/types.h"
+#include "../../../cmake-build-debug/3rd/ouster-sdk/generated/ouster/impl/build.h"
 
-#include <ouster/impl/logging.h>
+#include <../../../3rd/ouster-sdk/ouster_client/include/ouster/impl/logging.h>
 
 using namespace ouster;
 
