@@ -56,8 +56,8 @@ sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-ess
 ```
 
 
-## Static IP for eth0
-
+## Static IP for eth0 
+### Systems without network manager [Raspbian Bullseye]
 ```bash
 sudo nano /etc/dhcpcd.conf
 ```
@@ -68,6 +68,24 @@ static ip_address=192.168.1.5/24
 static routers=0.0.0.0    
 ```
 
+### Systems with network manager [Raspbian Bookwork]
+
+```bash
+sudo nmcli connection add type ethernet ifname eth0 con-name static-eth0 \
+  ipv4.addresses 192.168.1.5/24 \
+  ipv4.gateway 0.0.0.0 \
+  ipv4.method manual 
+```
+
+verify with :
+```bash
+nmcli device show eth0
+```
+
+eventually you can use
+```bash
+nmtui
+```
 ## Clone and build app
 
 Note that, target hardware is defined during compilation time using `-MANDEYE_HARDWARE_HEADER=mandeye-standard-rpi4.h` parameter.
@@ -203,6 +221,25 @@ make package
 ```
 
 The package will be available in the build directory.
+
+# Choosing Lidar SDK
+The software supports different SDKs for the Lidar:
+
+| SDK | Variable | Description                                                                      |                                                               
+|-----|----------|----------------------------------------------------------------------------------|
+| Livox SDK | `LIVOX_SDK2` | Livox SDK version 2 tested with Mid360 and HAP                                   |
+| Ouster SDK | `OUSTER` | Ouster SDK tested with OS-0-64 (ousteros-image-prod-aries-v2.5.3+20240111055903) |
+| Butter Lidar | `BUTTER_LIDAR` | Dummy SDK for documentation and testing purposes                                 |
+
+Those are shared libraries that are loaded at runtime.
+You can set the SDK to use in two ways:
+1. By setting the `MANDEYE_LIDAR_SDK` environment variable to `LIVOX_SDK2` or `OUSTER`.
+2. By putting the config in location '/media/usb/mandeye_config.json' with the following content:
+```json
+{
+  "lidar_sdk": "LIVOX_SDK2"
+}
+```
 
 # Installation and usage of the package
 To install the package, you need to copy it to the target device and install it with `dpkg`:

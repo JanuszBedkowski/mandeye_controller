@@ -1,7 +1,8 @@
 #pragma once
-#include <LivoxClient.h>
+#include "lidars/BaseLidarClient.h"
 #include <string>
 #include <json.hpp>
+#include <optional>
 namespace mandeye
 {
 struct LazStats {
@@ -15,5 +16,5 @@ struct LazStats {
 
 };
 
-std::optional<LazStats> saveLaz(const std::string& filename, LivoxPointsBufferPtr buffer);
+std::optional<LazStats> saveLaz(const std::string& filename, LidarPointsBufferPtr buffer);
 }
