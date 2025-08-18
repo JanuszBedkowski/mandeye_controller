@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5)
 set(CMAKE_CXX_STANDARD 17)
 
 project (mandeye_multisensor)
@@ -36,9 +36,11 @@ add_subdirectory(extras)
 
 include_directories(code/)
 
-set(MANDEYE_USE_OUSTER_SDK ON CACHE BOOL  "Use Ouster SDK ")
+set(MANDEYE_USE_OUSTER_SDK OFF CACHE BOOL  "Use Ouster SDK ")
 set(MANDEYE_USE_LIVOX_SDK2 ON CACHE BOOL "Use Livox SDK (HAP/Mid360)")
-set(MANDEYE_USE_SICK ON CACHE BOOL "Use SICK SCAN XD SDK (Multiscan MRS1000), requires SICK SDK to be installed")
+set(MANDEYE_USE_SICK OFF CACHE BOOL "Use SICK SCAN XD SDK (Multiscan MRS1000), requires SICK SDK to be installed")
+set(MANDEYE_USE_ROS2 ON CACHE BOOL "Use ros2 as lidar SDK, requires ROS2 to be installed")
+
 
 
 # NMEA and libserial
@@ -136,6 +138,27 @@ if (${MANDEYE_USE_SICK})
     else()
         message(FATAL_ERROR "SICK SDK not found. Install SICK SDK to use this feature.")
     endif()
+endif()
+
+
+if(${MANDEYE_USE_ROS2})
+    message("ROS2 SDK")
+    # ROS2 SDK
+    find_package(ament_cmake REQUIRED)
+    find_package(rclcpp REQUIRED)
+    find_package(sensor_msgs REQUIRED)
+    add_library(ros2_lib
+        code/lidars/ros2/Ros2Lidar.cpp
+    )
+    target_include_directories(ros2_lib PRIVATE ${rclcpp_INCLUDE_DIRS} ${sensor_msgs_INCLUDE_DIRS} ${std_msgs_INCLUDE_DIRS} ${geometry_msgs_INCLUDE_DIRS} ${nav_msgs_INCLUDE_DIRS})
+    ament_target_dependencies(ros2_lib
+            rclcpp
+            sensor_msgs
+    )
+    install(TARGETS ros2_lib LIBRARY DESTINATION /opt/mandeye/)
+    list(APPEND LIDAR_LIBRARIES ros2_lib)
+    add_compile_definitions(MANDEYE_USE_ROS2)
+
 endif()
 
 add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h

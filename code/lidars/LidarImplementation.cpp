@@ -123,6 +123,23 @@ BaseLidarClientPtr createLidarClient(const std::string& lidarType, const nlohman
             return nullptr;
         }
     }
+    else if (lidarType == "ROS2")
+    {
+        try {
+            return make_dynamic_client<BaseLidarClient>(
+                "libros2_lib.so",
+                "create_client",
+                "destroy_client"
+            );
+        } catch (const std::exception& e) {
+            std::cerr << "[ROS2] " << e.what() << std::endl;
+            return nullptr;
+        }
+    }
+    else if (lidarType == "DUMMY")
+    {
+        return std::make_shared<ButterLidar>();
+    }
     else
     {
         throw std::runtime_error("Unknown lidar type: " + lidarType);
