@@ -35,6 +35,13 @@ namespace mandeye
         std::lock_guard<std::mutex> lock(m_bufferImuMutex);
         // Simulate starting the listener
         m_watchThread = std::thread(&ROS2Lidar::DataThreadFunction, this);
+        // sleep for some time
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        // diagnose
+        if (m_recivedPointMessages==0 && m_receivedImuMessages ==0)
+        {
+            return false;
+        }
         return true; // Simulate success
     }
 
