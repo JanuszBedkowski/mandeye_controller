@@ -4,20 +4,23 @@ set(CMAKE_CXX_STANDARD 17)
 project (mandeye_multisensor)
 
 set(MANDEYE_HARDWARE_HEADER CACHE STRING "Mandeye hardware setting. Choose one header from 'code/hardware/mandeye-*.h")
-set(MANDEYE_USE_SYSTEM_PISTACHE CACHE BOOL ON)
+set(MANDEYE_USE_SYSTEM_PISTACHE ON CACHE BOOL "Use pkg to find pisatche")
 #add_compile_definitions(MANDEYE_HARDWARE_HEADER="${MANDEYE_HARDWARE_HEADER}")
 message(STATUS "Mandeye hardware version is : ${MANDEYE_HARDWARE_HEADER}")
 set (MANDEYE_VERSION "0.7-dev")
 message(STATUS "Mandeye version is : ${MANDEYE_VERSION}")
 set(SYSTEM_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 
-if (MANDEYE_USE_SYSTEM_PISTACHE)
-message(STATUS "Using system Pistache")
+message(STATUS "Pistache ... ${MANDEYE_USE_SYSTEM_PISTACHE}")
+if (${MANDEYE_USE_SYSTEM_PISTACHE})
+message("Using sstem pistache")
 find_package(PkgConfig)
 pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+set(PISTACHE_LIB PkgConfig::Pistache)
 elseif()
 set(PISTACHE_BUILD_TESTS OFF CACHE BOOL "Disable Pistache tests")
 add_subdirectory(3rd/pistache)
+set(PISTACHE_LIB pistache_static)
 endif()
 
 message("LASzip library")
@@ -88,7 +91,7 @@ set(LIDAR_SOURCES
     code/lidars/LidarImplementation.cpp
 )
 set(LIDAR_LIBRARIES )
-
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if (${MANDEYE_USE_OUSTER_SDK})
     # We need to separate the Ouster SDK from the main project to avoid conflicts with SPDLOG in LIVOX SDK2
     message("Ouster SDK")
@@ -174,7 +177,7 @@ add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic " )
 
 
-target_link_libraries(control_program pthread ${LIDAR_LIBRARIES} pistache_static atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod zmq)
+target_link_libraries(control_program pthread ${LIDAR_LIBRARIES} ${PISTACHE_LIB} atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod zmq)
 
 set_target_properties(control_program PROPERTIES
         INSTALL_RPATH "/opt/mandeye/lib"

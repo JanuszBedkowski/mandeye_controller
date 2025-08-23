@@ -32,14 +32,19 @@ namespace mandeye
     bool ROS2Lidar::startListener(const std::string& interfaceIp)
     {
         std::cout << "ROS2Lidar: startListener called with interfaceIp: " << interfaceIp << std::endl;
-        std::lock_guard<std::mutex> lock(m_bufferImuMutex);
-        // Simulate starting the listener
-        m_watchThread = std::thread(&ROS2Lidar::DataThreadFunction, this);
+        {
+            std::lock_guard<std::mutex> lock(m_bufferImuMutex);
+            // Simulate starting the listener
+            m_watchThread = std::thread(&ROS2Lidar::DataThreadFunction, this);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+
         // sleep for some time
         std::this_thread::sleep_for(std::chrono::seconds(5));
         // diagnose
         if (m_recivedPointMessages==0 && m_receivedImuMessages ==0)
         {
+            std::cerr << "Failed to fetch data imu : " << m_receivedImuMessages << " pc : " << m_recivedPointMessages << std::endl;
             return false;
         }
         return true; // Simulate success
@@ -101,7 +106,7 @@ namespace mandeye
                     imuData.laser_id = 0; // Assuming a single laser for now
                     auto now = std::chrono::system_clock::now();
                     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
-                    imuData.epoch_time = millis.count();
+                    imuData.epoch_time = millis.count();   
                     m_bufferIMUPtr->emplace_back(imuData);
                 }
                 m_receivedImuMessages.fetch_add(1);
@@ -110,7 +115,6 @@ namespace mandeye
         m_pointcloudSubscription = m_rosNode->create_subscription<sensor_msgs::msg::PointCloud2>(
             "/lidar_points", 10,
             [this](const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
-                std::lock_guard<std::mutex> lock(m_bufferImuMutex);
                 m_recivedPointMessages.fetch_add(1);
 
                 uint64_t msg_timestamp = msg->header.stamp.sec * 1e9 + msg->header.stamp.nanosec;
@@ -133,13 +137,13 @@ namespace mandeye
                     point.tag = 0;
                     point.line_id = 0;
                     point.laser_id = 0;
+
+                    std::lock_guard<std::mutex> lock(m_bufferImuMutex);
                     if (m_bufferLidarPtr)
                     {
                         m_bufferLidarPtr->emplace_back(point);
                     }
                 }
-
-                m_recivedPointMessages.fetch_add(1);
             });
         
         while (!isDone)
