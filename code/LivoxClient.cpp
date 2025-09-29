@@ -282,7 +282,7 @@ void LivoxClient::PointCloudCallback(uint32_t handle,
 			LivoxPoint point;
 			point.point = p_point_data[i];
 			point.laser_id = laser_id;
-			point.timestamp = toUint64.data + static_cast<uint64_t>(i) * data->time_interval * 100; //unit for interval is 0.1 us = 100 ns
+			point.timestamp = toUint64.data + static_cast<uint64_t>(i) * (double(data->time_interval * 100) / data->dot_num); //unit for interval is 0.1 us = 100 ns
 			if(point.timestamp > 0){
 				buffer->push_back(point);
 			}
