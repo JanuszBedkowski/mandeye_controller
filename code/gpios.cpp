@@ -2,7 +2,7 @@
 #include <gpios.h>
 #include <iostream>
 #include <gpiod.h>
-
+#include "hardware_config/mandeye.h"
 namespace mandeye
 {
 using namespace hardware;

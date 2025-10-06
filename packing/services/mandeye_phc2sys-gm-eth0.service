@@ -1,0 +1,13 @@
+[Unit]
+Description=phc2sys (CLOCK_REALTIME -> /dev/ptp0) on eth0
+After=mandeye_ptp4l-gm-eth0.service
+Requires=mandeye_ptp4l-gm-eth0.service
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/sbin/phc2sys -s CLOCK_REALTIME -c /dev/ptp0 -O 0 -w -m
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

@@ -52,9 +52,8 @@ The software can run other distros (e.g. Ubuntu) but it is not tested and mainta
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev
+sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev libpistache-dev libcamera-dev linuxptp
 ```
-
 
 ## Static IP for eth0
 
@@ -80,12 +79,13 @@ $ ls ./code/hardware_config/mandeye-*.h
 ./code/hardware_config/mandeye-standard-rpi5.h
 ```
 
-| Hardware header            | What is supported             |
-|----------------------------|-------------------------------|
-|mandeye-standard-rpi4.h     | Raspberry Pi 4                |
-|mandeye-standard-rpi5.h     | Raspberry Pi 5                |
-|mandeye-pro-cm4-bookworm.h  | Raspberry Pi Compute module 4 plus carrier board|
-|mandeye-pro-cm4-bullseye.h  | Deprecated                    |
+| Hardware header            | What is supported                                |
+|----------------------------|--------------------------------------------------|
+| mandeye-standard-rpi4.h    | Raspberry Pi 4                                   |
+| mandeye-standard-rpi5.h    | Raspberry Pi 5                                   |
+| mandeye-pro-cm4-bookworm.h | Raspberry Pi Compute module 4 plus carrier board |
+| mandeye-direct-cm5.h       | Raspberry Pi Compute module 5 plus carrier board |
+|mandeye-pro-cm4-bullseye.h  | Deprecated                                       |
 
 
 The next example shows how to build the app for Raspberry Pi 4 without custom carrier board at Raspberry Pi 4.
@@ -216,7 +216,7 @@ There is a helper script `/opt/mandeye/helper.sh` that contains some useful comm
 
 Add it to bashrc:
 ```bash
-echo "source /opt/mandeye/helper.sh" >> ~/.bashrc
+echo "source /opt/mandeye/helpers.sh" >> ~/.bashrc
 ```
 
 After that start required services:
@@ -226,8 +226,30 @@ mandeye_start
 ```
 
 There are optional services that can be started:
+
+PPS time synchronization generator using GPIO:
 ```shell
-mandeye_fakepps_start
-mandeye_camera_start
-mandeye_camera_ftp_start
+sudo systemctl enable mandeye_fakepps.service
+mandeye_fakepps_start # PPS generator using GPIO
+```
+
+PTP time synchronization generator using eth0 (works only on Raspberry Pi 5):
+```shell
+sudo systemctl enable mandeye_ptp4l-gm-eth0.service
+sudo systemctl enable mandeye_phc2sys-gm-eth0.service 
+mandeye_ptp_start # PTP clock using eth0
+mandeye_ptp_grandmaster_start # 
+```
+
+Cameras:
+```shell
+sudo systemctl enable mandeye_libcamera_cam0.service
+sudo systemctl enable mandeye_libcamera_cam1.service
+mandeye_camera_cam0_start
+mandeye_camera_cam1_start
+```
+
+List state of services:
+```shell
+mandeye_services_status
 ```

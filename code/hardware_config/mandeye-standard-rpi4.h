@@ -10,6 +10,8 @@ namespace hardware
 {
 #define PISTACHE_SERVER
 constexpr int Offset = 0;
+
+constexpr bool Autostart = false;
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyeStandard";
@@ -18,6 +20,16 @@ constexpr const char* mandeyeHarwareType()
 constexpr const char* GetGPIOChip()
 {
 	return "/dev/gpiochip0";
+}
+
+inline void ReportState([[maybe_unused]] const mandeye::States state)
+{
+	// no-op
+}
+
+inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
+{
+	// no-op
 }
 
 constexpr int GetLED(LED led)

@@ -2,6 +2,7 @@
 #include <gpios.h>
 #include <thread>
 #include <chrono>
+#include "hardware_config/mandeye.h"
 
 
 int main(int arc, char *argv[]){
