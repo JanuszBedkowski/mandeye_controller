@@ -20,12 +20,12 @@ namespace mandeye
         {libcamera::ControlType::ControlTypeRectangle, "ControlTypeRectangle"},
         {libcamera::ControlType::ControlTypeSize, "ControlTypeSize"}
     };
-
+    using CaptureCallback = void(cv::Mat& img, uint64_t timestamp, nlohmann::json& metaDataDump);
     class LibCameraWrapper
     {
     private:
         void requestComplete(libcamera::Request *request);
-        std::function<void(cv::Mat& img, uint64_t timestamp)> m_callback;
+        std::function<CaptureCallback> m_callback;
         std::shared_ptr<libcamera::Camera> m_camera;
         std::unique_ptr<libcamera::CameraManager> m_cm;
         std::unique_ptr<libcamera::FrameBufferAllocator> m_allocator;
@@ -53,7 +53,7 @@ namespace mandeye
         void start(nlohmann::json config = {} ,libcamera::StreamRole role = libcamera::StreamRole::StillCapture);
         void capture(bool oneFrame = false);
         void stop();
-        void registerCallback(std::function<void(cv::Mat& img, uint64_t timestamp)> cb) { m_callback = cb; }
+        void registerCallback(std::function<CaptureCallback>&& cb) { m_callback = std::move(cb); }
         nlohmann::json getCameraConfig();
         libcamera::ControlList& getControlList() { return m_controlList; }
         template <typename T> bool setControlNumeric(const std::string &name, T value);

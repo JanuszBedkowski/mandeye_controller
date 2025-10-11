@@ -6,6 +6,61 @@ using namespace std::chrono_literals;
 #include <sys/mman.h>
 
 namespace mandeye {
+    constexpr std::string_view controlToString(uint32_t id)
+    {
+        using namespace libcamera::controls;
+        switch (id) {
+        case AE_ENABLE:               return "AE_ENABLE";
+        case AE_STATE:                return "AE_STATE";
+        case AE_METERING_MODE:        return "AE_METERING_MODE";
+        case AE_CONSTRAINT_MODE:      return "AE_CONSTRAINT_MODE";
+        case AE_EXPOSURE_MODE:        return "AE_EXPOSURE_MODE";
+        case EXPOSURE_VALUE:          return "EXPOSURE_VALUE";
+        case EXPOSURE_TIME:           return "EXPOSURE_TIME";
+        case EXPOSURE_TIME_MODE:      return "EXPOSURE_TIME_MODE";
+        case ANALOGUE_GAIN:           return "ANALOGUE_GAIN";
+        case ANALOGUE_GAIN_MODE:      return "ANALOGUE_GAIN_MODE";
+        case AE_FLICKER_MODE:         return "AE_FLICKER_MODE";
+        case AE_FLICKER_PERIOD:       return "AE_FLICKER_PERIOD";
+        case AE_FLICKER_DETECTED:     return "AE_FLICKER_DETECTED";
+        case BRIGHTNESS:              return "BRIGHTNESS";
+        case CONTRAST:                return "CONTRAST";
+        case LUX:                     return "LUX";
+        case AWB_ENABLE:              return "AWB_ENABLE";
+        case AWB_MODE:                return "AWB_MODE";
+        case AWB_LOCKED:              return "AWB_LOCKED";
+        case COLOUR_GAINS:            return "COLOUR_GAINS";
+        case COLOUR_TEMPERATURE:      return "COLOUR_TEMPERATURE";
+        case SATURATION:              return "SATURATION";
+        case SENSOR_BLACK_LEVELS:     return "SENSOR_BLACK_LEVELS";
+        case SHARPNESS:               return "SHARPNESS";
+        case FOCUS_FO_M:              return "FOCUS_FO_M";
+        case COLOUR_CORRECTION_MATRIX:return "COLOUR_CORRECTION_MATRIX";
+        case SCALER_CROP:             return "SCALER_CROP";
+        case DIGITAL_GAIN:            return "DIGITAL_GAIN";
+        case FRAME_DURATION:          return "FRAME_DURATION";
+        case FRAME_DURATION_LIMITS:   return "FRAME_DURATION_LIMITS";
+        case SENSOR_TEMPERATURE:      return "SENSOR_TEMPERATURE";
+        case SENSOR_TIMESTAMP:        return "SENSOR_TIMESTAMP";
+        case AF_MODE:                 return "AF_MODE";
+        case AF_RANGE:                return "AF_RANGE";
+        case AF_SPEED:                return "AF_SPEED";
+        case AF_METERING:             return "AF_METERING";
+        case AF_WINDOWS:              return "AF_WINDOWS";
+        case AF_TRIGGER:              return "AF_TRIGGER";
+        case AF_PAUSE:                return "AF_PAUSE";
+        case LENS_POSITION:           return "LENS_POSITION";
+        case AF_STATE:                return "AF_STATE";
+        case AF_PAUSE_STATE:          return "AF_PAUSE_STATE";
+        case HDR_MODE:                return "HDR_MODE";
+        case HDR_CHANNEL:             return "HDR_CHANNEL";
+        case GAMMA:                   return "GAMMA";
+        case DEBUG_METADATA_ENABLE:   return "DEBUG_METADATA_ENABLE";
+        case FRAME_WALL_CLOCK:        return "FRAME_WALL_CLOCK";
+        default:                          return "";
+        }
+    }
+
     uint64_t getCurrentTimestamp() {
         using namespace std::chrono;
         auto ts = duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count();
@@ -191,7 +246,6 @@ namespace mandeye {
 
         m_controlsInfo = m_camera->controls();
         auto configDump = getCameraConfig();
-        //std::cout << configDump.dump(4) << std::endl;
 
         // apply config from json
 
@@ -252,6 +306,17 @@ namespace mandeye {
         if (request->status() == Request::RequestCancelled)
             return;
 
+        nlohmann::json metadataDump;
+        for (auto f : request->metadata()) {
+            const auto id = f.first;
+            std::string name;
+            if (name = controlToString(id); name.empty()) {
+                name = std::to_string(id);
+            }
+            metadataDump[name] = f.second.toString();
+        }
+
+
         if (m_config->at(0).pixelFormat == libcamera::formats::MJPEG) {
             const libcamera::Request::BufferMap &buffers = request->buffers();
             for (auto bufferPair: buffers) {
@@ -263,7 +328,7 @@ namespace mandeye {
                 cv::Mat img = cv::imdecode(memv, cv::IMREAD_COLOR);
 
                 if (m_callback) {
-                    m_callback(img, m_requestTimestamp);
+                    m_callback(img, m_requestTimestamp, metadataDump);
                 };
             }
         } else if (m_config->at(0).pixelFormat == libcamera::formats::RGB888) {
@@ -271,9 +336,6 @@ namespace mandeye {
             for (auto bufferPair: buffers) {
                 libcamera::FrameBuffer *buffer = bufferPair.second;
                 m_requestTimestamp = buffer->metadata().timestamp + m_monoOffset;
-                auto currentTime = getCurrentTimestamp();
-                double exposureTime = double(currentTime) / 1e9 - double(m_requestTimestamp) / 1e9;
-                //std::cout << "Exposure time: " << double(currentTime) / 1e9 - double(m_requestTimestamp) / 1e9 << std::endl;
                 libcamera::StreamConfiguration &streamConfig = m_config->at(0);
                 unsigned int vw = streamConfig.size.width;
                 unsigned int vh = streamConfig.size.height;
@@ -286,7 +348,7 @@ namespace mandeye {
                     memcpy(img.ptr(i), ptr, ls);
                 }
                 if (m_callback) {
-                    m_callback(img, m_requestTimestamp);
+                    m_callback(img, m_requestTimestamp, metadataDump);
                 }
             }
         } else {
@@ -348,7 +410,7 @@ namespace mandeye {
         config["buffer"]["stride"] = streamConfig.stride;
 
         config["controls_info"] = {};
-        config["picamera"]["_Note"] = "Here User can adjust setting of their camera!";
+        config["picamera"]["_Note1"] = "Here User can adjust setting of their camera!";
         for (auto const &control: m_controlsInfo) {
             const unsigned int id = control.first->id();
             auto name = control.first->name();
@@ -384,10 +446,20 @@ namespace mandeye {
                     auto currentValue = m_controlList.get(id);
                     config["picamera"][name] = reportValue(currentValue, type);
                 } else {
+                    // apply default
                     config["picamera"][name] = reportValue(defValue, type);
+
+
+                    // change default for some controls
+                    // 10002 - Noise reduction mode from disabled to fast
+                    if (id == controls::draft::NOISE_REDUCTION_MODE) {
+                        config["picamera"][name] = controls::draft::NoiseReductionModeFast;
+                    }
                 }
             }
         }
+        // enable denoising
+
 
         return config;
     }

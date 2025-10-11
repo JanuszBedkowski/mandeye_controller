@@ -58,6 +58,7 @@ std::string_view indexWebPageData = R"rawliteral(
     <button id="btnGet">Get Config</button>
     <button id="btnSet">Set Config</button>
     <button id="btnStop">Stop Stream</button>
+    <button id="btnDwnl">Download Full Image</button>
 
     <h3>Config (editable)</h3>
     <textarea id="configInput"></textarea>
@@ -109,9 +110,26 @@ std::string_view indexWebPageData = R"rawliteral(
         streamTimer = null;
     }
 
+    function downloadImage(){
+     fetch('/photoFull')
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'photo_full.jpg';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            });
+    }
+
     document.getElementById('btnGet').onclick = getConfig;
     document.getElementById('btnSet').onclick = setConfig;
     document.getElementById('btnStop').onclick = stopStream;
+    document.getElementById('btnDwnl').onclick = downloadImage;
+
 
     // Automatically start stream and get config on load
     window.onload = () => {

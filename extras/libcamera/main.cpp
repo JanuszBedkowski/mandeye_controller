@@ -21,10 +21,30 @@ using namespace std::chrono_literals;
 #include "index.html.h"
 
 using namespace Pistache;
-mandeye::LibCameraWrapper cam;
 
-cv::Mat lastPhoto;
-std::mutex photoMutex;
+namespace global {
+    mandeye::LibCameraWrapper cam;
+    cv::Mat lastPhoto;
+    nlohmann::json photoMetadata;
+    std::mutex photoMutex;
+    nlohmann::json loadedUSBConfig;
+}
+
+
+namespace
+{
+    std::string getEnvString(const std::string& env, const std::string& def)
+    {
+        const char* env_p = std::getenv(env.c_str());
+        if(env_p == nullptr)
+        {
+            return def;
+        }
+        return std::string{env_p};
+    }
+
+} // namespace utils
+
 
 template <typename T>
 std::optional<T> GetValue(const Http::Request& request, const std::string& key) {
@@ -42,8 +62,6 @@ std::optional<T> GetValue(const Http::Request& request, const std::string& key) 
 
 struct HelloHandler : public Http::Handler {
     HTTP_PROTOTYPE(HelloHandler)
-    // Allow CORS for debugging from a different origin (adjust for prod!)
-
 
     void onRequest(const Http::Request& request, Http::ResponseWriter writer) override {
         auto setCors = [&](Http::ResponseWriter &w) {
@@ -54,33 +72,41 @@ struct HelloHandler : public Http::Handler {
 
         setCors(writer);
         if (request.resource() == "/photo") {
-                std::lock_guard<std::mutex> lck(photoMutex);
-                if (lastPhoto.empty()) {
+                std::lock_guard<std::mutex> lck(global::photoMutex);
+                if (global::lastPhoto.empty()) {
                     writer.send(Http::Code::Not_Found, "No photo yet");
                     return;
                 }
                 cv::Mat img;
                 // scale down
-                cv::resize(lastPhoto, img, cv::Size(640, 480));
+                cv::resize(global::lastPhoto, img, cv::Size(640, 480));
                 std::vector<uchar> buf;
                 cv::imencode(".jpg", img, buf);
                 Http::Response response;
                 writer.send(Http::Code::Ok, std::string(buf.begin(), buf.end()));
                 return;
         }
+        if (request.resource() == "/photoMeta") {
+            std::lock_guard<std::mutex> lck(global::photoMutex);
+            if (global::lastPhoto.empty()) {
+                writer.send(Http::Code::Not_Found, "No photo yet");
+            }
+            writer.send(Http::Code::Ok, global::photoMetadata.dump(4), MIME(Application, Json));
+            return;
+        }
         else if (request.resource() == "/photoFull") {
-            std::lock_guard<std::mutex> lck(photoMutex);
-            if (lastPhoto.empty()) {
+            std::lock_guard<std::mutex> lck(global::photoMutex);
+            if (global::lastPhoto.empty()) {
                 writer.send(Http::Code::Not_Found, "No photo yet");
                 return;
             }
             std::vector<uchar> buf;
-            cv::imencode(".jpg", lastPhoto, buf);
+            cv::imencode(".jpg", global::lastPhoto, buf);
             Http::Response response;
             writer.send(Http::Code::Ok, std::string(buf.begin(), buf.end()));
         }
         else if (request.resource() == "/getConfig") {
-            auto config = cam.getCameraConfig();
+            auto config = global::cam.getCameraConfig();
             writer.send(Http::Code::Ok, config.dump(4), MIME(Application, Json));
             return;
         }
@@ -115,9 +141,9 @@ struct HelloHandler : public Http::Handler {
                     std::cout << "Parsing JSON" << std::endl;
                     std::cout << body << std::endl;
                     nlohmann::json config = nlohmann::json::parse(body);
-                    cam.stop();
-                    cam.start(config, libcamera::StreamRole::StillCapture);
-                    cam.capture();
+                    global::cam.stop();
+                    global::cam.start(config, libcamera::StreamRole::StillCapture);
+                    global::cam.capture();
                     writer.send(Http::Code::Ok, "OK");
                 }
                 catch (const std::exception& e) {
@@ -197,16 +223,32 @@ int main()
 {
 //
     std::cout << "Starting" << std::endl;
-    // get config from
+    // get config from USB
+    const auto configFileName = getEnvString("MANDEYE_CONFIG", "/media/usb/mandeye_config.json");
+    std::cout << "Loading camera config from" << configFileName << std::endl;
+
+
+    // try to load config
+
+    try {
+        if (!std::filesystem::exists(configFileName)) {
+            throw std::runtime_error("Config file not found on USB, will create default config");
+        }
+        global::loadedUSBConfig = nlohmann::json::parse(std::ifstream(configFileName));
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to load config: " << e.what() << std::endl;
+    }
 
     std::thread t(clientThread);
 
     std::future<void> jpgSaveThread;
 
-    auto printFrame = [&](cv::Mat& img, uint64_t timestamp) {
+    auto printFrame = [&](cv::Mat& img, uint64_t timestamp, nlohmann::json& metaDataDump) {
         {
-            std::unique_lock<std::mutex> lck(photoMutex);
-            lastPhoto = img;
+            std::unique_lock<std::mutex> lck(global::photoMutex);
+            global::lastPhoto = std::move(img);
+            global::photoMetadata = std::move(metaDataDump);
         }
 
         if (globals::state=="SCANNING") {
@@ -218,29 +260,48 @@ int main()
             }
 
             if (isPreviousFrameSaved) {
-                std::lock_guard<std::mutex> lck(globals::stateMutex);
-                const std::filesystem::path path(globals::continousScanTarget);
-                jpgSaveThread = std::async(std::launch::async, [=]() {
-                    const auto start = std::chrono::high_resolution_clock::now();
-                    const auto filename = path.string() + "/" + "photo_" + std::to_string(timestamp) + ".jpg";;
-                // cv::imwrite(filename.c_str(), img);
-                // create buffer in memory and write it
-                std::vector<uchar> buf;
-                cv::imencode(".jpg", img, buf);
-                std::ofstream file(filename, std::ios::binary);
-                file.write(reinterpret_cast<char*>(buf.data()), buf.size());
-                file.close();
-                    const auto end = std::chrono::high_resolution_clock::now();
-                    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-                std::cout << "Wrote " << filename << " size :" << float(buf.size())/(1024*1024) << " in " << duration.count() << "ms" << std::endl;
-                });
+                try {
+                    std::lock_guard<std::mutex> lck(globals::stateMutex);
+                    const std::filesystem::path path(globals::continousScanTarget);
+                    jpgSaveThread = std::async(std::launch::async, [=]() {
+                        const auto start = std::chrono::high_resolution_clock::now();
+                        const auto filename = path.string() + "/" + "photo_" + std::to_string(timestamp) + ".jpg";;
+
+                    // create buffer in memory and write it
+                    std::vector<uchar> buf;
+                    cv::imencode(".jpg", img, buf);
+                    std::ofstream file(filename, std::ios::binary);
+                    file.write(reinterpret_cast<char*>(buf.data()), buf.size());
+                    file.close();
+                        const auto end = std::chrono::high_resolution_clock::now();
+                        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    std::cout << "Wrote " << filename << " size :" << float(buf.size())/(1024*1024) << " in " << duration.count() << "ms" << std::endl;
+
+                    // save metadata
+                    std::ofstream metadataFile(filename + ".meta.json");
+                    metadataFile << global::photoMetadata.dump(4);
+                    });
+                } catch (const std::exception& e) {
+                    std::cerr << "Failed to save photo: " << e.what() << std::endl;
+                }
             }
         }
     };
 
-    cam.registerCallback(printFrame);
-    cam.start({}, libcamera::StreamRole::StillCapture);
-    cam.capture(false);
+    global::cam.registerCallback(printFrame);
+    global::cam.start({}, libcamera::StreamRole::StillCapture);
+    if (!global::loadedUSBConfig.is_object()) {
+        std::cout << "No config loaded, saving default config to " << configFileName << std::endl;
+        try {
+            std::ofstream file(configFileName);
+            file << global::cam.getCameraConfig().dump(4);
+            file.close();
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Failed to save default config: " << e.what() << std::endl;
+        }
+    }
+    global::cam.capture(false);
 
 
     Address addr(Ipv4::any(), Port(8004));
@@ -256,7 +317,7 @@ int main()
     server.setHandler(Http::make_handler<HelloHandler>());
     server.serve();
 
-    cam.stop();
+    global::cam.stop();
     std::cout << "Exiting" << std::endl;
     return 0;
 }
