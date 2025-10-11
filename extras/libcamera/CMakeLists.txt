@@ -19,7 +19,6 @@ include_directories(${LIBCAMERA_INCLUDE_DIRS} ${LIBJPEG_INCLUDE_DIRS})
 find_package(PkgConfig)
 pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
-find_package(nlohmann_json REQUIRED)
 pkg_check_modules(ZMQ REQUIRED libzmq)
 
 add_executable(mandeye_libcamera main.cpp LibCameraWrapper.cpp LibCameraWrapper.h)

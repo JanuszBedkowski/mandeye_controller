@@ -18,7 +18,7 @@ This project provides a web-based interface for controlling and monitoring a cam
   - Start and stop the live stream using the provided buttons.
 ## Prerequisites
 ```aiignore
-sudo apt install libcamera-dev libpistache-dev libopencv-core-dev
+sudo apt install libcamera-dev libpistache-dev libopencv-dev
 ```
 ## Build Instructions
 ```
