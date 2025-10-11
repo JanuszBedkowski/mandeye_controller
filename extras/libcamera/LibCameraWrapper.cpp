@@ -1,4 +1,6 @@
 #include "LibCameraWrapper.h"
+
+#include <bits/this_thread_sleep.h>
 using namespace libcamera;
 using namespace std::chrono_literals;
 #include <sys/mman.h>
@@ -10,107 +12,82 @@ namespace mandeye {
         return ts;
     }
 
-
-    template <typename T> bool LibCameraWrapper::setControlNumeric(const std::string &name, T value) {
+    template <typename T>
+    bool checkIfInRange(const libcamera::ControlInfo &control, const T& value) {
+        T min = control.min().get<T>();
+        T max = control.max().get<T>();
+        if (value < min || value > max) {
+            std::cerr << "Value " << value << " out of range [" << min << ", " << max << "]" << std::endl;
+            return false;
+        }
+        return true;
+    }
+    template<typename T>
+    bool LibCameraWrapper::setControlNumeric(const std::string &name, T valueInput) {
         for (auto const &control: m_controlsInfo) {
             if (control.first->name() == name) {
-                int id = control.first->id();
-                if (m_controlList.contains(id)) {
-                    const int id = control.first->id();
-                    const int type = control.first->type();
+                const int id = control.first->id();
+                const int type = control.first->type();
 
-
-                    const bool isTypeOk = (type == ControlTypeFloat && std::is_floating_point<T>::value) ||
-                                          (type == ControlTypeInteger32 && std::is_integral<T>::value) ||
-                                          (type == ControlTypeInteger64 && std::is_integral<T>::value);
-
-                    if (!isTypeOk) {
-                        std::cerr << "Control " << name << " is not float or integer type" << std::endl;
-                        throw std::runtime_error("Control type not supported");
-                        return false;
-                    }
-                    const float minVal = control.second.min().get<T>();
-                    const float maxVal = control.second.max().get<T>();
-                    if (value < minVal || value > maxVal) {
-                        std::cerr << "Control " << name << " value " << value << " out of range [" << minVal << ", " << maxVal << "]" << std::endl;
-                        throw std::out_of_range("Value out of range");
-                        return false;
-                    }
-                    m_controlList.set(id, ControlValue(value));
-                    std::cout << "Set control " << name << " to " << value << std::endl;
-
-                    return true;
-                } else {
-                    std::cerr << "Control " << name << " not found in control list" << std::endl;
-                    throw std::runtime_error("Control doesn't exist");
+                if (control.first->isArray()) {
+                    std::cerr << "Control " << name << " is an array, skipping" << std::endl;
                     return false;
                 }
+
+                if (type == libcamera::ControlTypeNone) {
+                    std::cerr << "Control " << name << " type " << type << " not supported" << std::endl;
+                    return false;
+                }
+
+                if (type == libcamera::ControlTypeBool) {
+                    auto value = static_cast<bool>(valueInput);
+                    m_controlList.set(id, value);
+                }
+                else if (type == libcamera::ControlTypeByte) {
+                    const auto value  = static_cast<uint8_t>(valueInput);
+                    if (checkIfInRange<uint8_t>(control.second, value)) {
+                        m_controlList.set(id, value);
+                    }
+                }
+                else if (type == libcamera::ControlTypeUnsigned16) {
+                    const auto value = static_cast<uint16_t>(valueInput);
+                    if (checkIfInRange<uint16_t>(control.second, value)) {
+                        m_controlList.set(id, value);
+                    }
+                }
+                else if (type == libcamera::ControlTypeInteger32) {
+                    const auto value = static_cast<int32_t>(valueInput);
+                    if (checkIfInRange<int32_t>(control.second, value)) {
+                        m_controlList.set(id, value);
+                    }
+                }
+                else if (type == libcamera::ControlTypeInteger64) {
+                    const auto value = static_cast<int64_t>(valueInput);
+                    if (checkIfInRange<int64_t>(control.second, value)) {
+                        m_controlList.set(id, value);
+                    }
+                }
+                if (type == libcamera::ControlTypeFloat) {
+                    const auto value = static_cast<float>(valueInput);
+                    if (checkIfInRange<float>(control.second, value)) {
+                        m_controlList.set(id, value);
+                    }
+                }
+                else if (type == libcamera::ControlTypeString) {
+                    std::string value = std::to_string(valueInput);
+                    m_controlList.set(id, ControlValue(value));
+                }
+                return true;
             }
         }
+        std::cerr << "Control " << name << " not found" << std::endl;
         return false;
     }
 
-
-
     // implementations
     template bool LibCameraWrapper::setControlNumeric<bool>(const std::string &name, bool value);
+    template bool LibCameraWrapper::setControlNumeric<int64_t>(const std::string &name, int64_t value);
     template bool LibCameraWrapper::setControlNumeric<float>(const std::string &name, float value);
-    template bool LibCameraWrapper::setControlNumeric<int>(const std::string &name, int value);
-
-
-    nlohmann::json libcameraConfigToJson(const libcamera::Span<const uint8_t> &span, libcamera::ControlType type) {
-        std::cout << "ControlType: " << type << " Size: " << span.size() << std::endl;
-        if (type == libcamera::ControlTypeBool && span.size() == 1) {
-            return span.data()[0] != 0;
-        }
-        else if (type == libcamera::ControlTypeByte) {
-            return span.data()[0];
-        }
-        else if (type == libcamera::ControlTypeInteger32 && span.size() == 4) {
-            int32_t val;
-            memcpy(&val, span.data(), 4);
-            return val;
-        }
-        else if (type == libcamera::ControlTypeInteger64 && span.size() == 8) {
-            int64_t val;
-            memcpy(&val, span.data(), 8);
-            return val;
-        }
-        else if (type == libcamera::ControlTypeFloat && span.size() == 4) {
-            float val;
-            memcpy(&val, span.data(), 4);
-            return val;
-        }
-        else if (type == libcamera::ControlTypeString) {
-            return std::string(reinterpret_cast<const char *>(span.data()), span.size());
-        }
-        else if (type == libcamera::ControlTypeRectangle && span.size() == 16) {
-            libcamera::Rectangle rect;
-            memcpy(&rect, span.data(), 16);
-            nlohmann::json j;
-            j["x"] = rect.x;
-            j["y"] = rect.y;
-            j["width"] = rect.width;
-            j["height"] = rect.height;
-            return j;
-        }
-        else if (type == libcamera::ControlTypeSize && span.size() == 8) {
-            libcamera::Size size;
-            memcpy(&size, span.data(), 8);
-            nlohmann::json j;
-            j["width"] = size.width;
-            j["height"] = size.height;
-            return j;
-        }
-        else {
-            // Fallback: dump as array of bytes
-            nlohmann::json j = nlohmann::json::array();
-            for (size_t i = 0; i < span.size(); i++)
-                j.push_back(span.data()[i]);
-            return j;
-        }
-    }
-
 
     std::vector<libcamera::Span<uint8_t> > LibCameraWrapper::Mmap(libcamera::FrameBuffer *buffer) {
         auto item = m_mapped_buffers.find(buffer);
@@ -174,9 +151,8 @@ namespace mandeye {
         m_config = m_camera->generateConfiguration({role});
 
         StreamConfiguration &streamConfig = m_config->at(0);
-        // streamConfig.size.width = 640;
-        // streamConfig.size.height = 480;
-        streamConfig.pixelFormat = libcamera::formats::BGR888;
+
+        streamConfig.pixelFormat = libcamera::formats::RGB888;
         m_config->validate();
         std::cout << "Validated configuration is: " << streamConfig.toString() << std::endl;
         m_camera->configure(m_config.get());
@@ -226,14 +202,17 @@ namespace mandeye {
                     continue;
                 }
                 try {
+                    if (value.is_null()) {
+                        std::cout << "Skipping " << key << " - unsupported set to null" << std::endl;
+                    }
                     if (value.is_boolean()) {
-                        setControlNumeric(key, value.get<bool>() ? 1.0f : 0.0f);
+                        setControlNumeric(key, value.get<bool>());
                     }
                     else if (value.is_number_float()) {
                         setControlNumeric(key, value.get<float>());
                     }
                     else if (value.is_number_integer()) {
-                        setControlNumeric(key, static_cast<float>(value.get<int>()));
+                        setControlNumeric(key, value.get<int32_t>());
                     }
                     else {
                         std::cout << "Skipping " << key << " - unsupported type" << std::endl;
@@ -244,23 +223,25 @@ namespace mandeye {
                 }
             }
         }
-
-        //m_controlList.set(controls::AeEnable, true);
         m_camera->start(&m_controlList);
-
 
     }
 
 
     void LibCameraWrapper::stop() {
-        requests.clear();
+        m_running.store(false);
+        std::cout << "Stopping camera" << std::endl;
+        std::this_thread::sleep_for(100ms);
+        m_stream = nullptr;
+
         if (m_camera) {
             m_camera->stop();
             if (m_allocator) m_allocator->free(m_stream);
+
+            requests.clear();
             m_camera->release();
             m_camera.reset();
             m_allocator.reset();
-
         }
         m_cm->stop();
         m_cm.reset();
@@ -280,18 +261,19 @@ namespace mandeye {
                 auto mem = Mmap(buffer);
                 std::vector<uchar> memv(mem[0].begin(), mem[0].end());
                 cv::Mat img = cv::imdecode(memv, cv::IMREAD_COLOR);
+
                 if (m_callback) {
                     m_callback(img, m_requestTimestamp);
                 };
             }
-        } else if (m_config->at(0).pixelFormat == libcamera::formats::BGR888) {
+        } else if (m_config->at(0).pixelFormat == libcamera::formats::RGB888) {
             const libcamera::Request::BufferMap &buffers = request->buffers();
             for (auto bufferPair: buffers) {
                 libcamera::FrameBuffer *buffer = bufferPair.second;
                 m_requestTimestamp = buffer->metadata().timestamp + m_monoOffset;
                 auto currentTime = getCurrentTimestamp();
                 double exposureTime = double(currentTime) / 1e9 - double(m_requestTimestamp) / 1e9;
-                std::cout << "Exposure time: " << double(currentTime) / 1e9 - double(m_requestTimestamp) / 1e9 << std::endl;
+                //std::cout << "Exposure time: " << double(currentTime) / 1e9 - double(m_requestTimestamp) / 1e9 << std::endl;
                 libcamera::StreamConfiguration &streamConfig = m_config->at(0);
                 unsigned int vw = streamConfig.size.width;
                 unsigned int vh = streamConfig.size.height;
@@ -328,6 +310,31 @@ namespace mandeye {
         }
     }
 
+    nlohmann::json reportValue(const libcamera::ControlValue &value, const libcamera::ControlType type) {
+        if (value.isNone())
+            return nlohmann::json();
+        switch (type) {
+            case libcamera::ControlTypeBool:
+                return nlohmann::json(value.get<bool>());
+            case libcamera::ControlTypeByte:
+                return nlohmann::json(value.get<uint8_t>());
+            case libcamera::ControlTypeUnsigned16:
+                return nlohmann::json(value.get<uint16_t>());
+            case libcamera::ControlTypeUnsigned32:
+                return nlohmann::json(value.get<uint32_t>());
+            case libcamera::ControlTypeInteger32:
+                return nlohmann::json(value.get<int32_t>());
+            case libcamera::ControlTypeInteger64:
+                return nlohmann::json(value.get<int64_t>());
+            case libcamera::ControlTypeFloat:
+                return nlohmann::json(value.get<float>());
+            case libcamera::ControlTypeString:
+                return nlohmann::json(value.get<std::string>());
+            default:
+                return nlohmann::json();
+        }
+    }
+
     nlohmann::json LibCameraWrapper::getCameraConfig() {
         nlohmann::json config;
         if (!m_camera)
@@ -343,27 +350,45 @@ namespace mandeye {
         config["controls_info"] = {};
         config["picamera"]["_Note"] = "Here User can adjust setting of their camera!";
         for (auto const &control: m_controlsInfo) {
-            int id = control.first->id();
+            const unsigned int id = control.first->id();
             auto name = control.first->name();
-            if (!name.empty()) {
+
+            if (control.first->isArray()) {
+                continue;
+            }
+            if (!name.empty())
+            {
                 config["controls_info"][name]["name"] = control.first->name();
+                config["controls_info"][name]["id"] = id;
+                config["controls_info"]["vendor"] =  control.first->vendor();
+                config["controls_info"][name]["isArray"] = control.first->isArray();
+                config["controls_info"][name]["isInput"] = control.first->isInput();
+                config["controls_info"][name]["isOutput"] = control.first->isOutput();
                 config["controls_info"][name]["type"] = control.first->type();
-                config["controls_info"][name]["max"] = control.second.max().toString();
-                config["controls_info"][name]["min"] = control.second.min().toString();
-                config["controls_info"][name]["default"] = control.second.def().toString();
-                config["controls_info"][name]["values"] = control.second.values().size();
-                auto type = control.first->type();
-                if (type == libcamera::ControlTypeBool ||
-                    type == libcamera::ControlTypeInteger32 ||
-                    type == libcamera::ControlTypeInteger64 ||
-                    type == libcamera::ControlTypeFloat ||
-                    type == libcamera::ControlTypeByte ) {
-                    config["picamera"][name] = control.second.def().toString();
+
+                const auto type = control.first->type();
+                if (LibCameraControlTypeToString.find(type) != LibCameraControlTypeToString.end()) {
+                    config["controls_info"][name]["type_str"] = LibCameraControlTypeToString.at(type);
+                } else {
+                    config["controls_info"][name]["type_str"] = "Unknown";
                 }
 
+                const auto &defValue = control.second.def();
+                const auto &minValue = control.second.min();
+                const auto &maxValue = control.second.max();
 
+                config["controls_info"][name]["max"] = minValue.toString();
+                config["controls_info"][name]["min"] = maxValue.toString();
+                config["controls_info"][name]["def"] = defValue.toString();
+                if (m_controlList.contains(id)){
+                    auto currentValue = m_controlList.get(id);
+                    config["picamera"][name] = reportValue(currentValue, type);
+                } else {
+                    config["picamera"][name] = reportValue(defValue, type);
+                }
             }
         }
+
         return config;
     }
 

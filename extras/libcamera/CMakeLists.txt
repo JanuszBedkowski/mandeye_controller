@@ -22,8 +22,7 @@ find_package(PkgConfig)
 pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 find_package(nlohmann_json REQUIRED)
-include_directories(../../3rd/json/)
 pkg_check_modules(ZMQ REQUIRED libzmq)
 
 add_executable(CameraDriver main.cpp LibCameraWrapper.cpp LibCameraWrapper.h)
-target_link_libraries(CameraDriver  ${ZMQ_LIBRARIES} PkgConfig::Pistache ${LIBCAMERA_LIBRARIES} ${LIBJPEG_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(CameraDriver  ${ZMQ_LIBRARIES} PkgConfig::Pistache ${LIBCAMERA_LIBRARIES} ${LIBJPEG_LIBRARIES} ${OpenCV_LIBS} nlohmann_json::nlohmann_json)

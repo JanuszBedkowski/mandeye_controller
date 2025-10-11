@@ -3,12 +3,23 @@
 #include <libcamera/libcamera.h>
 #include <opencv2/opencv.hpp>
 #include <atomic>
-#include <json.hpp>
+#include "json.hpp"
 namespace mandeye
 {
 
     uint64_t getCurrentTimestamp();
 
+    const std::unordered_map<libcamera::ControlType, std::string> LibCameraControlTypeToString = {
+        {libcamera::ControlType::ControlTypeNone, "ControlTypeNone"},
+        {libcamera::ControlType::ControlTypeBool, "ControlTypeBool"},
+        {libcamera::ControlType::ControlTypeByte, "ControlTypeByte"},
+        {libcamera::ControlType::ControlTypeInteger32, "ControlTypeInteger32"},
+        {libcamera::ControlType::ControlTypeInteger64, "ControlTypeInteger64"},
+        {libcamera::ControlType::ControlTypeFloat, "ControlTypeFloat"},
+        {libcamera::ControlType::ControlTypeString, "ControlTypeString"},
+        {libcamera::ControlType::ControlTypeRectangle, "ControlTypeRectangle"},
+        {libcamera::ControlType::ControlTypeSize, "ControlTypeSize"}
+    };
 
     class LibCameraWrapper
     {
@@ -44,7 +55,6 @@ namespace mandeye
         void stop();
         void registerCallback(std::function<void(cv::Mat& img, uint64_t timestamp)> cb) { m_callback = cb; }
         nlohmann::json getCameraConfig();
-
         libcamera::ControlList& getControlList() { return m_controlList; }
         template <typename T> bool setControlNumeric(const std::string &name, T value);
 
