@@ -16,13 +16,20 @@ std::string_view indexWebPageData = R"rawliteral(
             flex: 1;
             background: #000;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: flex-start;
             align-items: center;
         }
         #photo {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+        }
+        #photoMeta {
+            width: 100%;
+            max-width: 640px;
+            box-sizing: border-box;
+            margin-top: 10px;
         }
         #controls {
             flex: 1;
@@ -51,6 +58,7 @@ std::string_view indexWebPageData = R"rawliteral(
 <body>
 <div id="camera">
     <img id="photo" alt="Camera stream">
+    <pre id="photoMeta"></pre>
 </div>
 
 <div id="controls">
@@ -59,6 +67,7 @@ std::string_view indexWebPageData = R"rawliteral(
     <button id="btnSet">Set Config</button>
     <button id="btnStop">Stop Stream</button>
     <button id="btnDwnl">Download Full Image</button>
+    <button id="btnMeta">Show Photo Metadata</button>
 
     <h3>Config (editable)</h3>
     <textarea id="configInput"></textarea>
@@ -98,8 +107,16 @@ std::string_view indexWebPageData = R"rawliteral(
 
     function startStream() {
         if (streamTimer) return;
-        const update = () => {
+        const update = async () => {
             photo.src = `${API}/photo?cacheBust=${Date.now()}`;
+            // Fetch and display metadata with each photo update
+            try {
+                const res = await fetch('/photoMeta');
+                const json = await res.json();
+                document.getElementById('photoMeta').textContent = JSON.stringify(json, null, 2);
+            } catch (err) {
+                document.getElementById('photoMeta').textContent = 'Error fetching photo metadata: ' + err;
+            }
         };
         update();
         streamTimer = setInterval(update, 250);
@@ -125,10 +142,21 @@ std::string_view indexWebPageData = R"rawliteral(
             });
     }
 
+    async function showPhotoMeta() {
+        try {
+            const res = await fetch('/photoMeta');
+            const json = await res.json();
+            document.getElementById('photoMeta').textContent = JSON.stringify(json, null, 2);
+        } catch (err) {
+            alert('Error fetching photo metadata: ' + err);
+        }
+    }
+
     document.getElementById('btnGet').onclick = getConfig;
     document.getElementById('btnSet').onclick = setConfig;
     document.getElementById('btnStop').onclick = stopStream;
     document.getElementById('btnDwnl').onclick = downloadImage;
+    document.getElementById('btnMeta').onclick = showPhotoMeta;
 
 
     // Automatically start stream and get config on load
