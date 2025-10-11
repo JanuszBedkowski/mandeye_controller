@@ -32,8 +32,7 @@ message("Livox SDK2")
 # Livox SDK2
 add_subdirectory(3rd/Livox-SDK2)
 
-# extras
-add_subdirectory(extras)
+
 
 include_directories(code/)
 
@@ -95,7 +94,7 @@ target_link_libraries(button_demo gpiod pthread)
 
 # Define install directories
 install(TARGETS control_program led_demo fake_pps button_demo
-        RUNTIME DESTINATION /opt/mandeye/)
+        RUNTIME DESTINATION /opt/mandeye/extras/)
 
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)

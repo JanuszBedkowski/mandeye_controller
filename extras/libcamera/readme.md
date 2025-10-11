@@ -16,7 +16,10 @@ This project provides a web-based interface for controlling and monitoring a cam
   - Use the "Get Config" and "Set Config" buttons to retrieve and update configuration via `/getConfig` and `/setConfig` endpoints.
 - **Stream Control:**
   - Start and stop the live stream using the provided buttons.
-
+## Prerequisites
+```aiignore
+sudo apt install libcamera-dev libpistache-dev libopencv-core-dev
+```
 ## Build Instructions
 ```
 cd mandeye_controller/extras/libcamera
@@ -66,5 +69,7 @@ sudo systemctl start mandeye_libcamera.service
 - For development, you may need to adjust API endpoint URLs or ports as appropriate.
 
 ---
+
+
 
 

@@ -10,13 +10,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBCAMERA REQUIRED libcamera)
-pkg_check_modules(LIBJPEG REQUIRED libjpeg)
 
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 include_directories(${LIBCAMERA_INCLUDE_DIRS} ${LIBJPEG_INCLUDE_DIRS})
-link_directories(${LIBCAMERA_LIBRARY_DIRS} ${LIBJPEG_LIBRARY_DIRS})
 
 find_package(PkgConfig)
 pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
@@ -25,7 +23,7 @@ find_package(nlohmann_json REQUIRED)
 pkg_check_modules(ZMQ REQUIRED libzmq)
 
 add_executable(mandeye_libcamera main.cpp LibCameraWrapper.cpp LibCameraWrapper.h)
-target_link_libraries(mandeye_libcamera  ${ZMQ_LIBRARIES} PkgConfig::Pistache ${LIBCAMERA_LIBRARIES} ${LIBJPEG_LIBRARIES} ${OpenCV_LIBS} nlohmann_json::nlohmann_json)
+target_link_libraries(mandeye_libcamera  ${ZMQ_LIBRARIES} PkgConfig::Pistache ${LIBCAMERA_LIBRARIES} ${OpenCV_LIBS} nlohmann_json::nlohmann_json)
 
 install(TARGETS mandeye_libcamera
         RUNTIME DESTINATION /opt/mandeye/extras/)
