@@ -28,6 +28,18 @@ namespace global {
     nlohmann::json photoMetadata;
     std::mutex photoMutex;
     nlohmann::json loadedUSBConfig;
+    std::mutex stateMutex;
+    std::string state;
+    std::string continousScanTarget;
+    bool isContinousScanRunning() {
+        std::lock_guard<std::mutex> lck(global::stateMutex);
+        return global::state=="SCANNING";
+    }
+    std::string getContinousScanTarget() {
+        std::lock_guard<std::mutex> lck(global::stateMutex);
+        return global::continousScanTarget;
+    }
+
 }
 
 
@@ -165,11 +177,6 @@ struct HelloHandler : public Http::Handler {
     }
 };
 
-namespace globals {
-    std::mutex stateMutex;
-    std::string state;
-    std::string continousScanTarget;
-}
 
 void clientThread()
 {
@@ -199,12 +206,12 @@ void clientThread()
 
                 nlohmann::json j = nlohmann::json::parse(msg_str);
                 if (j.is_object()) {
-                    std::lock_guard<std::mutex> lck(globals::stateMutex);
+                    std::lock_guard<std::mutex> lck(global::stateMutex);
                     if (j.contains("mode")) {
-                        globals::state = j["mode"].get<std::string>();
+                        global::state = j["mode"].get<std::string>();
                     }
                     if (j.contains("continousScanDirectory")) {
-                        globals::continousScanTarget = j["continousScanDirectory"].get<std::string>();
+                        global::continousScanTarget = j["continousScanDirectory"].get<std::string>();
                     }
                 }
             }
@@ -251,39 +258,49 @@ int main()
             global::photoMetadata = std::move(metaDataDump);
         }
 
-        if (globals::state=="SCANNING") {
-            std::lock_guard<std::mutex> lck(globals::stateMutex);
+        if (global::isContinousScanRunning()) {
             bool isPreviousFrameSaved = true;
             if (jpgSaveThread.valid() && jpgSaveThread.wait_for(0ms) != std::future_status::ready) {
+
                 isPreviousFrameSaved = false;
-                std::cerr << "[WARNING] Previous frame not saved yet" << std::endl;
+                std::cerr << "[WARNING] Previous frame not saved yet - skipping this photo" << std::endl;
             }
 
             if (isPreviousFrameSaved) {
-                try {
-                    std::lock_guard<std::mutex> lck(globals::stateMutex);
-                    const std::filesystem::path path(globals::continousScanTarget);
-                    jpgSaveThread = std::async(std::launch::async, [=]() {
+                const std::filesystem::path path(global::getContinousScanTarget());
+
+                // delegate frame saving to std::future (separate thread).
+                jpgSaveThread = std::async(std::launch::async, [=]() {
+                    try {
                         const auto start = std::chrono::high_resolution_clock::now();
                         const auto filename = path.string() + "/" + "photo_" + std::to_string(timestamp) + ".jpg";;
-
-                    // create buffer in memory and write it
-                    std::vector<uchar> buf;
-                    cv::imencode(".jpg", img, buf);
-                    std::ofstream file(filename, std::ios::binary);
-                    file.write(reinterpret_cast<char*>(buf.data()), buf.size());
-                    file.close();
+                        // copy last photo
+                        cv::Mat imgToSave;
+                        {
+                            std::lock_guard<std::mutex> lck(global::photoMutex);
+                            imgToSave = global::lastPhoto.clone();
+                        }
+                        // create buffer in memory and write it
+                        std::vector<uchar> buf;
+                        cv::imencode(".jpg", imgToSave, buf);
+                        std::ofstream file(filename, std::ios::binary);
+                        file.write(reinterpret_cast<char *>(buf.data()), buf.size());
+                        file.close();
                         const auto end = std::chrono::high_resolution_clock::now();
                         const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-                    std::cout << "Wrote " << filename << " size :" << float(buf.size())/(1024*1024) << " in " << duration.count() << "ms" << std::endl;
+                        std::cout << "Wrote " << filename << " size :" << float(buf.size()) / (1024 * 1024) << " MB in " <<
+                                duration.count() << "ms" << std::endl;
 
-                    // save metadata
-                    std::ofstream metadataFile(filename + ".meta.json");
-                    metadataFile << global::photoMetadata.dump(4);
-                    });
-                } catch (const std::exception& e) {
-                    std::cerr << "Failed to save photo: " << e.what() << std::endl;
-                }
+                        // save metadata
+                        std::ofstream metadataFile(filename + ".meta.json");
+                        metadataFile << global::photoMetadata.dump(4);
+                        metadataFile.close();
+                        std::cout << "Wrote " << filename << ".meta.json" << std::endl;
+                    } catch (const std::exception &e) {
+                        std::cerr << "Failed to save photo: " << e.what() << std::endl;
+                    }
+                });
+
             }
         }
     };
