@@ -44,7 +44,15 @@ int main(int arc, char *argv[]){
         gpioClientPtr->setLed(LED::LED_GPIO_CONTINOUS_SCANNING, false);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
+		//for(int i = 0; i < 27; i++){
+		//	std::cout << "i: " << i << std::endl;
+		//	gpioClientPtr->setLed(i, true);
+		//	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
+		//	std::cout << "i: " << i <<  std::endl;
+		//	gpioClientPtr->setLed(i, false);
+		//	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		//}
     }
     
     return 0;

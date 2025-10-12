@@ -17,6 +17,8 @@
 
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
 #define MANDEYE_REPO "/media/usb/"
+//#define MANDEYE_REPO "/media/pi/mandeye"
+//#define MANDEYE_REPO "/tmp"
 #define MANDEYE_GPIO_SIM false
 #define SERVER_PORT 8003
 
@@ -203,6 +205,7 @@ void savePointcloudData(LivoxPointsBufferPtr buffer, const std::string& director
 	//            lidarStream<<p.point.x << " "<<p.point.y <<"  "<<p.point.z << " "<< p.point.tag << " " << p.timestamp << "\n";
 	//        }
 	system("sync");
+	
 	return;
 }
 
@@ -497,6 +500,7 @@ void stateWatcher()
 					}
 					mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_COPY_DATA, false);
 					chunksInExperimentCS++;
+					mandeye::gpioClientPtr->beep({100, 50, 100, 50, 100, 50});
 				}
 			}
 
@@ -583,6 +587,7 @@ void stateWatcher()
 				chunksInExperimentCS++;
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_COPY_DATA, false);
 				app_state = States::IDLE;
+				mandeye::gpioClientPtr->beep({100, 50, 100, 50, 100, 50});
 			}
 		}
 		else if(app_state == States::STARTING_STOP_SCAN)
@@ -671,6 +676,7 @@ void stateWatcher()
 					mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_STOP_SCAN, false);
 				}
 				app_state = States::IDLE;
+				mandeye::gpioClientPtr->beep({100, 50, 100, 50, 100, 50});
 			}
 		}
 	}
@@ -704,7 +710,7 @@ bool getEnvBool(const std::string& env, bool def)
 }
 } // namespace utils
 
-
+#if 0
 #ifdef PISTACHE_SERVER
 #include "web_page.h"
 #include <pistache/endpoint.h>
@@ -727,11 +733,11 @@ struct PistacheServerHandler : public Http::Handler
 			writer.send(Http::Code::Ok, p);
 			return;
 		}
-		else if(request.resource() == "/jquery.js")
-		{
-			writer.send(Http::Code::Ok, gJQUERYData);
-			return;
-		}
+		//else if(request.resource() == "/jquery.js")
+		//{
+		//	writer.send(Http::Code::Ok, gJQUERYData);
+		//	return;
+		//}
 		else if(request.resource() == "/trig/start_bag")
 		{
 			mandeye::StartScan();
@@ -754,23 +760,23 @@ struct PistacheServerHandler : public Http::Handler
 	}
 };
 #endif
-
+#endif
 
 int main(int argc, char** argv)
 {
 	std::cout << "program: " << argv[0] << " "<<MANDEYE_VERSION <<" " << MANDEYE_HARDWARE_HEADER << std::endl;
-	Address addr(Ipv4::any(), SERVER_PORT);
+	//Address addr(Ipv4::any(), SERVER_PORT);
 
 	mandeye::disableBuzzer = utils::getEnvBool("MANDEYE_DISABLE_BUZZER", false);
 
 	std::cout << "Buzzer is " << (mandeye::disableBuzzer ? "disabled" : "enabled") << std::endl;
-	auto server = std::make_shared<Http::Endpoint>(addr);
+	/*auto server = std::make_shared<Http::Endpoint>(addr);
 	std::thread http_thread1([&]() {
 		auto opts = Http::Endpoint::options().threads(2);
 		server->init(opts);
 		server->setHandler(Http::make_handler<PistacheServerHandler>());
 		server->serve();
-	});
+	});*/
 
 	mandeye::fileSystemClientPtr = std::make_shared<mandeye::FileSystemClient>(utils::getEnvString("MANDEYE_REPO", MANDEYE_REPO));
 
@@ -845,11 +851,15 @@ int main(int argc, char** argv)
 		mandeye::gpioClientPtr->addButtonCallback(hardware::BUTTON::BUTTON_CONTINOUS_SCANNING, "BUTTON_CONTINOUS_SCANNING", [&]() { mandeye::TriggerContinousScanning(); });
 	});
 
+	
 	while(mandeye::isRunning)
 	{
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for(1000ms);
-		char ch = std::getchar();
+		for(int i = 0; i < 1000; i++){
+			std::cout << "started" << std::endl;
+		}
+		/*char ch = std::getchar();
 		if(ch == 'q')
 		{
 			mandeye::isRunning.store(false);
@@ -869,12 +879,21 @@ int main(int argc, char** argv)
 			{
 				std::cout << "stop scan success!" << std::endl;
 			}
+		}*/
+		static bool start_ = true;
+		if(start_){
+			for(int i = 0; i < 1000; i++){
+					std::cout << "start" << std::endl;
+			}
+			mandeye::StartScan();
+			//mandeye::gpioClientPtr->beep({100, 50, 100, 50, 100, 50, 100, 50, 100, 50, 100, 50}); // beep, beep, beeeeeep
+			//start_ = false;
+			//exit(1);
 		}
-
 	}
 
-	server->shutdown();
-	http_thread1.join();
+	//server->shutdown();
+	//http_thread1.join();
 	std::cout << "joining thStateMachine" << std::endl;
 	thStateMachine.join();
 
