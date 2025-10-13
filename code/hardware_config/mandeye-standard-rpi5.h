@@ -27,6 +27,7 @@ constexpr const char* GetGPIOChip()
 inline void ReportState([[maybe_unused]] const mandeye::States state)
 {
 	if (state == mandeye::States::USB_IO_ERROR) {
+		std::cerr << "USB IO ERROR - will restart shorlty" << std::endl;
 		static int count = 0;
 		if (count ++ > 10) {
 			std::cerr << "Restarting..." << std::endl;
