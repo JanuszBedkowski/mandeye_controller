@@ -20,6 +20,16 @@ constexpr const char* GetGPIOChip()
 	return "/dev/gpiochip0";
 }
 
+inline void ReportState([[maybe_unused]] const mandeye::States state)
+{
+	void();
+}
+
+inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
+{
+	void();
+}
+
 constexpr int GetLED(LED led)
 {
 

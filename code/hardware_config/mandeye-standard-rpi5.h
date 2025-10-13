@@ -4,13 +4,14 @@
 #ifdef MANDEYE_HARDWARE_CONFIGURED
 #	error "MANDEYE Hardware were confiured. You included multiple hardware headers!"
 #endif
-
+#include <iostream>
 #define MANDEYE_HARDWARE_CONFIGURED
 namespace hardware
 {
 #define PISTACHE_SERVER
 #define MANDEYE_BENCHMARK_WRITE_SPEED
 #define MANDEYE_COUNTINOUS_SCANNING_STOP_1_CLICK
+
 constexpr int Offset = 0;
 constexpr const char* mandeyeHarwareType()
 {
@@ -21,6 +22,23 @@ constexpr const char* GetGPIOChip()
 {
 	//for raspberry pi 5
 	return "/dev/gpiochip4";
+}
+
+inline void ReportState([[maybe_unused]] const mandeye::States state)
+{
+	if (state == mandeye::States::USB_IO_ERROR) {
+		static int count = 0;
+		if (count ++ > 10) {
+			std::cerr << "Restarting..." << std::endl;
+			std::abort();
+		}
+
+	}
+}
+
+inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
+{
+	std::cout << "Saved LAZ file: " << filename << std::endl;
 }
 
 constexpr int GetLED(LED led)

@@ -1,6 +1,9 @@
 #pragma once
 
 #include "hardware_common.h"
+
+#include <iostream>
+#include <ostream>
 #ifdef MANDEYE_HARDWARE_CONFIGURED
 #	error "MANDEYE Hardware were confiured. You included multiple hardware headers!"
 #endif
@@ -20,6 +23,15 @@ constexpr const char* GetGPIOChip()
 	return "/dev/gpiochip0";
 }
 
+inline void ReportState([[maybe_unused]] const mandeye::States state)
+{
+	void();
+}
+
+inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
+{
+	void();
+}
 
 constexpr int GetLED(LED led)
 {
