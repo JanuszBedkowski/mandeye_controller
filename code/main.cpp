@@ -769,7 +769,9 @@ int main(int argc, char** argv)
 	std::cout << "Buzzer is " << (mandeye::disableBuzzer ? "disabled" : "enabled") << std::endl;
 	auto server = std::make_shared<Http::Endpoint>(addr);
 	std::thread http_thread1([&]() {
-		auto opts = Http::Endpoint::options().threads(2);
+		auto opts = Http::Endpoint::options()
+			.threads(1)
+			.flags(Tcp::Options::ReuseAddr);
 		server->init(opts);
 		server->setHandler(Http::make_handler<PistacheServerHandler>());
 		server->serve();
