@@ -17,7 +17,7 @@ Pins numbers, in plug, from documentation : [link](https://eu.mouser.com/datashe
 |  8  | Red    | PPS      |
 | 10  | Violet | NMEA     |
 | 11  | Gray/Pink | N/A   |
-| 12  | Gray/Pink | N/A   |
+| 12  | Red/Blue | N/A   |
 
 ### Connecting to RJ45 
 
