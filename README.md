@@ -9,7 +9,7 @@ We support the following hardware:
 
 Both version shares the same software, but are different in hardware (e.g. different GPIO layout, some extra features on custom carrier board).
 The target hardware is defined during compilation time.
-If you want to extend this project to different platforms or hardware, please refer to source code available in [hardware](./src/hardware) directory.
+If you want to extend this project to different platforms or hardware, please refer to source code available in [hardware](./code) directory.
 
 
 ## 3D Model
