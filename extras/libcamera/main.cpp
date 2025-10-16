@@ -31,6 +31,9 @@ namespace global {
     std::mutex stateMutex;
     std::string state;
     std::string continousScanTarget;
+    int cameraNo = 0;
+    std::string prefix = "cam0_";
+    std::string configFileName = "/media/usb/cam0_config.json";
     bool isContinousScanRunning() {
         std::lock_guard<std::mutex> lck(global::stateMutex);
         return global::state=="SCANNING";
@@ -154,7 +157,7 @@ struct HelloHandler : public Http::Handler {
                     std::cout << body << std::endl;
                     nlohmann::json config = nlohmann::json::parse(body);
                     global::cam.stop();
-                    global::cam.start(config, libcamera::StreamRole::StillCapture);
+                    global::cam.start(global::cameraNo, config, libcamera::StreamRole::StillCapture);
                     global::cam.capture();
                     writer.send(Http::Code::Ok, "OK");
                 }
@@ -226,22 +229,43 @@ void clientThread()
 
 
 
-int main()
+int main(int argc, char** argv)
 {
-//
     std::cout << "Starting" << std::endl;
-    // get config from USB
-    const auto configFileName = getEnvString("MANDEYE_CONFIG", "/media/usb/mandeye_config.json");
-    std::cout << "Loading camera config from" << configFileName << std::endl;
+
+    global::cameraNo = 0;
+    int portNo = 8004;
+    bool skipConfig = false;
+
+    // Simple CLI parsing: --camera / -c, --port / -p, --config / -f, --help / -h
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if ((arg == "--camera" || arg == "-c") && i + 1 < argc) {
+            try { global::cameraNo = std::stoi(argv[++i]); } catch(...) { /* ignore on parse error */ }
+        } else if ((arg == "--port" || arg == "-p") && i + 1 < argc) {
+            try { portNo = std::stoi(argv[++i]); } catch(...) { /* ignore on parse error */ }
+        } else if ((arg == "--prefix" || arg =="-t") && i + 1 < argc) {
+            global::prefix = argv[++i];
+        } else if ((arg == "--config" || arg == "-f") && i + 1 < argc) {
+            global::configFileName = argv[++i];
+        } else if (arg == "--help" || arg == "-h") {
+            std::cout << "Usage: " << argv[0] << " [--camera <n>] [--port <n>] [--config <path>]\n";
+            std::cout << "       " << argv[0] << " [--skip-config]\n";
+            return 0;
+        }
+    }
+
+    std::cout << "Using cameraNo=" << global::cameraNo << " port=" << portNo << " config=" << global::configFileName << std::endl;
+    std::cout << "Loading camera config from " << global::configFileName << std::endl;
 
 
     // try to load config
 
     try {
-        if (!std::filesystem::exists(configFileName)) {
+        if (!std::filesystem::exists(global::configFileName)) {
             throw std::runtime_error("Config file not found on USB, will create default config");
         }
-        global::loadedUSBConfig = nlohmann::json::parse(std::ifstream(configFileName));
+        global::loadedUSBConfig = nlohmann::json::parse(std::ifstream(global::configFileName));
     }
     catch (const std::exception& e) {
         std::cerr << "Failed to load config: " << e.what() << std::endl;
@@ -273,7 +297,9 @@ int main()
                 jpgSaveThread = std::async(std::launch::async, [=]() {
                     try {
                         const auto start = std::chrono::high_resolution_clock::now();
-                        const auto filename = path.string() + "/" + "photo_" + std::to_string(timestamp) + ".jpg";;
+                        const auto filename = path.string() + "/" + global::prefix + std::to_string(timestamp);
+                        const auto filenameJpg = filename+ ".jpg";
+                        const auto filenameMeta = filename + ".meta.json";
                         // copy last photo
                         cv::Mat imgToSave;
                         {
@@ -283,19 +309,19 @@ int main()
                         // create buffer in memory and write it
                         std::vector<uchar> buf;
                         cv::imencode(".jpg", imgToSave, buf);
-                        std::ofstream file(filename, std::ios::binary);
+                        std::ofstream file(filenameJpg, std::ios::binary);
                         file.write(reinterpret_cast<char *>(buf.data()), buf.size());
                         file.close();
                         const auto end = std::chrono::high_resolution_clock::now();
                         const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-                        std::cout << "Wrote " << filename << " size :" << float(buf.size()) / (1024 * 1024) << " MB in " <<
+                        std::cout << "Wrote " << filenameJpg << " size :" << float(buf.size()) / (1024 * 1024) << " MB in " <<
                                 duration.count() << "ms" << std::endl;
 
                         // save metadata
-                        std::ofstream metadataFile(filename + ".meta.json");
+                        std::ofstream metadataFile(filenameMeta);
                         metadataFile << global::photoMetadata.dump(4);
                         metadataFile.close();
-                        std::cout << "Wrote " << filename << ".meta.json" << std::endl;
+                        std::cout << "Wrote " << filenameMeta << std::endl;
                     } catch (const std::exception &e) {
                         std::cerr << "Failed to save photo: " << e.what() << std::endl;
                     }
@@ -306,11 +332,11 @@ int main()
     };
 
     global::cam.registerCallback(printFrame);
-    global::cam.start({}, libcamera::StreamRole::StillCapture);
+    global::cam.start(global::cameraNo, {}, libcamera::StreamRole::StillCapture);
     if (!global::loadedUSBConfig.is_object()) {
-        std::cout << "No config loaded, saving default config to " << configFileName << std::endl;
+        std::cout << "No config loaded, saving default config to " << global::configFileName << std::endl;
         try {
-            std::ofstream file(configFileName);
+            std::ofstream file(global::configFileName);
             file << global::cam.getCameraConfig().dump(4);
             file.close();
         }
@@ -321,7 +347,7 @@ int main()
     global::cam.capture(false);
 
 
-    Address addr(Ipv4::any(), Port(8004));
+    Address addr(Ipv4::any(), Port(portNo));
     Http::Endpoint server(addr);
 
     // Enable ReuseAddr to allow fast restarts

@@ -1,5 +1,5 @@
 [Unit]
-Description=Mandeye_libcamera
+Description=Mandeye_libcamera_cam1
 After=multi-user.target
 
 [Service]
@@ -7,7 +7,7 @@ User=pi
 StandardOutput=null
 StandardError=null
 ExecStartPre=/bin/sleep 20
-ExecStart=/opt/mandeye/extras/mandeye_libcamera
+ExecStart=/opt/mandeye/extras/mandeye_libcamera --camera 1 --port 8005 --prefix cam1_ --config /media/usb/cam1_config.json
 Restart=always
 
 [Install]

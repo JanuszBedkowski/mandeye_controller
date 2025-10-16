@@ -74,7 +74,8 @@ std::string_view indexWebPageData = R"rawliteral(
 </div>
 
 <script>
-    const API = 'http://' + window.location.hostname + ':8004';
+    const port = window.location.port ? ':' + window.location.port : '';
+    const API = 'http://' + window.location.hostname + port;
     const photo = document.getElementById('photo');
     const configInput = document.getElementById('configInput');
     let streamTimer = null;

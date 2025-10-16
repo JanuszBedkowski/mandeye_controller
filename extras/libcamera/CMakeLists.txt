@@ -27,7 +27,9 @@ target_link_libraries(mandeye_libcamera  ${ZMQ_LIBRARIES} PkgConfig::Pistache ${
 install(TARGETS mandeye_libcamera
         RUNTIME DESTINATION /opt/mandeye/extras/)
 
-install(FILES services/mandeye_libcamera.service  DESTINATION /usr/lib/systemd/system)
+install(FILES services/mandeye_libcamera_cam0.service  DESTINATION /usr/lib/systemd/system)
+install(FILES services/mandeye_libcamera_cam1.service  DESTINATION /usr/lib/systemd/system)
+
 
 # Packaging
 set(CPACK_GENERATOR "DEB")

@@ -50,7 +50,7 @@ namespace mandeye
 
         LibCameraWrapper() = default;
         ~LibCameraWrapper() = default;
-        void start(nlohmann::json config = {} ,libcamera::StreamRole role = libcamera::StreamRole::StillCapture);
+        void start(int camNo, nlohmann::json config = {} ,libcamera::StreamRole role = libcamera::StreamRole::StillCapture);
         void capture(bool oneFrame = false);
         void stop();
         void registerCallback(std::function<CaptureCallback>&& cb) { m_callback = std::move(cb); }

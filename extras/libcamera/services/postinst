@@ -2,5 +2,6 @@
 set -e
 ldconfig
 systemctl daemon-reload
-systemctl enable mandeye_libcamera.service
+systemctl enable mandeye_libcamera_cam0.service
+systemctl enable mandeye_libcamera_cam1.service
 exit 0
