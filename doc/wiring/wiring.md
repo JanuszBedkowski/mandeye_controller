@@ -71,6 +71,6 @@ Wire according to image:
 ![image](https://github.com/JanuszBedkowski/mandeye_controller/assets/3209244/747430b8-5e74-4051-882e-9b8eb404734c)
 
 
-
+Community suggested power source from 12V Parkside battery https://www.printables.com/model/1445620-parkside-12v-battery-adapter-for-mandeye_controlle
 
 
