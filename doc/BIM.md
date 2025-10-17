@@ -15,6 +15,7 @@
 | 9 |  RaspberyPi4         | 1  | RPI-14647                     | [link](https://botland.store/raspberry-pi-4b-modules-and-kits/14647-raspberry-pi-4-model-b-wifi-dual-band-bluetooth-4gb-ram-15ghz-765756931182.html)|
 | 10|  12v Battery*        | 1  | RB1-2400mAh-14,4V             | [link](https://www.amazon.de/DJI-Ronin-S-Part-BG37-Griff/dp/B07KLCY9H5)|
 | 11|  Livox Mid-360       | 1  | 360' Lidar sensor             | [link](https://www.livoxtech.com/mid-360)|
+| 12|  Buzzer              | 1  | Audible feedback ||
 
 *12v needed for the lidar, 5v for RasperryPi
 
