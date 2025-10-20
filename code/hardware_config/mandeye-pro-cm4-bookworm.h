@@ -13,6 +13,7 @@ namespace hardware
 {
 #define PISTACHE_SERVER
 
+constexpr bool Autostart = false;
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyePro";

@@ -271,6 +271,19 @@ int main(int argc, char** argv)
         std::cerr << "Failed to load config: " << e.what() << std::endl;
     }
 
+    // check if disabled
+    if (global::loadedUSBConfig.is_object()) {
+        if (global::loadedUSBConfig.contains("disabled")) {
+            if (global::loadedUSBConfig["disabled"].get<bool>()) {
+                std::cout << "Camera disabled, sleeping forever" << std::endl;
+                while (true) {
+                    std::this_thread::sleep_for(10s);
+                }
+                return 0;
+            }
+        }
+    }
+
     std::thread t(clientThread);
 
     std::future<void> jpgSaveThread;
@@ -332,7 +345,11 @@ int main(int argc, char** argv)
     };
 
     global::cam.registerCallback(printFrame);
-    global::cam.start(global::cameraNo, {}, libcamera::StreamRole::StillCapture);
+    const bool stated = global::cam.start(global::cameraNo, {}, libcamera::StreamRole::StillCapture);
+    if (!stated) {
+        std::cerr << "Failed to start camera" << std::endl;
+        return 1;
+    }
     if (!global::loadedUSBConfig.is_object()) {
         std::cout << "No config loaded, saving default config to " << global::configFileName << std::endl;
         try {

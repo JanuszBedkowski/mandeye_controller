@@ -13,6 +13,7 @@ namespace hardware
 #define MANDEYE_COUNTINOUS_SCANNING_STOP_1_CLICK
 
 constexpr int Offset = 0;
+constexpr bool Autostart = false;
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyeStandard";
@@ -26,20 +27,10 @@ constexpr const char* GetGPIOChip()
 
 inline void ReportState([[maybe_unused]] const mandeye::States state)
 {
-	if (state == mandeye::States::USB_IO_ERROR) {
-		std::cerr << "USB IO ERROR - will restart shorlty" << std::endl;
-		static int count = 0;
-		if (count ++ > 4) {
-			std::cerr << "Restarting..." << std::endl;
-			std::abort();
-		}
-
-	}
 }
 
 inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
 {
-	std::cout << "Saved LAZ file: " << filename << std::endl;
 }
 
 constexpr int GetLED(LED led)

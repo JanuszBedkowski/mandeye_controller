@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 User=pi
-ExecStartPre=/bin/sleep 20
+ExecStartPre=/bin/sleep 5
 ExecStart=/opt/mandeye/control_program
 Restart=always
 

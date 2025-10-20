@@ -52,8 +52,8 @@ sudo make install
 
 ## Start service
 ```
-sudo systemctl enable mandeye_libcamera.service 
-sudo systemctl start mandeye_libcamera.service 
+sudo systemctl enable mandeye_libcamera_cam0.service 
+sudo systemctl start mandeye_libcamera_cam0.service 
     
 ``` 
 

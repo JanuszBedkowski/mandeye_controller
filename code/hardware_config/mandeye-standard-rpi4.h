@@ -10,6 +10,8 @@ namespace hardware
 {
 #define PISTACHE_SERVER
 constexpr int Offset = 0;
+
+constexpr bool Autostart = false;
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyeStandard";

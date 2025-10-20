@@ -185,7 +185,7 @@ namespace mandeye {
         m_monoOffset = uint64_t(realtime_ns) - uint64_t(monotonic_ns);
     }
 
-    void LibCameraWrapper::start(int camNo, nlohmann::json config, StreamRole role) {
+    bool LibCameraWrapper::start(int camNo, nlohmann::json config, StreamRole role) {
         AdjustSystemClock();
         m_cm = std::make_unique<CameraManager>();
         m_cm->start();
@@ -196,7 +196,7 @@ namespace mandeye {
             std::cout << "No cameras were identified on the system."
                     << std::endl;
             m_cm->stop();
-            return;
+            return false;
         }
 
         for (auto const &camera: cameras) {
@@ -206,7 +206,7 @@ namespace mandeye {
         if (camNo > cameras.size()) {
             std::cout << "Camera number " << camNo << " is out of range." << std::endl;
             m_cm->stop();
-            return;
+            return false;
         }
 
 
@@ -290,7 +290,7 @@ namespace mandeye {
             }
         }
         m_camera->start(&m_controlList);
-
+        return true;
     }
 
 

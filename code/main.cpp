@@ -15,6 +15,7 @@
 #include "gnss.h"
 #include "publisher.h"
 #include "compilation_constants.h"
+#include "hardware_config/mandeye.h"
 #include <chrono>
 
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
@@ -34,8 +35,7 @@ std::atomic<bool> isLidarError{false};
 std::mutex livoxClientPtrLock;
 std::shared_ptr<LivoxClient> livoxCLientPtr;
 std::shared_ptr<GNSSClient> gnssClientPtr;
-std::mutex gpioClientPtrLock;
-std::shared_ptr<GpioClient> gpioClientPtr;
+
 std::shared_ptr<FileSystemClient> fileSystemClientPtr;
 std::shared_ptr<Publisher> publisherPtr;
 mandeye::LazStats lastFileSaveStats;
@@ -408,6 +408,9 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_CONTINOUS_SCANNING, false);
 			}
 			std::this_thread::sleep_for(100ms);
+			if (hardware::Autostart) {
+				app_state = States::STARTING_SCAN;
+			}
 		}
 		else if(app_state == States::STARTING_SCAN)
 		{
