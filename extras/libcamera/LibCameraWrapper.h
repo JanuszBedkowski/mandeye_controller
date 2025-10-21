@@ -3,6 +3,8 @@
 #include <libcamera/libcamera.h>
 #include <opencv2/opencv.hpp>
 #include <atomic>
+#include <thread>
+
 #include "json.hpp"
 namespace mandeye
 {
@@ -37,6 +39,7 @@ namespace mandeye
         libcamera::ControlInfoMap m_controlsInfo;
         libcamera::ControlList m_controlList;
         uint64_t m_requestTimestamp = 0;
+        std::chrono::time_point<std::chrono::steady_clock> m_FrameStart;
         uint64_t m_monoOffset = 0;
         bool m_oneFrame = false;
         std::atomic<bool> m_running = false;
@@ -45,6 +48,8 @@ namespace mandeye
 
         //! Adjust the system clock offset based on monotonic clock to @m_monoOffset
         void AdjustSystemClock();
+        uint32_t m_rateMs = 500;
+        std::thread m_captureThread;
 
     public:
 
@@ -57,8 +62,6 @@ namespace mandeye
         nlohmann::json getCameraConfig();
         libcamera::ControlList& getControlList() { return m_controlList; }
         template <typename T> bool setControlNumeric(const std::string &name, T value);
-
-
 
     };
 

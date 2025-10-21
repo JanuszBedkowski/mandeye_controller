@@ -289,6 +289,9 @@ namespace mandeye {
                 }
             }
         }
+        if (config.contains("rateMs")) {
+            m_rateMs = config["rateMs"].get<uint32_t>();
+        }
         m_camera->start(&m_controlList);
         return true;
     }
@@ -318,53 +321,59 @@ namespace mandeye {
         if (request->status() == Request::RequestCancelled)
             return;
 
-        nlohmann::json metadataDump;
-        for (auto f : request->metadata()) {
-            const auto id = f.first;
-            std::string name;
-            if (name = controlToString(id); name.empty()) {
-                name = std::to_string(id);
-            }
-            metadataDump[name] = f.second.toString();
-        }
-
-
-        if (m_config->at(0).pixelFormat == libcamera::formats::MJPEG) {
-            const libcamera::Request::BufferMap &buffers = request->buffers();
-            for (auto bufferPair: buffers) {
-                libcamera::FrameBuffer *buffer = bufferPair.second;
-                libcamera::StreamConfiguration &streamConfig = m_config->at(0);
-                m_requestTimestamp = buffer->metadata().timestamp + m_monoOffset;
-                auto mem = Mmap(buffer);
-                std::vector<uchar> memv(mem[0].begin(), mem[0].end());
-                cv::Mat img = cv::imdecode(memv, cv::IMREAD_COLOR);
-
-                if (m_callback) {
-                    m_callback(img, m_requestTimestamp, metadataDump);
-                };
-            }
-        } else if (m_config->at(0).pixelFormat == libcamera::formats::RGB888) {
-            const libcamera::Request::BufferMap &buffers = request->buffers();
-            for (auto bufferPair: buffers) {
-                libcamera::FrameBuffer *buffer = bufferPair.second;
-                m_requestTimestamp = buffer->metadata().timestamp + m_monoOffset;
-                libcamera::StreamConfiguration &streamConfig = m_config->at(0);
-                unsigned int vw = streamConfig.size.width;
-                unsigned int vh = streamConfig.size.height;
-                unsigned int vstr = streamConfig.stride;
-                auto mem = Mmap(buffer);
-                cv::Mat img(vh, vw, CV_8UC3);
-                uint ls = vw * 3;
-                uint8_t *ptr = mem[0].data();
-                for (unsigned int i = 0; i < vh; i++, ptr += vstr) {
-                    memcpy(img.ptr(i), ptr, ls);
+        const auto now = std::chrono::steady_clock::now();
+        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_FrameStart);
+        if (duration.count() > m_rateMs)
+        {
+            m_FrameStart = std::chrono::steady_clock::now();
+            nlohmann::json metadataDump;
+            for (auto f : request->metadata()) {
+                const auto id = f.first;
+                std::string name;
+                if (name = controlToString(id); name.empty()) {
+                    name = std::to_string(id);
                 }
-                if (m_callback) {
-                    m_callback(img, m_requestTimestamp, metadataDump);
-                }
+                metadataDump[name] = f.second.toString();
             }
-        } else {
-            std::cout << "Unsupported pixel format" << std::endl;
+
+
+            if (m_config->at(0).pixelFormat == libcamera::formats::MJPEG) {
+                const libcamera::Request::BufferMap &buffers = request->buffers();
+                for (auto bufferPair: buffers) {
+                    libcamera::FrameBuffer *buffer = bufferPair.second;
+                    libcamera::StreamConfiguration &streamConfig = m_config->at(0);
+                    m_requestTimestamp = buffer->metadata().timestamp + m_monoOffset;
+                    auto mem = Mmap(buffer);
+                    std::vector<uchar> memv(mem[0].begin(), mem[0].end());
+                    cv::Mat img = cv::imdecode(memv, cv::IMREAD_COLOR);
+
+                    if (m_callback) {
+                        m_callback(img, m_requestTimestamp, metadataDump);
+                    };
+                }
+            } else if (m_config->at(0).pixelFormat == libcamera::formats::RGB888) {
+                const libcamera::Request::BufferMap &buffers = request->buffers();
+                for (auto bufferPair: buffers) {
+                    libcamera::FrameBuffer *buffer = bufferPair.second;
+                    m_requestTimestamp = buffer->metadata().timestamp + m_monoOffset;
+                    libcamera::StreamConfiguration &streamConfig = m_config->at(0);
+                    unsigned int vw = streamConfig.size.width;
+                    unsigned int vh = streamConfig.size.height;
+                    unsigned int vstr = streamConfig.stride;
+                    auto mem = Mmap(buffer);
+                    cv::Mat img(vh, vw, CV_8UC3);
+                    uint ls = vw * 3;
+                    uint8_t *ptr = mem[0].data();
+                    for (unsigned int i = 0; i < vh; i++, ptr += vstr) {
+                        memcpy(img.ptr(i), ptr, ls);
+                    }
+                    if (m_callback) {
+                        m_callback(img, m_requestTimestamp, metadataDump);
+                    }
+                }
+            } else {
+                std::cout << "Unsupported pixel format" << std::endl;
+            }
         }
         request->reuse(libcamera::Request::ReuseBuffers);
 
@@ -375,12 +384,11 @@ namespace mandeye {
 
     void LibCameraWrapper::capture(bool oneFrame)
     {
-
+        m_FrameStart = std::chrono::steady_clock::now();
         m_oneFrame = oneFrame;
         for (std::unique_ptr<Request> &request: requests) {
             m_requestTimestamp = getCurrentTimestamp();
             m_camera->queueRequest(request.get());
-            m_running.store(true);
         }
     }
 
@@ -414,14 +422,8 @@ namespace mandeye {
         if (!m_camera)
             return config;
         config["id"] = m_camera->id();
-        libcamera::StreamConfiguration &streamConfig = m_config->at(0);
-        config["buffer"]["width"] = streamConfig.size.width;
-        config["buffer"]["height"] = streamConfig.size.height;
-
-        config["buffer"]["pixelFormat"] = streamConfig.pixelFormat.toString();
-        config["buffer"]["stride"] = streamConfig.stride;
-
         config["controls_info"] = {};
+        config["rateMs"] = m_rateMs;
         config["picamera"]["_Note1"] = "Here User can adjust setting of their camera!";
         for (auto const &control: m_controlsInfo) {
             const unsigned int id = control.first->id();
@@ -460,7 +462,6 @@ namespace mandeye {
                 } else {
                     // apply default
                     config["picamera"][name] = reportValue(defValue, type);
-
 
                     // change default for some controls
                     // 10002 - Noise reduction mode from disabled to fast
