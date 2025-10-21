@@ -94,8 +94,9 @@ target_link_libraries(button_demo gpiod pthread)
 
 # Define install directories
 install(TARGETS control_program led_demo fake_pps button_demo
-        RUNTIME DESTINATION /opt/mandeye/extras/)
+        RUNTIME DESTINATION /opt/mandeye/)
 
+add_subdirectory(extras/libcamera)
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/services/mandeye_controller.service  DESTINATION /usr/lib/systemd/system)
@@ -103,6 +104,7 @@ install(FILES packing/services/mandeye_fake_pps.service  DESTINATION /usr/lib/sy
 install(FILES packing/services/mandeye_phc2sys-gm-eth0.service DESTINATION /usr/lib/systemd/system)
 install(FILES packing/services/mandeye_ptp4l-gm-eth0.service DESTINATION /usr/lib/systemd/system)
 install(FILES packing/config/gm-l2.conf DESTINATION /opt/mandeye/)
+install(FILES packing/check_services.sh DESTINATION /opt/mandeye/)
 # Packaging
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME "mandeye-multisensor")
