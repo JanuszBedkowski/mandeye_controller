@@ -1,5 +1,5 @@
 #!/bin/sh
-
+# Helpers for Mandeye systemctl services and GPIO
 alias mandeye_start="sudo systemctl start mandeye_controller.service"
 alias mandeye_stop="sudo systemctl stop mandeye_controller.service"
 alias mandeye_status="sudo systemctl status mandeye_controller.service"

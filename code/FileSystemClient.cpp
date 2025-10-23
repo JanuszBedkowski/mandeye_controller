@@ -149,6 +149,7 @@ bool FileSystemClient::CreateDirectoryForContinousScanning(std::string &writable
 		{
 			if(!newDirPath.string().empty()){
 				writable_dir = newDirPath.string();
+			        m_currentContinousScanDirectory = writable_dir;
 				return true;
 			}else{
 				return false;
@@ -179,6 +180,7 @@ bool FileSystemClient::CreateDirectoryForStopScans(std::string &writable_dir, in
 		{
 			if(!newDirPath.string().empty()){
 				writable_dir = newDirPath.string();
+			        m_currentStopScanDirectory = writable_dir;
 				return true;
 			}else{
 				return false;
@@ -195,20 +197,17 @@ std::vector<std::string> FileSystemClient::GetDirectories()
 {
 	std::unique_lock<std::mutex> lck(m_mutex);
 	std::vector<std::string> fn;
-
-	for(const auto& entry : std::filesystem::recursive_directory_iterator(m_repository))
+	for(const auto& entry : std::filesystem::directory_iterator(m_currentContinousScanDirectory))
 	{
-		if(entry.is_regular_file())
-		{
-			auto size = std::filesystem::file_size(entry);
-			float fsize = static_cast<float>(size) / (1024 * 1204);
-			fn.push_back(entry.path().string() + " " + std::to_string(fsize) + " Mb");
-		}
-		else
-		{
-			fn.push_back(entry.path().string());
-		}
+	    if(entry.is_regular_file() )
+	    {
+		auto size = std::filesystem::file_size(entry);
+		float fsize = static_cast<float>(size) / (1024 * 1204);
+		fn.push_back(entry.path().string() + " " + std::to_string(fsize) + " Mb");
+	    }
+
 	}
+
 	std::sort(fn.begin(), fn.end());
 	return fn;
 }
@@ -225,6 +224,38 @@ bool FileSystemClient::GetIsWritable()
 	}
 }
 
+nlohmann::json FileSystemClient::GetConfig()
+{
+	std::filesystem::path configPath = std::filesystem::path(m_repository) / std::filesystem::path(config);
+	if (!std::filesystem::exists(configPath))
+	{
+		std::cerr << "Config file does not exist at " << configPath.string() << std::endl;
+		return nlohmann::json();
+	}
+
+	nlohmann::json configJson;
+	std::ifstream configFile(configPath);
+	if (configFile.is_open())
+	{
+		try
+		{
+			configFile >> configJson;
+		}
+		catch (nlohmann::json::parse_error& e)
+		{
+			std::cerr << "Error parsing config file: " << e.what() << std::endl;
+			return nlohmann::json();
+		}
+		configFile.close();
+		return configJson;
+	}
+	else
+	{
+		std::cerr << "Failed to open config file at " << configPath.string() << std::endl;
+		return nlohmann::json();
+	}
+	return nlohmann::json();
+}
 double FileSystemClient::BenchmarkWriteSpeed(const std::string& filename, size_t fileSizeMB) {
 	const size_t bufferSize = 1024 * 1024; // 1 MB buffer
 	std::vector<char> buffer(bufferSize, 0xAA);

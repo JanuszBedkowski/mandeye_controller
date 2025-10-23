@@ -52,8 +52,7 @@ The software can run other distros (e.g. Ubuntu) but it is not tested and mainta
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev 
-sudo apt-get install libpistache-dev libcamera-dev linuxptp
+sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev libpistache-dev libcamera-dev linuxptp
 ```
 
 ## Static IP for eth0
@@ -80,12 +79,13 @@ $ ls ./code/hardware_config/mandeye-*.h
 ./code/hardware_config/mandeye-standard-rpi5.h
 ```
 
-| Hardware header            | What is supported             |
-|----------------------------|-------------------------------|
-|mandeye-standard-rpi4.h     | Raspberry Pi 4                |
-|mandeye-standard-rpi5.h     | Raspberry Pi 5                |
-|mandeye-pro-cm4-bookworm.h  | Raspberry Pi Compute module 4 plus carrier board|
-|mandeye-pro-cm4-bullseye.h  | Deprecated                    |
+| Hardware header            | What is supported                                |
+|----------------------------|--------------------------------------------------|
+| mandeye-standard-rpi4.h    | Raspberry Pi 4                                   |
+| mandeye-standard-rpi5.h    | Raspberry Pi 5                                   |
+| mandeye-pro-cm4-bookworm.h | Raspberry Pi Compute module 4 plus carrier board |
+| mandeye-direct-cm5.h       | Raspberry Pi Compute module 5 plus carrier board |
+|mandeye-pro-cm4-bullseye.h  | Deprecated                                       |
 
 
 The next example shows how to build the app for Raspberry Pi 4 without custom carrier board at Raspberry Pi 4.
@@ -246,4 +246,10 @@ Cameras:
 sudo systemctl enable mandeye_libcamera_cam0.service
 sudo systemctl enable mandeye_libcamera_cam1.service
 mandeye_camera_cam0_start
+mandeye_camera_cam1_start
+```
+
+List state of services:
+```shell
+mandeye_services_status
 ```

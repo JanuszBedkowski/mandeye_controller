@@ -11,9 +11,10 @@ message(STATUS "Mandeye version is : ${MANDEYE_VERSION}")
 
 set(SYSTEM_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 message("pistache")
-#pistache
-add_subdirectory(3rd/pistache)
 
+# pistache
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 message("LASzip library")
 # LASzip library

@@ -1,5 +1,5 @@
 #pragma once
-
+#define FORCE_REBUILD __DATE__ __TIME__
 #include "incbin.h"
 
 INCTXT(INDEX_HTM, "../html/index.htm");
