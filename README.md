@@ -41,6 +41,8 @@ Time-lapse video guide to build and configure the system.
 
 [Youtube video](https://youtu.be/BXBbuSJMFEo)
 
+> Note: the video will get outdated eventually, please refer to the manual.
+
 # Software
 
 # Important notes
@@ -52,7 +54,7 @@ The software can run other distros (e.g. Ubuntu) but it is not tested and mainta
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev libpistache-dev libcamera-dev linuxptp
+sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev libpistache-dev libcamera-dev linuxptp debhelper
 ```
 
 ## Static IP for eth0
@@ -77,6 +79,7 @@ $ ls ./code/hardware_config/mandeye-*.h
 ./code/hardware_config/mandeye-pro-cm4-bullseye.h
 ./code/hardware_config/mandeye-standard-rpi4.h
 ./code/hardware_config/mandeye-standard-rpi5.h
+...
 ```
 
 | Hardware header            | What is supported                                |
@@ -156,42 +159,9 @@ touch /media/usb/test
 tail -f /var/log/syslog
 ```
 
-## Setup systemctl for autostart
-Create a file `/usr/lib/systemd/system/mandeye_controller.service` with content.
-Note that you need to adjust your user's name:
-```
-[Unit]
-Description=Mandeye
-After=multi-user.target
 
-[Service]
-User=mandeye
-StandardOutput=null
-StandardError=null
-ExecStartPre=/bin/sleep 20
-ExecStart=/home/robot/mandeye_controller/build/control_program
-Restart=always
+# Installing software on target device
 
-[Install]
-WantedBy=multi-user.target
-```
-
-Next reload daemons, enable and start the service`
-```
-sudo systemctl daemon-reload
-sudo systemctl enable mandeye_controller.service
-sudo systemctl start mandeye_controller.service
-```
-You can check status of the service with:
-```bash
-sudo systemctl status mandeye_controller.service
-```
-
-# Buildinng DEB package
-To build DEB package, you need to install additional packages:
-```bash
-sudo apt-get install debhelper
-```
 
 Then you can build the package:
 ```bash
@@ -199,12 +169,24 @@ cd mandeye_controller
 mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DMANDEYE_HARDWARE_HEADER=mandeye-standard-rpi4.h
 make -j1 # -j4 can be used for 8 Gb version
-make package
+sudo make install 
+```
+
+## Debian package
+
+You can build a DEB package for easier installation on the target device. 
+It can help with deployment on small 1Gb devices.
+
+```bash
+cd mandeye_controller
+mkdir -p build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DMANDEYE_HARDWARE_HEADER=mandeye-standard-rpi4.h
+make -j1 # -j4 can be used for 8 Gb version
+sudo make package
 ```
 
 The package will be available in the build directory.
 
-# Installation and usage of the package
 To install the package, you need to copy it to the target device and install it with `dpkg`:
 ```bash
 sudo dpkg -i mandeye_controller-0.1.0-Linux.deb
@@ -213,6 +195,10 @@ sudo dpkg -i mandeye_controller-0.1.0-Linux.deb
 The package will be installed in `/opt/mandeye/` directory, the service will be added to `/usr/lib/systemd/system/`.
 Note that the service will not start automatically, you need to start it manually or enable it with `systemctl`.
 There is a helper script `/opt/mandeye/helper.sh` that contains some useful commands to start, stop, and restart the service.
+
+## Post installation
+Those commands need to be run only once after installation.
+
 
 Add it to bashrc:
 ```bash
