@@ -11,7 +11,7 @@ alias mandeye_fakepps_log="journalctl -u mandeye_fakepps.service"
 alias GPIO_BUZZER_ON="raspi-gpio set 24 op && raspi-gpio set 24 dh"
 alias GPIO_BUZZER_OFF="raspi-gpio set 24 dl"
 alias mandeye_test="curl 127.0.0.1:8003/json/status --silent"
-alias mandeye_gnss_sattelites="mandeye_test | grep satellites_tracked"
+alias mandeye_gnss_satellites="mandeye_test | grep satellites_tracked"
 
 alias mandeye_cam0_status="sudo systemctl status mandeye_libcamera_cam0.service"
 alias mandeye_cam1_status="sudo systemctl status mandeye_libcamera_cam1.service"

@@ -197,6 +197,12 @@ std::vector<std::string> FileSystemClient::GetDirectories()
 {
 	std::unique_lock<std::mutex> lck(m_mutex);
 	std::vector<std::string> fn;
+	if (m_currentContinousScanDirectory.empty() ||
+	    !std::filesystem::exists(m_currentContinousScanDirectory) ||
+	    !std::filesystem::is_directory(m_currentContinousScanDirectory)) {
+	    // Directory is not set or invalid, return empty vector
+	    return fn;
+	}
 	for(const auto& entry : std::filesystem::directory_iterator(m_currentContinousScanDirectory))
 	{
 	    if(entry.is_regular_file() )

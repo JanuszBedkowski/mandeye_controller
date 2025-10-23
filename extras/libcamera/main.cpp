@@ -165,7 +165,6 @@ struct HelloHandler : public Http::Handler {
                     std::cerr << "Error parsing JSON: " << e.what() << std::endl;
                     writer.send(Http::Code::Bad_Request, "Invalid JSON");
                 }
-                writer.send(Http::Code::Ok, "OK");
                 return;
             }
 
