@@ -453,8 +453,8 @@ namespace mandeye {
                 const auto &minValue = control.second.min();
                 const auto &maxValue = control.second.max();
 
-                config["controls_info"][name]["max"] = minValue.toString();
-                config["controls_info"][name]["min"] = maxValue.toString();
+                config["controls_info"][name]["min"] = minValue.toString();
+                config["controls_info"][name]["max"] = maxValue.toString();
                 config["controls_info"][name]["def"] = defValue.toString();
                 if (m_controlList.contains(id)){
                     auto currentValue = m_controlList.get(id);
