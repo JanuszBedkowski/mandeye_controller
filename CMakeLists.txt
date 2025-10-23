@@ -6,7 +6,7 @@ project (mandeye_multisensor)
 set(MANDEYE_HARDWARE_HEADER CACHE STRING "Mandeye hardware setting. Choose one header from 'code/hardware/mandeye-*.h")
 #add_compile_definitions(MANDEYE_HARDWARE_HEADER="${MANDEYE_HARDWARE_HEADER}")
 message(STATUS "Mandeye hardware version is : ${MANDEYE_HARDWARE_HEADER}")
-set (MANDEYE_VERSION "0.6-dev")
+set (MANDEYE_VERSION "0.7-dev")
 message(STATUS "Mandeye version is : ${MANDEYE_VERSION}")
 
 set(SYSTEM_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
