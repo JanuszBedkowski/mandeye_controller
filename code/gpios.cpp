@@ -276,6 +276,8 @@ void GpioClient::beep(const std::vector<int>& durations)
 				isOn = false;
 			}
 		}
+		// make sure that is off;
+		setLed(buzzerGpio, false);
 	}
 }
 

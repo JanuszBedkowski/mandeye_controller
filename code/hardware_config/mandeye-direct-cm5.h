@@ -44,7 +44,7 @@ inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
 {
 	std::cout << "Saved LAZ file: " << filename << std::endl;
 	if (mandeye::gpioClientPtr) {
-		mandeye::gpioClientPtr->beep({200, 100, 200});
+		mandeye::gpioClientPtr->beep({50, 100, 50, 100});
 	}
 }
 
