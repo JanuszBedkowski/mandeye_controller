@@ -14,7 +14,7 @@ alias mandeye_test="curl 127.0.0.1:8003/json/status --silent"
 alias mandeye_gnss_sattelites="mandeye_test | grep satellites_tracked"
 
 alias mandeye_cam0_status="sudo systemctl status mandeye_libcamera_cam0.service"
-alias mandeye_cam1_status="sudo systemctl statusmandeye_libcamera_cam1.service"
+alias mandeye_cam1_status="sudo systemctl status mandeye_libcamera_cam1.service"
 alias mandeye_cam0_stop="sudo systemctl stop mandeye_libcamera_cam0.service"
 alias mandeye_cam1_stop="sudo systemctl stop mandeye_libcamera_cam1.service"
 alias mandeye_cam0_start="sudo systemctl start mandeye_libcamera_cam0.service"

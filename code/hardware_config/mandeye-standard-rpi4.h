@@ -24,12 +24,12 @@ constexpr const char* GetGPIOChip()
 
 inline void ReportState([[maybe_unused]] const mandeye::States state)
 {
-	void();
+	// no-op
 }
 
 inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
 {
-	void();
+	// no-op
 }
 
 constexpr int GetLED(LED led)

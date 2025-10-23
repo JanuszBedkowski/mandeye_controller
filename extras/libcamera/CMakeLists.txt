@@ -1,8 +1,4 @@
 cmake_minimum_required(VERSION 3.13)
-project(LibCameraHello)
-
-
-cmake_minimum_required(VERSION 3.13)
 project(libcamera_jpeg_example)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -37,6 +33,6 @@ set(CPACK_PACKAGE_NAME "mandeye-extras-libcamera")
 set(MANDEYE_VERSION "1.0.0")
 set(CPACK_PACKAGE_VERSION "${MANDEYE_VERSION}-${GIT_HASH}-${MANDEYE_HARDWARE_HEADER}-${SYSTEM_ARCH}")
 set(CPACK_PACKAGE_CONTACT "Michał Pełka <michalpelka@gmail.com>")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "rapidjson-dev,libserial-dev, libgpiod-dev, libzmq3-dev, opecv4.5, libpistache-dev, libcamera-dev, libjpeg-dev")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "rapidjson-dev,libserial-dev, libgpiod-dev, libzmq3-dev, opencv4.5, libpistache-dev, libcamera-dev, libjpeg-dev")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/services/postinst")
 include(CPack)
