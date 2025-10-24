@@ -46,9 +46,9 @@ Time-lapse video guide to build and configure the system.
 # Software
 
 # Important notes
-Currently Raspbian Bookworm is recommended for the system. The system is tested on Raspbian Bookworm. 
-The version v0.5 supported Bullseye, current main branch supports Bookworm.
-The software can run other distros (e.g. Ubuntu) but it is not tested and maintained.
+Currently, Raspbian Bookworm is recommended for the system. The system is tested on Raspbian Bookworm. 
+The version v0.5 supported Bullseye, the current main branch supports Bookworm.
+The software can run other distros (e.g. Ubuntu), but it is not tested and maintained.
 
 ## Update system
 ```bash
@@ -91,7 +91,7 @@ $ ls ./code/hardware_config/mandeye-*.h
 |mandeye-pro-cm4-bullseye.h  | Deprecated                                       |
 
 
-The next example shows how to build the app for Raspberry Pi 4 without custom carrier board at Raspberry Pi 4.
+The next example shows how to build the app for Raspberry Pi 4 without a custom carrier board at Raspberry Pi 4.
 ```
 git clone https://github.com/JanuszBedkowski/mandeye_controller.git
 cd mandeye_controller
@@ -109,7 +109,7 @@ cd mandeye_controller/build
 ./led_demo
 ./button_demo
 ```
-Both program should work correctly, without need of `sudo`. If not , check if your user is in `gpio` group, if not add it:
+Both programs should work correctly, without a need of `sudo`. If not, check if your user is in `gpio` group, if not add it:
 ```bash
 sudo usermod -a -G gpio $USER
 ```
@@ -223,16 +223,16 @@ PTP time synchronization generator using eth0 (works only on Raspberry Pi 5):
 ```shell
 sudo systemctl enable mandeye_ptp4l-gm-eth0.service
 sudo systemctl enable mandeye_phc2sys-gm-eth0.service 
-mandeye_ptp_start # PTP clock using eth0
-mandeye_ptp_grandmaster_start # 
+mandeye_phc2sys_start # PTP clock using eth0
+mandeye_ptp4l_grandmaster_start # 
 ```
 
 Cameras:
 ```shell
 sudo systemctl enable mandeye_libcamera_cam0.service
 sudo systemctl enable mandeye_libcamera_cam1.service
-mandeye_camera_cam0_start
-mandeye_camera_cam1_start
+mandeye_cam0_start
+mandeye_cam1_start
 ```
 
 List state of services:

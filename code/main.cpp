@@ -192,6 +192,10 @@ std::string savePointcloudData(LivoxPointsBufferPtr buffer, const std::string& d
 	if (saveStatus) {
 		saveStatus->m_saveDurationSec2 = elapsed_seconds.count();
 		mandeye::lastFileSaveStats = *saveStatus;
+		hardware::OnSavedLaz(lidarFilePath);
+	}
+	else {
+		std::cout << "Error saving laz file " << lidarFilePath << std::endl;
 	}
 	return lidarFilePath.string();
 }
@@ -498,7 +502,7 @@ void stateWatcher()
 						saveGnssData(gnssBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 						saveGnssRawData(gnssRawBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					}
-					hardware::OnSavedLaz(fn);
+
 					mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_COPY_DATA, false);
 					chunksInExperimentCS++;
 				}
@@ -585,7 +589,6 @@ void stateWatcher()
 					saveGnssData(gnssData, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				}
 				chunksInExperimentCS++;
-				hardware::OnSavedLaz(fn);
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_COPY_DATA, false);
 				app_state = States::IDLE;
 			}
@@ -675,7 +678,7 @@ void stateWatcher()
 					mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_COPY_DATA, false);
 					mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_STOP_SCAN, false);
 				}
-				hardware::OnSavedLaz(fn);
+
 				app_state = States::IDLE;
 			}
 		}
