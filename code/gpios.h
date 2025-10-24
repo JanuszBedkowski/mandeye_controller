@@ -5,7 +5,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <atomic>
-#include "hardware_config/mandeye.h"
+#include "hardware_config/hardware_common.h"
 
 // Forward declaration for GPIOD
 struct gpiod_chip;
@@ -112,4 +112,7 @@ private:
 	std::mutex m_lock;
 	std::atomic<bool> m_running{true};
 };
+static std::mutex gpioClientPtrLock;
+static std::shared_ptr<GpioClient> gpioClientPtr;
+
 } // namespace mandeye

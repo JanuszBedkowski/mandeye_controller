@@ -2,7 +2,7 @@
 #include <gpios.h>
 #include <iostream>
 #include <gpiod.h>
-
+#include "hardware_config/mandeye.h"
 namespace mandeye
 {
 using namespace hardware;
@@ -276,6 +276,8 @@ void GpioClient::beep(const std::vector<int>& durations)
 				isOn = false;
 			}
 		}
+		// make sure that is off;
+		setLed(buzzerGpio, false);
 	}
 }
 

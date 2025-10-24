@@ -4,26 +4,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta charset="UTF-8">
     <title>Status</title>
-<!--    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>-->
+    <!--    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>-->
     <script src="jquery.js"></script>
     <script >
         // var host_global = "http://127.0.0.1:8003"
         var host_global = window.location.protocol + "//" + window.location.host;
 
         var start = new Date;
-        function populate(){
+        function populate2(){
             //var host = window.location.protocol + "//" + window.location.host;
 
             $.ajax({
-                url: host_global+"/json/status"
+                url: host_global+"/json/status_full"
             }).then(function(data) {
                 var obj = jQuery.parseJSON(data);
 
-                $('.msgs_livox').text( obj.livox.counters.lidar);
-                $('.msgs_imu').text( obj.livox.counters.imu);
-                $('.disk').text( obj.fs.FileSystemClient.free_str);
-                $('.state').text( obj.state);
-                $('.filesystem').text(obj.fs.FileSystemClient.error);
+                if (obj.hasOwnProperty('fs'))
+                {
+                    $('.disk').text( obj.fs.FileSystemClient.free_str);
+                    $('.filesystem').text(obj.fs.FileSystemClient.error);
+                    list = document.getElementById("dirs");
+                    list.innerHTML = ""
+                    for (let i =0; i <  obj.fs.FileSystemClient.dirs.length; i++ )
+                    {
+                        list.innerHTML += "<li>"+obj.fs.FileSystemClient.dirs[i] +"</li>";
+                    }
+                }
                 if (obj.hasOwnProperty('gnss'))
                 {
                     $('.gnss').text( obj.gnss.gga.satellites_tracked);
@@ -32,17 +38,39 @@
                 {
                     $('.gnss').text( "N/A");
                 }
-                list = document.getElementById("dirs");
-                list.innerHTML = ""
-                for (let i =0; i <  obj.fs.FileSystemClient.dirs.length; i++ )
-                {
-                    list.innerHTML += "<li>"+obj.fs.FileSystemClient.dirs[i] +"</li>";
-                }
+
 
             });
         };
 
-        setInterval(function() {populate();}, 100);
+        function populate1(){
+            //var host = window.location.protocol + "//" + window.location.host;
+
+            $.ajax({
+                url: host_global+"/json/status"
+            }).then(function(data) {
+                var obj = jQuery.parseJSON(data);
+
+                $('.msgs_lidar').text( obj.livox.counters.lidar);
+                $('.msgs_imu').text( obj.livox.counters.imu);
+                $('.state').text( obj.state);
+
+                if (obj.hasOwnProperty('gnss'))
+                {
+                    $('.gnss').text( obj.gnss.gga.satellites_tracked);
+                }
+                else
+                {
+                    $('.gnss').text( "N/A");
+                }
+
+
+            });
+        };
+
+
+        setInterval(function() {populate1();}, 100);
+        setInterval(function() {populate2();}, 1000);
 
 
         function start_bag() {
@@ -167,7 +195,7 @@
 
     <table>
         <tr>
-            <th>Livox</th>
+            <th>Lidar</th>
             <th>IMU</th>
             <th>Disk</th>
             <th>State</th>
@@ -176,7 +204,7 @@
 
         </tr>
         <tr>
-            <td class="msgs_livox">-1</td>
+            <td class="msgs_lidar">-1</td>
             <td class="msgs_imu">-1</td>
             <td class="disk">-1</td>
             <td class="state">-1</td>
@@ -185,7 +213,7 @@
         </tr>
     </table>
     <ul id="dirs">
-        <li><a href="#">Item 1</a></li>
+        <li><a href="#"></a></li>
     </ul>
 </body>
 </html>

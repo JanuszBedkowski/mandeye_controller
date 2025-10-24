@@ -6,14 +6,15 @@ project (mandeye_multisensor)
 set(MANDEYE_HARDWARE_HEADER CACHE STRING "Mandeye hardware setting. Choose one header from 'code/hardware/mandeye-*.h")
 #add_compile_definitions(MANDEYE_HARDWARE_HEADER="${MANDEYE_HARDWARE_HEADER}")
 message(STATUS "Mandeye hardware version is : ${MANDEYE_HARDWARE_HEADER}")
-set (MANDEYE_VERSION "0.6-dev")
+set (MANDEYE_VERSION "0.7-dev")
 message(STATUS "Mandeye version is : ${MANDEYE_VERSION}")
 
 set(SYSTEM_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 message("pistache")
-#pistache
-add_subdirectory(3rd/pistache)
 
+# pistache
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 message("LASzip library")
 # LASzip library
@@ -32,8 +33,7 @@ message("Livox SDK2")
 # Livox SDK2
 add_subdirectory(3rd/Livox-SDK2)
 
-# extras
-add_subdirectory(extras)
+
 
 include_directories(code/)
 
@@ -97,11 +97,15 @@ target_link_libraries(button_demo gpiod pthread)
 install(TARGETS control_program led_demo fake_pps button_demo
         RUNTIME DESTINATION /opt/mandeye/)
 
+add_subdirectory(extras/libcamera)
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/services/mandeye_controller.service  DESTINATION /usr/lib/systemd/system)
 install(FILES packing/services/mandeye_fake_pps.service  DESTINATION /usr/lib/systemd/system)
-
+install(FILES packing/services/mandeye_phc2sys-gm-eth0.service DESTINATION /usr/lib/systemd/system)
+install(FILES packing/services/mandeye_ptp4l-gm-eth0.service DESTINATION /usr/lib/systemd/system)
+install(FILES packing/config/gm-l2.conf DESTINATION /opt/mandeye/)
+install(FILES packing/check_services.sh DESTINATION /opt/mandeye/)
 # Packaging
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME "mandeye-multisensor")

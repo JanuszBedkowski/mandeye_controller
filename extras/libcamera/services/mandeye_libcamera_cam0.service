@@ -1,0 +1,15 @@
+[Unit]
+Description=Mandeye_libcamera
+After=multi-user.target
+
+[Service]
+User=pi
+StandardOutput=null
+StandardError=null
+ExecStartPre=/bin/sleep 20
+ExecStart=/opt/mandeye/extras/mandeye_libcamera --camera 0 --port 8004 --prefix cam0_ --config /media/usb/cam0_config.json
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

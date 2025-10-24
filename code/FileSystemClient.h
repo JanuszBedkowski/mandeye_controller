@@ -1,6 +1,5 @@
 #pragma once
 
-#include "livox_lidar_def.h"
 #include <deque>
 #include <json.hpp>
 #include <mutex>
@@ -12,6 +11,7 @@ namespace mandeye
 class FileSystemClient
 {
 	constexpr static char manifestFilename[]{"mandala_manifest.txt"};
+	constexpr static char config[]{"mandeye_config.json"};
 	constexpr static char versionFilename[]{"version.txt"};
 
 public:
@@ -38,11 +38,14 @@ public:
 
 	double BenchmarkWriteSpeed(const std::string& filename, size_t fileSizeMB);
 
-
+	nlohmann::json GetConfig();
 private:
 	int32_t m_nextId{0};
 	std::string ConvertToText(float mb);
 	std::string m_repository;
+	std::string m_currentContinousScanDirectory;
+	std::string m_currentStopScanDirectory;
+
 	std::string m_error;
 	std::mutex m_mutex;
 	double m_benchmarkWriteSpeed{-1.f};

@@ -1,5 +1,9 @@
 #pragma once
 #include <SerialPortConstants.h>
+#include "state.h"
+#include "gpios.h"
+
+
 namespace hardware
 {
 	enum class LED
