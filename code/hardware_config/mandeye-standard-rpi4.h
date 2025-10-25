@@ -9,9 +9,10 @@
 namespace hardware
 {
 #define PISTACHE_SERVER
-constexpr int Offset = 0;
 
+constexpr int Offset = 0;
 constexpr bool Autostart = false;
+constexpr bool WaitForLidarSync = false;
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyeStandard";

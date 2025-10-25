@@ -162,15 +162,14 @@ tail -f /var/log/syslog
 
 # Installing software on target device
 
-
-Then you can build the package:
+  Then you can build the package:
 ```bash
 cd mandeye_controller
 mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DMANDEYE_HARDWARE_HEADER=mandeye-standard-rpi4.h
 make -j1 # -j4 can be used for 8 Gb version
 sudo make install 
-```
+```[imu0000.csv](../../../../media/michal/mandeye/continousScanning_0015/imu0000.csv)
 
 ## Debian package
 
@@ -196,6 +195,8 @@ The package will be installed in `/opt/mandeye/` directory, the service will be 
 Note that the service will not start automatically, you need to start it manually or enable it with `systemctl`.
 There is a helper script `/opt/mandeye/helper.sh` that contains some useful commands to start, stop, and restart the service.
 
+If you make any changes post-installation, please run 'sudo systemctl daemon-reload' to reload the service.
+Note that the changes will be disregarded after reinstallation.
 ## Post installation
 Those commands need to be run only once after installation.
 

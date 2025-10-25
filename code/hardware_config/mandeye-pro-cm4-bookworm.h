@@ -14,6 +14,7 @@ namespace hardware
 #define PISTACHE_SERVER
 
 constexpr bool Autostart = false;
+constexpr bool WaitForLidarSync = false;
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyePro";

@@ -66,6 +66,10 @@ public:
 	//! Return current mapping from serial number to lidar id
 	std::unordered_map<uint32_t, std::string> getSerialNumberToLidarIdMapping() const;
 
+	//! Returns if Lidar is synced (PPS or PTP)
+	bool isSynced() const;
+
+
 	// mandeye_utils::TimeStampProvider overrides ...
 	double getTimestamp() override;
 	double getSessionDuration() override;

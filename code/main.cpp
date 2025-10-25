@@ -381,9 +381,31 @@ void stateWatcher()
 		}
 		else if(app_state == States::WAIT_FOR_RESOURCES)
 		{
+			if (!disableBuzzer)
+			{
+				mandeye::gpioClientPtr->beep({10}); // One very short beep to show that we are alive
+			}
 			std::this_thread::sleep_for(100ms);
 			std::lock_guard<std::mutex> l1(livoxClientPtrLock);
 			std::lock_guard<std::mutex> l2(gpioClientPtrLock);
+
+			// check if lidar
+			if (hardware::WaitForLidarSync) {
+				bool isLidarSynced = false;
+				for (int i = 0; i < 60; i++) {
+					std::this_thread::sleep_for(1000ms);
+					if (livoxCLientPtr && livoxCLientPtr->isSynced()) {
+						isLidarSynced = true;
+						break;
+					}
+				}
+				if (!isLidarSynced) {
+					std::cout << "Lidar not synced even after waiting, going into failed mode " << std::endl;
+					isLidarError.store(true);
+				}
+			}
+
+
 			if(mandeye::gpioClientPtr && mandeye::fileSystemClientPtr)
 			{
 				app_state = States::IDLE;
@@ -412,7 +434,7 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_CONTINOUS_SCANNING, false);
 			}
 			std::this_thread::sleep_for(100ms);
-			if (hardware::Autostart) {
+			if (hardware::Autostart && !isLidarError) {
 				app_state = States::STARTING_SCAN;
 			}
 		}

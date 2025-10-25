@@ -16,6 +16,8 @@ namespace hardware
 
 constexpr int Offset = 0;
 constexpr bool Autostart = true;
+constexpr bool WaitForLidarSync = true;
+
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyeStandard";

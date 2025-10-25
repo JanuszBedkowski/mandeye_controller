@@ -298,6 +298,24 @@ void LivoxClient::PointCloudCallback(uint32_t handle,
 	}
 }
 
+bool LivoxClient::isSynced() const {
+	std::lock_guard<std::mutex> lcK(m_lidarInfoMutex);
+	if (m_LivoxLidarTimeSync.empty()) {
+		return false;
+	}
+
+	for (auto& [handle,mode] : m_LivoxLidarTimeSync)
+	{
+		if (mode <= 0)
+		{
+			const auto sn = m_handleToSerialNumber.at(handle);
+			std::cout << "Time sync mode is  " << mode << " for " << sn << std::endl;
+			return false;
+		}
+	}
+	std::cout << "Time sync is synced" << std::endl;
+	return true;
+}
 
 void LivoxClient::ImuDataCallback(uint32_t handle,
 								  const uint8_t dev_type,
