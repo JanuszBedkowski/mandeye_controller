@@ -1,6 +1,9 @@
 #pragma once
 
 #include "hardware_common.h"
+
+#include <iostream>
+#include <ostream>
 #ifdef MANDEYE_HARDWARE_CONFIGURED
 #	error "MANDEYE Hardware were confiured. You included multiple hardware headers!"
 #endif
@@ -10,6 +13,8 @@ namespace hardware
 {
 #define PISTACHE_SERVER
 
+constexpr bool Autostart = false;
+constexpr bool WaitForLidarSync = false;
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyePro";
@@ -20,6 +25,15 @@ constexpr const char* GetGPIOChip()
 	return "/dev/gpiochip0";
 }
 
+inline void ReportState([[maybe_unused]] const mandeye::States state)
+{
+	// no-op
+}
+
+inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
+{
+	// no-op
+}
 
 constexpr int GetLED(LED led)
 {

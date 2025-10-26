@@ -1,6 +1,8 @@
 #pragma once
 
+#include "gpios.h"
 #include "hardware_common.h"
+#include "utils/TimeStampProvider.h"
 #ifdef MANDEYE_HARDWARE_CONFIGURED
 #	error "MANDEYE Hardware were confiured. You included multiple hardware headers!"
 #endif
@@ -13,8 +15,9 @@ namespace hardware
 #define MANDEYE_COUNTINOUS_SCANNING_STOP_1_CLICK
 
 constexpr int Offset = 0;
-constexpr bool Autostart = false;
-constexpr bool WaitForLidarSync = false;
+constexpr bool Autostart = true;
+constexpr bool WaitForLidarSync = true;
+
 constexpr const char* mandeyeHarwareType()
 {
 	return "MandeyeStandard";
@@ -28,10 +31,23 @@ constexpr const char* GetGPIOChip()
 
 inline void ReportState([[maybe_unused]] const mandeye::States state)
 {
+	if (state == mandeye::States::USB_IO_ERROR) {
+		std::cerr << "USB IO ERROR - will restart shortly" << std::endl;
+		static int count = 0;
+		if (count ++ >= 2) {
+			std::cerr << "Restarting..." << std::endl;
+			std::abort();
+		}
+	}
+
 }
 
 inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
 {
+	std::cout << "Saved LAZ file: " << filename << std::endl;
+	if (mandeye::gpioClientPtr) {
+		mandeye::gpioClientPtr->beep({50, 100, 50, 100});
+	}
 }
 
 constexpr int GetLED(LED led)
@@ -59,7 +75,7 @@ constexpr int GetLED(LED led)
 	}
 	if(led == LED::BUZZER)
 	{
-		return 12;
+		return 24;
 	}
 	return -1;
 }
