@@ -169,7 +169,7 @@ mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DMANDEYE_HARDWARE_HEADER=mandeye-standard-rpi4.h
 make -j1 # -j4 can be used for 8 Gb version
 sudo make install 
-```[imu0000.csv](../../../../media/michal/mandeye/continousScanning_0015/imu0000.csv)
+```
 
 ## Debian package
 
