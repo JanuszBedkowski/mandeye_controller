@@ -70,6 +70,9 @@ namespace mandeye
         {
             return {};
         }
+
+        //! Check if the lidar timer is synchronized with computer time (e.g. with PTP)
+        virtual bool isSynced() {return false;}
     };
 
 } // namespace mandeye

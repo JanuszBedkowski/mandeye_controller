@@ -123,7 +123,7 @@ add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic " )
 
 
-target_link_libraries(control_program pthread ${LIDAR_LIBRARIES} pistache_static atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod zmq)
+target_link_libraries(control_program pthread ${LIDAR_LIBRARIES} pistache atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod zmq)
 
 set_target_properties(control_program PROPERTIES
         INSTALL_RPATH "/opt/mandeye/lib"

@@ -288,7 +288,7 @@ namespace mandeye
                 point.z = 0.001 * p_point_data[i].z;
                 point.intensity = p_point_data[i].reflectivity;
                 point.laser_id = laser_id;
-                point.timestamp = toUint64.data + i * data->time_interval;
+                point.timestamp = toUint64.data + static_cast<uint64_t>(i) * (double(data->time_interval * 100) / data->dot_num); //unit for interval is 0.1 us = 100 ns
                 if (point.timestamp > 0)
                 {
                     buffer->push_back(point);
@@ -547,6 +547,26 @@ namespace mandeye
         }
 
         return 255;
+    }
+
+    bool LivoxClient::isSynced()
+    {
+        std::lock_guard<std::mutex> lcK(m_lidarInfoMutex);
+        if (m_LivoxLidarTimeSync.empty()) {
+            return false;
+        }
+
+        for (auto& [handle,mode] : m_LivoxLidarTimeSync)
+        {
+            if (mode <= 0)
+            {
+                const auto sn = m_handleToSerialNumber.at(handle);
+                std::cout << "Time sync mode is  " << mode << " for " << sn << std::endl;
+                return false;
+            }
+        }
+        std::cout << "Time sync is synced" << std::endl;
+        return true;
     }
 
 } // namespace mandeye

@@ -407,7 +407,7 @@ void stateWatcher()
 				bool isLidarSynced = false;
 				for (int i = 0; i < 60; i++) {
 					std::this_thread::sleep_for(1000ms);
-					if (livoxCLientPtr && livoxCLientPtr->isSynced()) {
+					if (lidarClientPtr && lidarClientPtr->isSynced()) {
 						isLidarSynced = true;
 						break;
 					}

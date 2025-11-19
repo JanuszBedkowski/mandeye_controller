@@ -42,6 +42,7 @@ public:
 	double getSessionDuration() override;
 	double getSessionStart() override;
 	void initializeDuration() override;
+        bool isSynced() override;
 	// periodically ask lidars for status
 	void testThread();
 
