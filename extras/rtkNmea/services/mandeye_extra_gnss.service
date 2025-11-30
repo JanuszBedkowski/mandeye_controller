@@ -1,5 +1,5 @@
 [Unit]
-Description=Mandeye_libcamera
+Description=Mandeye_extra_gnss
 After=multi-user.target
 
 [Service]
@@ -7,7 +7,7 @@ User=pi
 StandardOutput=journal
 StandardError=journal
 ExecStartPre=/bin/sleep 20
-ExecStart=/opt/mandeye/extras/mandeye_libcamera --camera 0 --port 8004 --prefix cam0_ --config /media/usb/cam0_config.json
+ExecStart=/opt/mandeye/extras/mandeye_extra_gnss
 Restart=always
 
 [Install]

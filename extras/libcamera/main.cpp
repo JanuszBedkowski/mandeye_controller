@@ -303,13 +303,16 @@ int main(int argc, char** argv)
             }
 
             if (isPreviousFrameSaved) {
-                const std::filesystem::path path(global::getContinousScanTarget());
+                const std::filesystem::path continousPath(global::getContinousScanTarget());
+                const std::filesystem::path directory = continousPath/ ("CAMERA_"+std::to_string(global::cameraNo));
+                // mkdir, ok
+                std::filesystem::create_directories(directory);
 
                 // delegate frame saving to std::future (separate thread).
                 jpgSaveThread = std::async(std::launch::async, [=]() {
                     try {
                         const auto start = std::chrono::high_resolution_clock::now();
-                        const auto filename = path.string() + "/" + global::prefix + std::to_string(timestamp);
+                        const auto filename = directory.string() + "/" + global::prefix + std::to_string(timestamp);
                         const auto filenameJpg = filename+ ".jpg";
                         const auto filenameMeta = filename + ".meta.json";
                         // copy last photo
@@ -344,7 +347,7 @@ int main(int argc, char** argv)
     };
 
     global::cam.registerCallback(printFrame);
-    const bool stated = global::cam.start(global::cameraNo, {}, libcamera::StreamRole::StillCapture);
+    const bool stated = global::cam.start(global::cameraNo, global::loadedUSBConfig, libcamera::StreamRole::StillCapture);
     if (!stated) {
         std::cerr << "Failed to start camera" << std::endl;
         return 1;
