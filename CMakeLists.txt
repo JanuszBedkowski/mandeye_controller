@@ -35,6 +35,8 @@ include_directories(code/)
 
 set(MANDEYE_USE_OUSTER_SDK ON CACHE BOOL  "Use Ouster SDK ")
 set(MANDEYE_USE_LIVOX_SDK2 ON CACHE BOOL "Use Livox SDK (HAP/Mid360)")
+set(MANDEYE_USE_HESAI_SDK2 ON CACHE BOOL "Use Hesai SDK2 (PandarXT/GT)")
+
 
 # NMEA and libserial
 find_path(LIBSERIAL_INCLUDE_DIR SerialPort.h
@@ -113,6 +115,21 @@ if (${MANDEYE_USE_LIVOX_SDK2})
     add_compile_definitions(MANDEYE_USE_LIVOX_SDK2)
 endif()
 
+if (${MANDEYE_USE_HESAI_SDK2})
+    message("Hesai SDK2")
+    # Hesai SDK2
+
+    add_subdirectory(3rd/hesai_sdk)
+    add_library(hesai_lib SHARED
+            code/lidars/hesai/HesaiClient.cpp
+    )
+    target_link_libraries(hesai_lib PRIVATE hesai_sdk_lib)
+    target_include_directories(hesai_lib PRIVATE 3rd/Hesai-SDK2/include)
+    install(TARGETS hesai_lib LIBRARY DESTINATION /opt/mandeye/)
+    list(APPEND LIDAR_LIBRARIES hesai_lib)
+    # add defines
+    add_compile_definitions(MANDEYE_USE_HESAI_SDK2)
+endif()
 
 add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h
         ${LIDAR_SOURCES}

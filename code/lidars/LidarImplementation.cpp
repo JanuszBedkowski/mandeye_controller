@@ -15,21 +15,49 @@ namespace {
 using CreateFunc = void*();
 using DestroyFunc = void(void*);
 
+void * GetLibHandle(const std::string& libPath)
+{
+    void* handle = dlopen(libPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
+    if (!handle)
+    {
+        std::cerr << dlerror() << std::endl;
+    }
+    if (handle)
+    {
+        return handle;
+    }
+    std::vector<std::string> paths ={
+        "/usr/local/lib/",
+        "/opt/mandeye/",
+        "/home/michal/jcode/mandeye_controller/cmake-build-debug/"
+    };
+    for (const auto& path : paths)
+    {
+        std::cerr << "Trying to load from " << path << std::endl;
+        handle = dlopen((path + libPath).c_str(), RTLD_LAZY | RTLD_GLOBAL);
+        if (!handle)
+        {
+            std::cerr << dlerror() << std::endl;
+        }
+        if (handle)
+        {
+            std::cout << "Loaded from " << path << std::endl;
+            return handle;
+        }
+    }
+    std::cerr << "Failed to load from any path" << std::endl;
+    std::abort();
+    throw std::runtime_error("Failed to load library: " + std::string(dlerror()));
+    return nullptr;
+}
+
 // Wrapper for a dynamically loaded lidar client
 template <typename ClientType>
 std::shared_ptr<ClientType> make_dynamic_client(const std::string& libPath,
                                                 const std::string& createSym,
                                                 const std::string& destroySym)
 {
-    void* handle = dlopen(libPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
-    if (!handle) {
-        //try again with global install path
-        std::cerr << "Failed to load library: " << dlerror() << " trying to load from default install" << std::endl;
-        handle = dlopen(("/opt/mandeye/" + libPath).c_str(), RTLD_LAZY | RTLD_GLOBAL);
-        if (!handle) {
-            throw std::runtime_error("Failed to load library: " + std::string(dlerror()));
-        }
-    }
+    void* handle = GetLibHandle(libPath);
 
     auto create = reinterpret_cast<CreateFunc*>(dlsym(handle, createSym.c_str()));
     auto destroy = reinterpret_cast<DestroyFunc*>(dlsym(handle, destroySym.c_str()));
@@ -85,6 +113,18 @@ BaseLidarClientPtr createLidarClient(const std::string& lidarType, const nlohman
             );
         } catch (const std::exception& e) {
             std::cerr << "[OUSTER] " << e.what() << std::endl;
+            return nullptr;
+        }
+    }
+    else if (lidarType == "HESAI")
+    {
+        try
+        {
+            return make_dynamic_client<BaseLidarClient>("libhesai_lib.so", "create_hesai_client", "destroy_hesai_client");
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "[HESAI] " << e.what() << std::endl;
             return nullptr;
         }
     }
