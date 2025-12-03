@@ -130,7 +130,7 @@ sudo apt install ./usbmount_0.0.24_all.deb
 Edit config `sudo nano /etc/usbmount/usbmount.conf`:
 by changing keys:
 ```shell
-FILESYSTEMS="vfat ext2 ext3 ext4 hfsplus ntfs fuseblk"
+FILESYSTEMS="vfat ext2 ext3 ext4 hfsplus ntfs fuseblk exfat"
 FS_MOUNTOPTIONS="-fstype=vfat,users,rw,umask=000 -fstype=exfat,users,rw,umask=000"
 VERBOSE=yes
 ```
