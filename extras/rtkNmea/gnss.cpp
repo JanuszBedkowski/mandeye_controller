@@ -80,6 +80,13 @@ void GNSSClient::worker()
 		bool is_vaild = minmea_check(line.c_str(), true);
 		if (is_vaild)
 		{
+		    minmea_sentence_gga gga;
+		    bool isGGA = minmea_parse_gga(&gga, line.c_str());
+		    if (isGGA)
+		    {
+		        std::lock_guard<std::mutex> lock(m_ggaMutex);
+		        lastGGA = gga;
+		    }
                     if (m_dataCallback)
                     {
                         std::lock_guard<std::mutex> lock(m_laserTsMutex);

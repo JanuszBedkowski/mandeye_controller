@@ -5,6 +5,47 @@
 #include "gnss.h"
 #include <pistache/endpoint.h>
 #include "fstream"
+
+
+static const std::unordered_map<int, LibSerial::BaudRate> baud_map = {
+    {50,   LibSerial::BaudRate::BAUD_50},
+    {75,   LibSerial::BaudRate::BAUD_75},
+    {110,  LibSerial::BaudRate::BAUD_110},
+    {134,  LibSerial::BaudRate::BAUD_134},
+    {150,  LibSerial::BaudRate::BAUD_150},
+    {200,  LibSerial::BaudRate::BAUD_200},
+    {300,  LibSerial::BaudRate::BAUD_300},
+    {600,  LibSerial::BaudRate::BAUD_600},
+    {1200, LibSerial::BaudRate::BAUD_1200},
+    {1800, LibSerial::BaudRate::BAUD_1800},
+    {2400, LibSerial::BaudRate::BAUD_2400},
+    {4800, LibSerial::BaudRate::BAUD_4800},
+    {9600, LibSerial::BaudRate::BAUD_9600},
+    {19200,  LibSerial::BaudRate::BAUD_19200},
+    {38400,  LibSerial::BaudRate::BAUD_38400},
+    {57600,  LibSerial::BaudRate::BAUD_57600},
+    {115200, LibSerial::BaudRate::BAUD_115200},
+    {230400, LibSerial::BaudRate::BAUD_230400},
+    {460800,  LibSerial::BaudRate::BAUD_460800},
+    {500000,  LibSerial::BaudRate::BAUD_500000},
+    {576000,  LibSerial::BaudRate::BAUD_576000},
+    {921600,  LibSerial::BaudRate::BAUD_921600},
+    {1000000, LibSerial::BaudRate::BAUD_1000000},
+    {1152000, LibSerial::BaudRate::BAUD_1152000},
+    {1500000, LibSerial::BaudRate::BAUD_1500000},
+    {2000000, LibSerial::BaudRate::BAUD_2000000},
+    {2500000, LibSerial::BaudRate::BAUD_2500000},
+    {3000000, LibSerial::BaudRate::BAUD_3000000},
+    {3500000, LibSerial::BaudRate::BAUD_3500000},
+    {4000000, LibSerial::BaudRate::BAUD_4000000},
+};
+
+std::optional<LibSerial::BaudRate> baudrate_to_constant(int baud)
+{
+    if (auto it = baud_map.find(baud); it != baud_map.end())
+        return it->second;
+    return std::nullopt;
+}
 namespace
 {
     std::string getEnvString(const std::string& env, const std::string& def)
@@ -138,6 +179,7 @@ nlohmann::json getConfig(const std::string& configPath)
     return nlohmann::json();
 }
 
+
 void NMEACallback(const std::string& nmea)
 {
     namespace  fs = std::filesystem;
@@ -146,30 +188,53 @@ void NMEACallback(const std::string& nmea)
     static std::string buffer;
     const auto now = std::chrono::steady_clock::now();
     const auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - lastTime);
-    buffer.append(nmea);
-    if (duration.count() > 60)
+    static std::string lastMode = "";
+
+    // get current mode
+    std::string mode;
     {
-        std::string continousScanTarget;
-        {
-            std::lock_guard<std::mutex> lck(state::stateMutex);
-            continousScanTarget = state::continousScanTarget;
-        }
-
-        // construct path
-        const fs::path directory = fs::path(continousScanTarget)/ global::directoryName;
-        // mkdir -p
-        std::filesystem::create_directories(directory);
-
-        // save file
-        char filename[100];
-        sprintf(filename, "%s/%06d.nmea", directory.c_str(), fileCount);
-        std::ofstream file(filename);
-        file << buffer;
-        file.close();
-        fileCount++;
-        lastTime = std::chrono::steady_clock::now();
+        std::lock_guard<std::mutex> lck(state::stateMutex);
+        mode = state::modeName;
     }
 
+    if (lastMode!= mode && mode == "SCANNING")
+    {
+        lastTime = std::chrono::steady_clock::now();
+    }
+    //
+    if (mode == "SCANNING")
+    {
+        buffer.append(nmea);
+    }
+
+
+    if (duration.count() > 60 || mode == "STOPPING" )
+    {
+        if (!buffer.empty())
+        {
+            std::string continousScanTarget;
+            {
+                std::lock_guard<std::mutex> lck(state::stateMutex);
+                continousScanTarget = state::continousScanTarget;
+            }
+
+            // construct path
+            const fs::path directory = fs::path(continousScanTarget)/ global::directoryName;
+            // mkdir -p
+            std::filesystem::create_directories(directory);
+
+            // save file
+            char filename[100];
+            sprintf(filename, "%s/%06d.nmea", directory.c_str(), fileCount);
+            std::ofstream file(filename);
+            file << buffer;
+            file.close();
+            std::cout << "Saved file " << filename << std::endl;
+            fileCount++;
+            buffer.clear();
+            lastTime = std::chrono::steady_clock::now();
+        }
+    }
 }
 
 int main(int argc, char** argv)
@@ -224,13 +289,21 @@ int main(int argc, char** argv)
 
         global::gnssClient.setNtripClient(global::ntripUser, global::ntripPassword, global::ntripMountPoint,  global::ntripHost, std::to_string( global::ntripPort));
     }
+    global::gnssClient.setDataCallback(NMEACallback);
 
+    const auto baudrate = baudrate_to_constant(global::uartBaudRate);
+    if (baudrate == std::nullopt)
+    {
+        std::cerr << "Invalid baudrate: " << global::uartBaudRate << std::endl;
+        return -1;
+    }
     // ca
 
     std::thread tzmq(clientThread);
     std::thread tgnss([&]()
     {
-        global::gnssClient.startListener(global::uartPort, LibSerial::BaudRate(global::uartBaudRate));
+
+        global::gnssClient.startListener(global::uartPort, *baudrate);
     });
 
     Address addr(Ipv4::any(), Port(portNo));
