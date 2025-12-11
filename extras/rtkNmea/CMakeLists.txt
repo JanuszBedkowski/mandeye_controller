@@ -30,9 +30,13 @@ include_directories(../../3rd/minmea ${LIBSERIAL_INCLUDE_DIR})
 include_directories(../../3rd/json)
 add_library(mineaRtk STATIC ../../3rd/minmea/minmea.c)
 
-add_executable(mandeye_rtkNmea main.cpp gnss.cpp ntrip.cpp)
+add_executable(mandeye_extra_gnss main.cpp gnss.cpp ntrip.cpp)
 MESSAGE("Libserial  ${LIBSERIAL_LIBRARY}")
-target_link_libraries(mandeye_rtkNmea ${LIBSERIAL_LIBRARY} mineaRtk  ${ZMQ_LIBRARIES} PkgConfig::Pistache )
+target_link_libraries(mandeye_extra_gnss ${LIBSERIAL_LIBRARY} mineaRtk  ${ZMQ_LIBRARIES} PkgConfig::Pistache )
 
-install(TARGETS mandeye_rtkNmea
+install(TARGETS mandeye_extra_gnss
         RUNTIME DESTINATION /opt/mandeye/extras/)
+
+install(FILES services/mandeye_extra_gnss.service  DESTINATION /usr/lib/systemd/system)
+
+install(FILES rules/99-mandeye-ublox.rules DESTINATION /etc/udev/rules.d/)

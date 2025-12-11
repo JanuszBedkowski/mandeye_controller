@@ -31,4 +31,9 @@ alias mandeye_ptp4l_grandmaster_start="sudo systemctl start mandeye_ptp4l-gm-eth
 alias mandeye_ptp4l_grandmaster_stop="sudo systemctl stop mandeye_ptp4l-gm-eth0.service"
 alias mandeye_ptp4l_grandmaster_log="journalctl -u mandeye_ptp4l-gm-eth0.service"
 
+alias mandeye_extra_gnss_status="sudo systemctl status mandeye_extra_gnss.service"
+alias mandeye_extra_gnss_start="sudo systemctl start mandeye_extra_gnss.service"
+alias mandeye_extra_gnss_stop="sudo systemctl stop mandeye_extra_gnss.service"
+alias mandeye_extra_gnss_log="journalctl -u mandeye_extra_gnss.service"
+
 alias mandeye_services_status="bash /opt/mandeye/check_services.sh"

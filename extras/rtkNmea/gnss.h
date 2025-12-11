@@ -54,6 +54,7 @@ public:
         void setLaserTimestamp(double laserTimestamp);
 
 private:
+
         std::mutex m_laserTsMutex;
         double m_laserTimestamp{0};
 
@@ -70,7 +71,7 @@ private:
 
         std::atomic<uint64_t> m_numberOfRTCM3Messages{0};
 	std::atomic<uint64_t> m_numberOfGGAMessagesToCaster{0};
-	int m_baudRate {0};
+	LibSerial::BaudRate m_baudRate {0};
 	void worker();
 
 	bool init_succes{false};

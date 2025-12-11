@@ -67,9 +67,10 @@ namespace global
     std::string ntripMountPoint;
     std::string ntripUser;
     std::string ntripPassword;
-    std::string uartPort = "/dev/ttyACM0";
+    std::string uartPort = "/dev/ublox";
+
     int uartBaudRate = 115200;
-    std::string directoryName = "extra_gnss";
+    std::string directoryName = "EXTRA_GNSS";
 }
 
 namespace state
@@ -153,7 +154,8 @@ nlohmann::json getConfig(const std::string& configPath)
 {
     if (!std::filesystem::exists(configPath))
     {
-         throw("Config file does not exist at " + configPath);
+         std::cerr<< "Config file does not exist" << std::endl;
+        return nlohmann::json();
     }
     nlohmann::json configJson;
     std::ifstream configFile(configPath);
@@ -201,6 +203,7 @@ void NMEACallback(const std::string& nmea)
     {
         lastTime = std::chrono::steady_clock::now();
     }
+    lastMode = mode;
     //
     if (mode == "SCANNING")
     {
@@ -223,9 +226,10 @@ void NMEACallback(const std::string& nmea)
             // mkdir -p
             std::filesystem::create_directories(directory);
 
-            // save file
-            char filename[100];
-            sprintf(filename, "%s/%06d.nmea", directory.c_str(), fileCount);
+            const auto start = std::chrono::high_resolution_clock::now();
+
+            const auto filename = directory.string() + "/" + "extra_gnss" + std::to_string(start.time_since_epoch().count()) + ".gnss";
+
             std::ofstream file(filename);
             file << buffer;
             file.close();
@@ -244,25 +248,31 @@ int main(int argc, char** argv)
     int portNo = 8090;
 
     // load from usb
-    std::cout << "Loading configuration from usb" << std::endl;
-    std::string configPath = getEnvString("CONFIG_PATH", "/mnt/usb/config_extra_gps.json");
-    global::directoryName = getEnvString("DIRECTORY_NAME", "extra_gnss");
+
+    std::string configPath = getEnvString("EXTRA_GNSS_CONFIG_PATH", "/media/usb/config_extra_gps.json");
+    std::cout << "Loading configuration from usb : " << configPath << std::endl;
+    global::directoryName = getEnvString("EXTRA_GNSS_DIRECTORY_NAME", "EXTRA_GNSS");
+    global::uartPort = getEnvString("EXTRA_GNSS_UART_PORT", "/dev/ublox");
+    global::uartBaudRate = std::stoi(getEnvString("EXTRA_GNSS_UART_BAUD_RATE", "115200"));
     nlohmann::json configJson;
 
     bool configOk = false;
     try
     {
         configJson = getConfig(configPath);
-        std::cout << "Loaded configuration" << std::endl;
-        std::cout << configJson.dump(4) << std::endl;
-        global::ntripHost = configJson["ntrip"]["host"];
-        global::ntripPort = configJson["ntrip"]["port"];
-        global::ntripMountPoint = configJson["ntrip"]["mount_point"];
-        global::ntripUser = configJson["ntrip"]["user_name"];
-        global::ntripPassword = configJson["ntrip"]["password"];
-        global::uartPort = configJson["uart"]["port"];
-        global::uartBaudRate = configJson["uart"]["baud_rate"];
-        configOk = true;
+        if (configJson.is_object() && !configJson.empty())
+        {
+            std::cout << "Loaded configuration" << std::endl;
+            std::cout << configJson.dump(4) << std::endl;
+            global::ntripHost = configJson["ntrip"]["host"];
+            global::ntripPort = configJson["ntrip"]["port"];
+            global::ntripMountPoint = configJson["ntrip"]["mount_point"];
+            global::ntripUser = configJson["ntrip"]["user_name"];
+            global::ntripPassword = configJson["ntrip"]["password"];
+            global::uartPort = configJson["uart"]["port"];
+            global::uartBaudRate = configJson["uart"]["baud_rate"];
+            configOk = true;
+        }
     }
     catch (const std::exception& e)
     {
@@ -282,6 +292,7 @@ int main(int argc, char** argv)
         configJson["uart"]["baud_rate"] = global::uartBaudRate;
         std::ofstream configFile(configPath);
         configFile << configJson.dump(4);
+        std::cout << "Created default config at " << configPath << std::endl;
     }
     std::cout << "Starting GNSS client" << std::endl;
     if (!global::ntripHost.empty() || !global::ntripMountPoint.empty())
@@ -297,14 +308,13 @@ int main(int argc, char** argv)
         std::cerr << "Invalid baudrate: " << global::uartBaudRate << std::endl;
         return -1;
     }
-    // ca
 
+    bool isOk = global::gnssClient.startListener(global::uartPort, *baudrate);
+    if (!isOk) {
+        return -1;
+    }
     std::thread tzmq(clientThread);
-    std::thread tgnss([&]()
-    {
 
-        global::gnssClient.startListener(global::uartPort, *baudrate);
-    });
 
     Address addr(Ipv4::any(), Port(portNo));
     Http::Endpoint server(addr);
@@ -320,5 +330,5 @@ int main(int argc, char** argv)
     server.serve();
 
     tzmq.join();
-    tgnss.join();
+    return 0;
 }

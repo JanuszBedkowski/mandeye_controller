@@ -43,6 +43,8 @@ nlohmann::json GNSSClient::produceStatus()
 
 bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate baudRate) {
 
+    	m_baudRate = baudRate;
+    	m_portName = portName;
 	try
 	{
 		if (init_succes)
@@ -69,35 +71,47 @@ bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate 
 void GNSSClient::worker()
 {
 	std::cout << "Worker started" << std::endl;
-	while(m_serialPort.IsOpen())
+    	int errorCounter = 0;
+	while(errorCounter < 10)
 	{
-		std::string line;
-		m_serialPort.ReadLine(line);
-		{
-			std::lock_guard<std::mutex> lock(m_bufferMutex);
-			m_lastLine = line;
+		try {
+
+			std::string line;
+			m_serialPort.ReadLine(line, '\n', 1000);
+			{
+				std::lock_guard<std::mutex> lock(m_bufferMutex);
+				m_lastLine = line;
+			}
+			bool is_vaild = minmea_check(line.c_str(), true);
+			if (is_vaild)
+			{
+				errorCounter = 0;
+				minmea_sentence_gga gga;
+				bool isGGA = minmea_parse_gga(&gga, line.c_str());
+				if (isGGA)
+				{
+					std::lock_guard<std::mutex> lock(m_ggaMutex);
+					lastGGA = gga;
+				}
+				if (m_dataCallback)
+				{
+					std::lock_guard<std::mutex> lock(m_laserTsMutex);
+					m_dataCallback(RawEntryToLine(line, m_laserTimestamp));
+				}
+			}
+			else
+			{
+				std::cout << "Invalid line: " << line << std::endl;
+			}
 		}
-		bool is_vaild = minmea_check(line.c_str(), true);
-		if (is_vaild)
-		{
-		    minmea_sentence_gga gga;
-		    bool isGGA = minmea_parse_gga(&gga, line.c_str());
-		    if (isGGA)
-		    {
-		        std::lock_guard<std::mutex> lock(m_ggaMutex);
-		        lastGGA = gga;
-		    }
-                    if (m_dataCallback)
-                    {
-                        std::lock_guard<std::mutex> lock(m_laserTsMutex);
-                        m_dataCallback(RawEntryToLine(line, m_laserTimestamp));
-                    }
-		}
-		else
-		{
-			std::cout << "Invalid line: " << line << std::endl;
+		catch (std::exception& e) {
+			errorCounter++;
+			std::cout << "Exception: " << e.what() << std::endl;
 		}
 	}
+    	std::cout << "Worker stopped" << std::endl;
+    	std::abort();
+
 
 }
 void GNSSClient::setLaserTimestamp(double laserTimestamp)

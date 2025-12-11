@@ -291,6 +291,7 @@ namespace mandeye {
         }
         if (config.contains("rateMs")) {
             m_rateMs = config["rateMs"].get<uint32_t>();
+            std::cout << "Setting rate to " << m_rateMs << std::endl;
         }
         m_camera->start(&m_controlList);
         return true;
@@ -471,7 +472,7 @@ namespace mandeye {
                 }
             }
         }
-        // enable denoising
+
 
 
         return config;
