@@ -25,21 +25,8 @@ public:
 	//! Spins up a thread that reads from the serial port
 	bool startListener(const std::string& portName, LibSerial::BaudRate baudRate);
 	bool startListener();
-	//! Start logging into the buffers
-	void startLog();
 
-	//! Stop logging into the buffers
-	void stopLog();
-
-	//! Retrieve all data from the buffer, in form of CSV lines
-	std::deque<std::string> retrieveData();
-
-	//! Retrieve all data from the buffer, in form of CSV lines
-	std::deque<std::string> retrieveRawData();
-
-
-	//! Addcallback on data received
-	void setDataCallback(const std::function<void(const minmea_sentence_gga& gga)>& callback);
+        void setDataCallback(const std::function<void(const std::string& line)>& callback);
 
         void sheduleGgaSend(boost::asio::steady_timer& timer)
         {
@@ -63,13 +50,15 @@ public:
         void setNtripClient(const std::string& userName, const std::string& password,
                             const std::string& mountPoint,
                             const std::string& host, const std::string& port);
-private:
-	std::mutex m_bufferMutex;
-	std::deque<std::string> m_buffer;
-	std::deque<std::string> m_rawbuffer;
 
+        void setLaserTimestamp(double laserTimestamp);
+
+private:
+        std::mutex m_laserTsMutex;
+        double m_laserTimestamp{0};
+
+	std::mutex m_bufferMutex;
 	std::string m_lastLine;
-	bool m_isLogging{false};
 
 
 	std::mutex m_ggaMutex;
@@ -92,7 +81,7 @@ private:
 	//! Convert a raw entry to a CSV line
 	std::string RawEntryToLine(const std::string& line, double laserTimestamp);
 	//! Callbacks to call when new data is received
-	std::function<void(const minmea_sentence_gga& gga)> m_dataCallback;
+	std::function<void(const std::string& line)> m_dataCallback;
 	std::atomic<uint32_t> m_messageCount{0};
         std::unique_ptr<mandeye::NtripClient> m_ntripClient;
         std::thread m_ntripThread;

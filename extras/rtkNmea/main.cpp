@@ -20,15 +20,23 @@ namespace
 } // namespace utils
 namespace global
 {
-    std::mutex stateMutex;
-    std::string state;
-    std::string continousScanTarget;
     mandeye::GNSSClient gnssClient;
     std::string ntripHost;
     int ntripPort;
     std::string ntripMountPoint;
     std::string ntripUser;
     std::string ntripPassword;
+    std::string uartPort = "/dev/ttyACM0";
+    int uartBaudRate = 115200;
+    std::string directoryName = "extra_gnss";
+}
+
+namespace state
+{
+    std::mutex stateMutex;
+    std::string modeName;
+    double timestamp;
+    std::string continousScanTarget;
 }
 void clientThread()
 {
@@ -58,12 +66,17 @@ void clientThread()
 
                 nlohmann::json j = nlohmann::json::parse(msg_str);
                 if (j.is_object()) {
-                    std::lock_guard<std::mutex> lck(global::stateMutex);
+                    std::lock_guard<std::mutex> lck(state::stateMutex);
+                    if (j.contains("timestamp"))
+                    {
+                        state::timestamp = j["timestamp"].get<double>();
+                        global::gnssClient.setLaserTimestamp(state::timestamp);
+                    }
                     if (j.contains("mode")) {
-                        global::state = j["mode"].get<std::string>();
+                        state::modeName = j["mode"].get<std::string>();
                     }
                     if (j.contains("continousScanDirectory")) {
-                        global::continousScanTarget = j["continousScanDirectory"].get<std::string>();
+                        state::continousScanTarget = j["continousScanDirectory"].get<std::string>();
                     }
                 }
             }
@@ -125,6 +138,40 @@ nlohmann::json getConfig(const std::string& configPath)
     return nlohmann::json();
 }
 
+void NMEACallback(const std::string& nmea)
+{
+    namespace  fs = std::filesystem;
+    static auto lastTime = std::chrono::steady_clock::now();
+    static int fileCount = 0 ;
+    static std::string buffer;
+    const auto now = std::chrono::steady_clock::now();
+    const auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - lastTime);
+    buffer.append(nmea);
+    if (duration.count() > 60)
+    {
+        std::string continousScanTarget;
+        {
+            std::lock_guard<std::mutex> lck(state::stateMutex);
+            continousScanTarget = state::continousScanTarget;
+        }
+
+        // construct path
+        const fs::path directory = fs::path(continousScanTarget)/ global::directoryName;
+        // mkdir -p
+        std::filesystem::create_directories(directory);
+
+        // save file
+        char filename[100];
+        sprintf(filename, "%s/%06d.nmea", directory.c_str(), fileCount);
+        std::ofstream file(filename);
+        file << buffer;
+        file.close();
+        fileCount++;
+        lastTime = std::chrono::steady_clock::now();
+    }
+
+}
+
 int main(int argc, char** argv)
 {
     std::cout << "Starting" << std::endl;
@@ -133,8 +180,11 @@ int main(int argc, char** argv)
 
     // load from usb
     std::cout << "Loading configuration from usb" << std::endl;
-    std::string configPath = getEnvString("CONFIG_PATH", "/mnt/usb/config.json");
+    std::string configPath = getEnvString("CONFIG_PATH", "/mnt/usb/config_extra_gps.json");
+    global::directoryName = getEnvString("DIRECTORY_NAME", "extra_gnss");
     nlohmann::json configJson;
+
+    bool configOk = false;
     try
     {
         configJson = getConfig(configPath);
@@ -145,17 +195,42 @@ int main(int argc, char** argv)
         global::ntripMountPoint = configJson["ntrip"]["mount_point"];
         global::ntripUser = configJson["ntrip"]["user_name"];
         global::ntripPassword = configJson["ntrip"]["password"];
+        global::uartPort = configJson["uart"]["port"];
+        global::uartBaudRate = configJson["uart"]["baud_rate"];
+        configOk = true;
     }
     catch (const std::exception& e)
     {
         std::cerr << "Failed to load config: " << e.what() << std::endl;
-        return 1;
     }
-    global::gnssClient.setNtripClient("Mpelka", "t200757p", "JOZ2_RTCM_3_2", "system.asgeupos.pl", "8086");
+    if (!configOk)
+    {
+        // create avlid config
+        configJson["ntrip"]["host"] = global::ntripHost;
+        configJson["ntrip"]["port"] = global::ntripPort;
+        configJson["ntrip"]["mount_point"] = global::ntripMountPoint;
+        configJson["ntrip"]["user_name"] = global::ntripUser;
+        configJson["ntrip"]["password"] = global::ntripPassword;
+        configJson["uart"]["port"] = global::uartPort;
+        configJson["uart"]["baud_rate"] = global::uartBaudRate;
+        configJson["uart"]["port"] = global::uartPort;
+        configJson["uart"]["baud_rate"] = global::uartBaudRate;
+        std::ofstream configFile(configPath);
+        configFile << configJson.dump(4);
+    }
+    std::cout << "Starting GNSS client" << std::endl;
+    if (!global::ntripHost.empty() || !global::ntripMountPoint.empty())
+    {
+
+        global::gnssClient.setNtripClient(global::ntripUser, global::ntripPassword, global::ntripMountPoint,  global::ntripHost, std::to_string( global::ntripPort));
+    }
+
+    // ca
+
     std::thread tzmq(clientThread);
     std::thread tgnss([&]()
     {
-        global::gnssClient.startListener("/dev/ttyACM0", LibSerial::BaudRate::BAUD_38400);
+        global::gnssClient.startListener(global::uartPort, LibSerial::BaudRate(global::uartBaudRate));
     });
 
     Address addr(Ipv4::any(), Port(portNo));
@@ -164,16 +239,12 @@ int main(int argc, char** argv)
     // Enable ReuseAddr to allow fast restarts
     auto opts = Http::Endpoint::options()
                     .threads(1)
-                    .maxRequestSize(16 * 1024 * 1024)// 16 MB
+                    .maxRequestSize(1 * 1024 * 1024)// 16 MB
                     .flags(Tcp::Options::ReuseAddr);
     server.init(opts);
 
     server.setHandler(Http::make_handler<HelloHandler>());
     server.serve();
-
-    // Rest of the main function...
-
-
 
     tzmq.join();
     tgnss.join();

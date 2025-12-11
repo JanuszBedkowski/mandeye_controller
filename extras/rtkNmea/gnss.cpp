@@ -35,9 +35,7 @@ nlohmann::json GNSSClient::produceStatus()
 	data["gga"]["altitude"] = minmea_tofloat(&lastGGA.altitude);
 	data["gga"]["height"] = minmea_tofloat(&lastGGA.height);
 	data["gga"]["dgps_age"] = minmea_tofloat(&lastGGA.dgps_age);
-	data["is_logging"] = m_isLogging;
 	data["message_count"] = m_messageCount.load();
-	data["buffer_size"] = m_buffer.size();
         data["ntrip_client"]["number_of_rtcm3_messages"] = m_numberOfRTCM3Messages.load();
         data["ntrip_client"]["number_of_gga_messages"] = m_numberOfGGAMessagesToCaster.load();
 	return data;
@@ -82,32 +80,11 @@ void GNSSClient::worker()
 		bool is_vaild = minmea_check(line.c_str(), true);
 		if (is_vaild)
 		{
-			const double laserTimestamp = 0; // TODO FIX
-			m_rawbuffer.emplace_back(RawEntryToLine(line, laserTimestamp));
-			minmea_sentence_gga gga;
-			bool isGGA = minmea_parse_gga(&gga, line.c_str());
-			if (isGGA)
-			{
-				if (m_dataCallback)
-				{
-					m_dataCallback(gga);
-				}
-
-				std::string csvline = GgaToCsvLine(gga, laserTimestamp);
-				{
-				    std::lock_guard<std::mutex> lockLastGGA(m_ggaMutex);
-				    lastGGA = gga;
-				    m_lastGGARaw = line;
-				}
-				std::lock_guard<std::mutex> lock(m_bufferMutex);
-				std::swap(m_lastLine, line);
-
-				m_messageCount++;
-				if(m_isLogging)
-				{
-				    m_buffer.emplace_back(csvline);
-				}
-			}
+                    if (m_dataCallback)
+                    {
+                        std::lock_guard<std::mutex> lock(m_laserTsMutex);
+                        m_dataCallback(RawEntryToLine(line, m_laserTimestamp));
+                    }
 		}
 		else
 		{
@@ -116,33 +93,12 @@ void GNSSClient::worker()
 	}
 
 }
-void GNSSClient::startLog() {
-	std::lock_guard<std::mutex> lock(m_bufferMutex);
-	m_buffer.clear();
-	m_rawbuffer.clear();
-	m_isLogging = true;
-}
-
-void GNSSClient::stopLog() {
-	std::lock_guard<std::mutex> lock(m_bufferMutex);
-	m_isLogging = false;
-}
-
-std::deque<std::string> GNSSClient::retrieveData()
+void GNSSClient::setLaserTimestamp(double laserTimestamp)
 {
-	std::lock_guard<std::mutex> lock(m_bufferMutex);
-	std::deque<std::string> ret;
-	std::swap(ret, m_buffer);
-	return ret;
+        std::lock_guard<std::mutex> lock(m_laserTsMutex);
+        m_laserTimestamp = laserTimestamp;
 }
 
-std::deque<std::string> GNSSClient::retrieveRawData()
-{
-	std::lock_guard<std::mutex> lock(m_bufferMutex);
-	std::deque<std::string> ret;
-	std::swap(ret, m_rawbuffer);
-	return ret;
-}
 //! Convert a minmea_sentence_gga to a CSV line
 std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double laserTimestamp)
 {
@@ -169,16 +125,16 @@ std::string GNSSClient::RawEntryToLine(const std::string& line, double laserTime
 {
 	auto now = std::chrono::system_clock::now();
 	auto duration = now.time_since_epoch();
-	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+	auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
 
 	std:std::stringstream oss;
 	oss << std::setprecision(20) << static_cast<uint_least64_t>(laserTimestamp * 1000000000.0) << " ";
-	oss << millis.count() << " ";
+	oss << nanos.count() << " ";
 	oss << line << " ";
 	return oss.str();
 }
 
-void GNSSClient::setDataCallback(const std::function<void(const minmea_sentence_gga& gga)>& callback)
+void GNSSClient::setDataCallback(const std::function<void(const std::string& line)>& callback)
 {
 	m_dataCallback = callback;
 }
