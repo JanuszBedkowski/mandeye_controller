@@ -109,9 +109,9 @@ void clientThread()
                 nlohmann::json j = nlohmann::json::parse(msg_str);
                 if (j.is_object()) {
                     std::lock_guard<std::mutex> lck(state::stateMutex);
-                    if (j.contains("timestamp"))
+                    if (j.contains("time"))
                     {
-                        state::timestamp = j["timestamp"].get<double>();
+                        state::timestamp = j["time"].get<double>();
                         global::gnssClient.setLaserTimestamp(state::timestamp);
                     }
                     if (j.contains("mode")) {
@@ -194,8 +194,10 @@ void NMEACallback(const std::string& nmea)
 
     // get current mode
     std::string mode;
+    std::string continousScanTarget;
     {
         std::lock_guard<std::mutex> lck(state::stateMutex);
+        continousScanTarget = state::continousScanTarget;
         mode = state::modeName;
     }
 
@@ -215,11 +217,6 @@ void NMEACallback(const std::string& nmea)
     {
         if (!buffer.empty())
         {
-            std::string continousScanTarget;
-            {
-                std::lock_guard<std::mutex> lck(state::stateMutex);
-                continousScanTarget = state::continousScanTarget;
-            }
 
             // construct path
             const fs::path directory = fs::path(continousScanTarget)/ global::directoryName;

@@ -95,8 +95,12 @@ void GNSSClient::worker()
 				}
 				if (m_dataCallback)
 				{
-					std::lock_guard<std::mutex> lock(m_laserTsMutex);
-					m_dataCallback(RawEntryToLine(line, m_laserTimestamp));
+					double laserTimestamp = 0.0;
+					{
+						std::lock_guard<std::mutex> lock(m_laserTsMutex);
+						laserTimestamp = m_laserTimestamp;
+					}
+					m_dataCallback(RawEntryToLine(line, laserTimestamp));
 				}
 			}
 			else
