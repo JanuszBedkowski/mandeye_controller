@@ -118,21 +118,21 @@ void GNSSClient::worker()
 
 
 }
-void GNSSClient::setLaserTimestamp(double laserTimestamp)
+void GNSSClient::setLaserTimestamp(uint64_t laserTimestamp)
 {
         std::lock_guard<std::mutex> lock(m_laserTsMutex);
         m_laserTimestamp = laserTimestamp;
 }
 
 //! Convert a minmea_sentence_gga to a CSV line
-std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double laserTimestamp)
+std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, uint64_t laserTimestamp)
 {
 	auto now = std::chrono::system_clock::now();
 	auto duration = now.time_since_epoch();
 	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 
 	std:std::stringstream oss;
-	oss << std::setprecision(20) << static_cast<uint_least64_t>(laserTimestamp * 1000000000.0) << " ";
+	oss << laserTimestamp << " ";
 	oss << minmea_tocoord(&gga.latitude) << " ";
 	oss	<< minmea_tocoord(&gga.longitude) << " ";
 	oss	<< minmea_tofloat(&gga.altitude) << " ";
@@ -146,16 +146,16 @@ std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double lase
 	return oss.str();
 }
 
-std::string GNSSClient::RawEntryToLine(const std::string& line, double laserTimestamp)
+std::string GNSSClient::RawEntryToLine(const std::string& line, uint64_t laserTimestamp)
 {
 	auto now = std::chrono::system_clock::now();
 	auto duration = now.time_since_epoch();
 	auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
 
 	std:std::stringstream oss;
-	oss << std::setprecision(20) << static_cast<uint_least64_t>(laserTimestamp * 1000000000.0) << " ";
+	oss << laserTimestamp << " ";
 	oss << nanos.count() << " ";
-	oss << line << " ";
+	oss << line;
 	return oss.str();
 }
 

@@ -51,12 +51,12 @@ public:
                             const std::string& mountPoint,
                             const std::string& host, const std::string& port);
 
-        void setLaserTimestamp(double laserTimestamp);
+        void setLaserTimestamp(uint64_t laserTimestamp);
 
 private:
 
         std::mutex m_laserTsMutex;
-        double m_laserTimestamp{0};
+        uint64_t m_laserTimestamp{0};
 
 	std::mutex m_bufferMutex;
 	std::string m_lastLine;
@@ -77,10 +77,10 @@ private:
 	bool init_succes{false};
 
 	//! Convert a minmea_sentence_gga to a CSV line
-	std::string GgaToCsvLine(const minmea_sentence_gga& gga, double laserTimestamp);
+	std::string GgaToCsvLine(const minmea_sentence_gga& gga, uint64_t laserTimestamp);
 
 	//! Convert a raw entry to a CSV line
-	std::string RawEntryToLine(const std::string& line, double laserTimestamp);
+	std::string RawEntryToLine(const std::string& line, uint64_t laserTimestamp);
 	//! Callbacks to call when new data is received
 	std::function<void(const std::string& line)> m_dataCallback;
 	std::atomic<uint32_t> m_messageCount{0};
