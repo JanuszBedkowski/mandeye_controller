@@ -225,7 +225,7 @@ void NMEACallback(const std::string& nmea)
 
             const auto start = std::chrono::high_resolution_clock::now();
 
-            const auto filename = directory.string() + "/" + "extra_gnss" + std::to_string(start.time_since_epoch().count()) + ".gnss";
+            const auto filename = directory.string() + "/" + "extra_gnss" + std::to_string(start.time_since_epoch().count()) + ".nmea";
 
             std::ofstream file(filename);
             file << buffer;
