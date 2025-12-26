@@ -1,6 +1,5 @@
 #include <zmq.hpp>
 #include <pistache/endpoint.h>
-#include <zmq.hpp>
 #include <json.hpp>
 #include "gnss.h"
 #include <fstream>
@@ -276,7 +275,7 @@ int main(int argc, char** argv)
     }
     if (!configOk)
     {
-        // create avlid config
+        // create a valid config
         configJson["ntrip"]["host"] = global::ntripHost;
         configJson["ntrip"]["port"] = global::ntripPort;
         configJson["ntrip"]["mount_point"] = global::ntripMountPoint;
