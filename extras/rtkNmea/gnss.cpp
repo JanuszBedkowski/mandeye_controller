@@ -82,8 +82,8 @@ void GNSSClient::worker()
 				std::lock_guard<std::mutex> lock(m_bufferMutex);
 				m_lastLine = line;
 			}
-			bool is_vaild = minmea_check(line.c_str(), true);
-			if (is_vaild)
+			bool is_valid = minmea_check(line.c_str(), true);
+			if (is_valid)
 			{
 				errorCounter = 0;
 				minmea_sentence_gga gga;

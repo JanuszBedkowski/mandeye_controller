@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(libcamera_jpeg_example)
+project(mandeye_extra_gnss)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,11 +28,11 @@ find_library(LIBSERIAL_LIBRARY
         PATHS /usr/lib)
 include_directories(../../3rd/minmea ${LIBSERIAL_INCLUDE_DIR})
 include_directories(../../3rd/json)
-add_library(mineaRtk STATIC ../../3rd/minmea/minmea.c)
+add_library(minmeaRtk STATIC ../../3rd/minmea/minmea.c)
 
 add_executable(mandeye_extra_gnss main.cpp gnss.cpp ntrip.cpp)
 MESSAGE("Libserial  ${LIBSERIAL_LIBRARY}")
-target_link_libraries(mandeye_extra_gnss ${LIBSERIAL_LIBRARY} mineaRtk  ${ZMQ_LIBRARIES} PkgConfig::Pistache )
+target_link_libraries(mandeye_extra_gnss ${LIBSERIAL_LIBRARY} minmeaRtk  ${ZMQ_LIBRARIES} PkgConfig::Pistache )
 
 install(TARGETS mandeye_extra_gnss
         RUNTIME DESTINATION /opt/mandeye/extras/)
