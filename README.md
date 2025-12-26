@@ -1,5 +1,7 @@
 # mandeye_controller
 
+This is an open-hardware hand-held scanner, capable of collecting data for [HDMapping](https://github.com/MapsHD/HDMapping).
+
 # Hardware documementation
 
 ## Supported hardware
