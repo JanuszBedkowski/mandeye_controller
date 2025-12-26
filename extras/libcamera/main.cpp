@@ -303,9 +303,9 @@ int main(int argc, char** argv)
             }
 
             if (isPreviousFrameSaved) {
-                const std::filesystem::path continousPath(global::getContinousScanTarget());
-                const std::filesystem::path directory = continousPath/ ("CAMERA_"+std::to_string(global::cameraNo));
-                // mkdir, ok
+                const std::filesystem::path continuousPath(global::getContinousScanTarget());
+                const std::filesystem::path directory = continuousPath / ("CAMERA_" + std::to_string(global::cameraNo));
+                // mkdir -p
                 std::filesystem::create_directories(directory);
 
                 // delegate frame saving to std::future (separate thread).
