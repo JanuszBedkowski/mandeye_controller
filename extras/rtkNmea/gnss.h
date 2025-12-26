@@ -6,7 +6,7 @@
 
 #include <SerialPort.h>
 #include <SerialStream.h>
-#include "thread"
+#include <thread>
 #include "utils/TimeStampReceiver.h"
 #include "minmea.h"
 #include "ntrip.h"

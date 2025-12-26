@@ -3,8 +3,7 @@
 #include <zmq.hpp>
 #include <json.hpp>
 #include "gnss.h"
-#include <pistache/endpoint.h>
-#include "fstream"
+#include <fstream>
 
 
 static const std::unordered_map<int, LibSerial::BaudRate> baud_map = {
@@ -117,8 +116,8 @@ void clientThread()
                     if (j.contains("mode")) {
                         state::modeName = j["mode"].get<std::string>();
                     }
-                    if (j.contains("continousScanDirectory")) {
-                        state::continousScanTarget = j["continousScanDirectory"].get<std::string>();
+                    if (j.contains("continuousScanDirectory")) {
+                        state::continousScanTarget = j["continuousScanDirectory"].get<std::string>();
                     }
                 }
             }
@@ -285,14 +284,12 @@ int main(int argc, char** argv)
         configJson["ntrip"]["password"] = global::ntripPassword;
         configJson["uart"]["port"] = global::uartPort;
         configJson["uart"]["baud_rate"] = global::uartBaudRate;
-        configJson["uart"]["port"] = global::uartPort;
-        configJson["uart"]["baud_rate"] = global::uartBaudRate;
         std::ofstream configFile(configPath);
         configFile << configJson.dump(4);
         std::cout << "Created default config at " << configPath << std::endl;
     }
     std::cout << "Starting GNSS client" << std::endl;
-    if (!global::ntripHost.empty() || !global::ntripMountPoint.empty())
+    if (!global::ntripHost.empty() && !global::ntripMountPoint.empty())
     {
 
         global::gnssClient.setNtripClient(global::ntripUser, global::ntripPassword, global::ntripMountPoint,  global::ntripHost, std::to_string( global::ntripPort));
@@ -319,7 +316,7 @@ int main(int argc, char** argv)
     // Enable ReuseAddr to allow fast restarts
     auto opts = Http::Endpoint::options()
                     .threads(1)
-                    .maxRequestSize(1 * 1024 * 1024)// 16 MB
+                    .maxRequestSize(1 * 1024 * 1024)// 1 MB
                     .flags(Tcp::Options::ReuseAddr);
     server.init(opts);
 
