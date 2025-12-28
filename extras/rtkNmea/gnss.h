@@ -25,10 +25,9 @@ public:
 	//! Spins up a thread that reads from the serial port
 	bool startListener(const std::string& portName, LibSerial::BaudRate baudRate);
 	bool startListener();
-
         void setDataCallback(const std::function<void(const std::string& line)>& callback);
 
-        void sheduleGgaSend(boost::asio::steady_timer& timer)
+        void scheduleGgaSend(boost::asio::steady_timer& timer)
         {
             timer.expires_after(std::chrono::seconds(1));
             timer.async_wait(
@@ -40,7 +39,7 @@ public:
                         m_ntripClient->send_gga(m_lastGGARaw);
                     	m_numberOfGGAMessagesToCaster++;
                     }
-                    sheduleGgaSend(timer);
+                    scheduleGgaSend(timer);
                 });
         }
 

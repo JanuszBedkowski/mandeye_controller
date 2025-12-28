@@ -56,17 +56,17 @@ namespace
         return std::string{env_p};
     }
 
-} // namespace utils
+} // namespace
 namespace global
 {
     mandeye::GNSSClient gnssClient;
     std::string ntripHost;
-    int ntripPort;
+    int ntripPort = 0;
     std::string ntripMountPoint;
     std::string ntripUser;
     std::string ntripPassword;
     std::string uartPort = "/dev/ublox";
-
+    int fileLengthMs = 20000; // 20 seconds
     int uartBaudRate = 115200;
     std::string directoryName = "EXTRA_GNSS";
 }
@@ -76,7 +76,7 @@ namespace state
     std::mutex stateMutex;
     std::string modeName;
     double timestamp;
-    std::string continousScanTarget;
+    std::string continuousScanTarget;
 }
 void clientThread()
 {
@@ -115,8 +115,8 @@ void clientThread()
                     if (j.contains("mode")) {
                         state::modeName = j["mode"].get<std::string>();
                     }
-                    if (j.contains("continuousScanDirectory")) {
-                        state::continousScanTarget = j["continuousScanDirectory"].get<std::string>();
+                    if (j.contains("continousScanDirectory")) {
+                        state::continuousScanTarget = j["continousScanDirectory"].get<std::string>();
                     }
                 }
             }
@@ -142,6 +142,18 @@ struct HelloHandler : public Http::Handler {
         setCors(writer);
 
         auto status = global::gnssClient.produceStatus();
+        {
+            std::lock_guard<std::mutex> lck(state::stateMutex);
+            status["timestamp"] = state::timestamp;
+            status["mode"] = state::modeName;
+            status["continuousScanDirectory"] = state::continuousScanTarget;
+            status["ntripHost"] = global::ntripHost;
+            status["ntripPort"] = global::ntripPort;
+            status["ntripMountPoint"] = global::ntripMountPoint;
+            status["ntripUser"] = global::ntripUser;
+            status["global::fileLengthMs"] = global::fileLengthMs;
+        }
+
         writer.send(Http::Code::Ok, status.dump(4), MIME(Application, Json));
         return;
 
@@ -184,10 +196,9 @@ void NMEACallback(const std::string& nmea)
 {
     namespace  fs = std::filesystem;
     static auto lastTime = std::chrono::steady_clock::now();
-    static int fileCount = 0 ;
     static std::string buffer;
     const auto now = std::chrono::steady_clock::now();
-    const auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - lastTime);
+    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTime);
     static std::string lastMode = "";
 
     // get current mode
@@ -195,7 +206,7 @@ void NMEACallback(const std::string& nmea)
     std::string continousScanTarget;
     {
         std::lock_guard<std::mutex> lck(state::stateMutex);
-        continousScanTarget = state::continousScanTarget;
+        continousScanTarget = state::continuousScanTarget;
         mode = state::modeName;
     }
 
@@ -211,7 +222,7 @@ void NMEACallback(const std::string& nmea)
     }
 
 
-    if (duration.count() > 60 || mode == "STOPPING" )
+    if (duration.count() > global::fileLengthMs || mode == "STOPPING" )
     {
         if (!buffer.empty())
         {
@@ -229,7 +240,6 @@ void NMEACallback(const std::string& nmea)
             file << buffer;
             file.close();
             std::cout << "Saved file " << filename << std::endl;
-            fileCount++;
             buffer.clear();
             lastTime = std::chrono::steady_clock::now();
         }
@@ -266,6 +276,7 @@ int main(int argc, char** argv)
             global::ntripPassword = configJson["ntrip"]["password"];
             global::uartPort = configJson["uart"]["port"];
             global::uartBaudRate = configJson["uart"]["baud_rate"];
+            global::fileLengthMs = configJson["file_length_ms"].get<int>();
             configOk = true;
         }
     }
@@ -283,6 +294,7 @@ int main(int argc, char** argv)
         configJson["ntrip"]["password"] = global::ntripPassword;
         configJson["uart"]["port"] = global::uartPort;
         configJson["uart"]["baud_rate"] = global::uartBaudRate;
+        configJson["file_length_ms"] = global::fileLengthMs;
         std::ofstream configFile(configPath);
         configFile << configJson.dump(4);
         std::cout << "Created default config at " << configPath << std::endl;

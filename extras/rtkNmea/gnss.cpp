@@ -59,6 +59,7 @@ bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate 
 		m_serialPort.SetBaudRate(baudRate);
 		init_succes = true;
 		m_serialPortThread = std::thread(&GNSSClient::worker, this);
+		m_serialPortThread.detach();
 	}catch(std::exception& e)
 	{
 		std::cout << "Failed to open port " << portName <<" : " << e.what()  << std::endl;
@@ -131,7 +132,7 @@ std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, uint64_t la
 	auto duration = now.time_since_epoch();
 	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 
-	std:std::stringstream oss;
+	std::stringstream oss;
 	oss << laserTimestamp << " ";
 	oss << minmea_tocoord(&gga.latitude) << " ";
 	oss	<< minmea_tocoord(&gga.longitude) << " ";
@@ -152,7 +153,7 @@ std::string GNSSClient::RawEntryToLine(const std::string& line, uint64_t laserTi
 	auto duration = now.time_since_epoch();
 	auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
 
-	std:std::stringstream oss;
+	std::stringstream oss;
 	oss << laserTimestamp << " ";
 	oss << nanos.count() << " ";
 	oss << line;
@@ -193,11 +194,12 @@ void GNSSClient::setNtripClient(
                 });
             m_ntripClient->start();
             boost::asio::steady_timer timer(io);
-            sheduleGgaSend(timer);
+            scheduleGgaSend(timer);
             io.run();
         });
 
     m_ntripThread = std::move(t);
+    m_ntripThread.detach();
 }
 
 void GNSSClient::setNtripClient(const nlohmann::json& ntripClientConfig)
@@ -219,7 +221,6 @@ void GNSSClient::setNtripClient(const nlohmann::json& ntripClientConfig)
     }
     setNtripClient(userName, password, mountPoint, host, port);
 }
-
 
 
 } // namespace mandeye
