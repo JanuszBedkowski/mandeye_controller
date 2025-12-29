@@ -80,7 +80,7 @@ void NtripClient::send_request() {
         << "Host: " << host_ << "\r\n"
         << "User-Agent: BoostNtrip/1.0\r\n"
         << "Authorization: Basic " << encoded << "\r\n"
-        << "Connection: close\r\n\r\n";
+        << "Connection: keep-alive\r\n\r\n";
 
     std::string request = req.str();
     std::cout << "[NtripClient] Sending request:\n" << request;
