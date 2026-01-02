@@ -98,7 +98,7 @@ install(TARGETS control_program led_demo fake_pps button_demo
         RUNTIME DESTINATION /opt/mandeye/)
 
 add_subdirectory(extras/libcamera)
-install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
+add_subdirectory(extras/rtkNmea)
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/services/mandeye_controller.service  DESTINATION /usr/lib/systemd/system)
 install(FILES packing/services/mandeye_fake_pps.service  DESTINATION /usr/lib/systemd/system)

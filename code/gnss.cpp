@@ -154,7 +154,7 @@ std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double lase
 	auto duration = now.time_since_epoch();
 	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 
-	std:std::stringstream oss;
+	std::stringstream oss;
 	oss << std::setprecision(20) << static_cast<uint_least64_t>(laserTimestamp * 1000000000.0) << " ";
 	oss << minmea_tocoord(&gga.latitude) << " ";
 	oss	<< minmea_tocoord(&gga.longitude) << " ";
@@ -175,7 +175,7 @@ std::string GNSSClient::RawEntryToLine(const std::string& line, double laserTime
 	auto duration = now.time_since_epoch();
 	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 
-	std:std::stringstream oss;
+	std::stringstream oss;
 	oss << std::setprecision(20) << static_cast<uint_least64_t>(laserTimestamp * 1000000000.0) << " ";
 	oss << millis.count() << " ";
 	oss << line << " ";

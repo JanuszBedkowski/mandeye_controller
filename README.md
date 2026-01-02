@@ -238,6 +238,12 @@ mandeye_cam0_start
 mandeye_cam1_start
 ```
 
+Extra USB Gnss:
+```shell
+sudo systemctl enable mandeye_extra_gnss.service 
+mandeye_extra_gnss_start
+```
+
 List state of services:
 ```shell
 mandeye_services_status

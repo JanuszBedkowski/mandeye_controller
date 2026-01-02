@@ -1,0 +1,1 @@
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", MODE="0666", GROUP="dialout", SYMLINK+="ublox"
