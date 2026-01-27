@@ -97,7 +97,7 @@ nlohmann::json LivoxClient::produceStatus()
 	data["LivoxLidarInfo"]["m_sessionStart_s"] = double(m_sessionStart.value_or(-1.f)) / 1e9;
 	data["LivoxLidarInfo"]["m_elapsed"] = m_elapsed;
 	data["LivoxLidarInfo"]["m_elapsed_s"] = double(m_elapsed) / 1e9;
-
+	data["LivoxLidarInfo"]["m_time_diff"] = m_time_diff;
 	auto arrayworkMode = nlohmann::json::array();
 	for(auto& mode : m_LivoxLidarWorkMode)
 	{
@@ -247,6 +247,11 @@ void LivoxClient::saveTimeStamp(LivoxClient* client, uint64_t timestamp)
 	{
 		client->m_elapsed = client->m_timestamp - client->m_sessionStart.value();
 	}
+	using namespace std::chrono;
+	const auto now = system_clock::now();
+	auto duration = now.time_since_epoch();
+	double tp = std::chrono::duration<double>(duration).count();
+	client->m_time_diff = std::abs(tp - double(client->m_timestamp)/1e9);
 }
 
 void LivoxClient::PointCloudCallback(uint32_t handle, const uint8_t dev_type, LivoxLidarEthernetPacket* data, void* client_data)

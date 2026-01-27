@@ -184,6 +184,12 @@ if(MANDEYE_USE_LIBCAMERA)
     add_subdirectory(extras/libcamera)
 endif()
 add_subdirectory(extras/rtkNmea)
+set(MANDEYE_BUILD_EXTRAS_MURATA_UART_IMU ON CACHE BOOL "Build Murata UART IMU extra module - Experimental")
+if (MANDEYE_BUILD_EXTRAS_MURATA_UART_IMU)
+    message(STATUS "Building Murata SPI IMU extra module")
+    add_subdirectory(extras/MurataUartImu)
+endif()
+
 add_subdirectory(extras/FakePPS)
 add_subdirectory(extras/SlavePPS)
 

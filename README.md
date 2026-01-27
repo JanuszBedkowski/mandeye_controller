@@ -300,6 +300,11 @@ sudo systemctl enable mandeye_extra_gnss.service
 mandeye_extra_gnss_start
 ```
 
+Extra muRata UART IMU (experimental):
+```shell
+sudo systemctl enable mandeye_murata_uart_driver.service
+mandeye_murata_uart_imu_start
+```
 # Services
 List state of services:
 ```shell
