@@ -99,6 +99,12 @@ install(TARGETS control_program led_demo fake_pps button_demo
 
 add_subdirectory(extras/libcamera)
 add_subdirectory(extras/rtkNmea)
+set(MANDEYE_BUILD_EXTRAS_MURATA_SPI_IMU OFF CACHE BOOL "Build Murata SPI IMU extra module - Experimental")
+if (MANDEYE_BUILD_EXTRAS_MURATA_SPI_IMU)
+    message(STATUS "Building Murata SPI IMU extra module")
+    add_subdirectory(extras/MurataSpiImu)
+endif()
+
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/services/mandeye_controller.service  DESTINATION /usr/lib/systemd/system)
 install(FILES packing/services/mandeye_fake_pps.service  DESTINATION /usr/lib/systemd/system)
