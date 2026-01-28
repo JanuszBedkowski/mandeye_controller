@@ -1,5 +1,5 @@
 [Unit]
-Description=Mandeye_extra_gnss
+Description=Mandeye_murata_spi_imu Service
 After=multi-user.target
 
 [Service]

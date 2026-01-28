@@ -36,4 +36,9 @@ alias mandeye_extra_gnss_start="sudo systemctl start mandeye_extra_gnss.service"
 alias mandeye_extra_gnss_stop="sudo systemctl stop mandeye_extra_gnss.service"
 alias mandeye_extra_gnss_log="journalctl -u mandeye_extra_gnss.service"
 
+alias mandeye_murata_spi_imu_status="sudo systemctl status mandeye_extra_murata_spi_imu.service"
+alias mandeye_murata_spi_imu_start="sudo systemctl start mandeye_extra_murata_spi_imu.service"
+alias mandeye_murata_spi_imu_stop="sudo systemctl stop mandeye_extra_murata_spi_imu.service"
+alias mandeye_murata_spi_imu_log="journalctl -u mandeye_extra_murata_spi_imu.service"
+
 alias mandeye_services_status="bash /opt/mandeye/check_services.sh"
