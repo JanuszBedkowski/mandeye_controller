@@ -300,6 +300,11 @@ sudo systemctl enable mandeye_extra_gnss.service
 mandeye_extra_gnss_start
 ```
 
+Extra muRata SPI IMU (experimental):
+```shell
+sudo systemctl enable mandeye_extra_murata_spi_imu.service
+mandeye_murata_spi_imu_start
+```
 # Services
 List state of services:
 ```shell

@@ -33,6 +33,7 @@ namespace MODES {
 
 }
 
+inline double deg2rad (double deg) { return deg * M_PI / 180; }
 namespace state {
     std::mutex stateMutex;
     std::string modeName = MODES::UNKNOWN;
@@ -207,17 +208,18 @@ int murataThread() {
                 logFileName = directory.string() + "/" + "murata_imu_" + std::to_string(start.time_since_epoch().count()) + ".csv";
                 std::cout << "Logging to " << logFileName << std::endl;
                 logFile.open(logFileName);
-                logFile << "timestamp gyroX gyroY gyroZ accX accY accZ" << std::endl;
+                logFile << "timestamp gyroX gyroY gyroZ accX accY accZ timestampUnix" << std::endl;
             }
             if (logFile.is_open()) {
                 const uint64_t timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
                 logFile << timestamp << " ";
-                logFile << result.Rate1[AXIS_X] << " ";
-                logFile << result.Rate1[AXIS_Y] << " ";
-                logFile << result.Rate1[AXIS_Z] << " ";
+                logFile << deg2rad(result.Rate1[AXIS_X]) << " ";
+                logFile << deg2rad(result.Rate1[AXIS_Y]) << " ";
+                logFile << deg2rad(result.Rate1[AXIS_Z]) << " ";
                 logFile << result.Acc1[AXIS_X] << " ";
                 logFile << result.Acc1[AXIS_Y] << " ";
-                logFile << result.Acc1[AXIS_Z] << std::endl;
+                logFile << result.Acc1[AXIS_Z] << " ";
+                logFile << timestamp << std::endl;
 
                 const auto now = std::chrono::high_resolution_clock::now();
                 const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - fileStartTimeStamp);
@@ -232,26 +234,6 @@ int murataThread() {
             }
             old_state_id = state_id;
 
-            // FusionVector g;
-            // g.axis.x = result.Rate1[AXIS_X];
-            // g.axis.y = result.Rate1[AXIS_Y];
-            // g.axis.z = result.Rate1[AXIS_Z];
-            // gyro = g;
-            // FusionVector a;
-            // a.axis.x = result.Acc1[AXIS_X] ;
-            // a.axis.y = result.Acc1[AXIS_Y] ;
-            // a.axis.z = result.Acc1[AXIS_Z] ;
-            // acc = a;
-            // gyro_acc[0] += g.axis.x;
-            // gyro_acc[1] += g.axis.y;
-            // gyro_acc[2] += g.axis.z;
-            // number_of_samples ++;
-            //
-            // FusionVector gyro_bias_corrected;
-            // gyro_bias_corrected.axis.x = gyro.axis.x - gyro_bias.axis.x;
-            // gyro_bias_corrected.axis.y = gyro.axis.y - gyro_bias.axis.y;
-            // gyro_bias_corrected.axis.z = gyro.axis.z - gyro_bias.axis.z;
-            // FusionAhrsUpdateNoMagnetometer(&ahrs, gyro_bias_corrected, a, dt);
         }
         auto sleep_deadline = last + std::chrono::milliseconds(1);
         std::this_thread::sleep_until(sleep_deadline);
