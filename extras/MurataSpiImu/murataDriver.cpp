@@ -251,9 +251,9 @@ int murataThread() {
 
 int main(int argc, char **argv) {
 
-    std::string configPath = getEnvString("EXTRA_GNSS_CONFIG_PATH", "/media/usb/config_murata_imu.json");
+    std::string configPath = getEnvString("EXTRA_MURATA_CONFIG_PATH", "/media/usb/config_murata_imu.json");
     std::cout << "Loading configuration from usb : " << configPath << std::endl;
-    global::directoryName = getEnvString("EXTRA_GNSS_DIRECTORY_NAME", "MURATA_IMU");
+    global::directoryName = getEnvString("EXTRA_MURATA_DIRECTORY_NAME", "MURATA_IMU");
 
     nlohmann::json configJson;
     bool configOk = false;
@@ -280,7 +280,7 @@ int main(int argc, char **argv) {
         configFile << configJson.dump(4);
         std::cout << "Created default config at " << configPath << std::endl;
     }
-    std::cout << "Starting GNSS client" << std::endl;
+    std::cout << "Starting Murata SPI client" << std::endl;
 
     std::thread tzmq(clientThread);
     std::thread timu(murataThread);
