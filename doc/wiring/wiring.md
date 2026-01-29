@@ -41,7 +41,7 @@ Please make suer that all LEDs are connected through 220 Ohm resistor.
 
 | Pin  | Name   | Connection        |   |   | Connection |  Name    | Pin |
 |------|--------|-------------------|---|---|------------|----------|-----|
-| 01   | 3.3v   | GPS_red/Blueled   | X | X | DC 5V      | 5v       | 02  |
+| 01   | 3.3v   | GPS_red/BlueLed   | X | X | DC 5V      | 5v       | 02  |
 | 03   | GPIO02 |                   |   |   |            | 5v       | 04  |
 | 05   | GPIO03 |                   |   | X | GND        | GND      | 06  |
 | 07   | GPIO4  |                   |   |   |            | GPI014   | 08  |
@@ -55,8 +55,8 @@ Please make suer that all LEDs are connected through 220 Ohm resistor.
 | 23   | GPI011 |                   |   |   |            | GPIO28   | 24  |
 | 25   | GND    | 0V                | X |   |            | GPIO07   | 26  |
 | 27   | GPI000 |                   | X |   |            | ID_SC    | 28  |
-| 29   | GPIO05 | Button1           | X |   | Buzzer -   | GND      | 30  |
-| 31   | GPIO06 | Button2           | X |   | Buzzer +   | GPIO12   | 32  |
+| 29   | GPIO05 | Button1           | X | X | Buzzer -   | GND      | 30  |
+| 31   | GPIO06 | Button2           | X | X | Buzzer +   | GPIO12   | 32  |
 | 33   | GPIO13 | GreenLed          | X |   |            | GND      | 34  |
 | 35   | GPIO19 | RedLed            | X |   |            | GPIO16   | 36  |
 | 37   | GPIO26 | YellowLed         | X |   |            | GPIO20   | 38  |
