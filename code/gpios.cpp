@@ -145,19 +145,23 @@ GpioClient::GpioClient(bool sim)
 			for(auto& [buttonID, buttonData] : m_buttons)
 			{
 				bool rawButtonState = ButtonData::GetButtonState(buttonData);
-				if(rawButtonState == true)
-				{
-					buttonData.m_pressedTime++;
-					if(buttonData.m_pressedTime == buttonData.DEBOUNCE_TIME)
-					{
-						buttonData.m_pressed = true;
-						buttonData.CallUserCallbacks();
-					}
-				}
-				else
-				{
-					buttonData.m_pressedTime = 0;
-				}
+                if (rawButtonState == true)
+                {
+                    if (buttonData.m_pressedTime < buttonData.DEBOUNCE_TIME + 1) {
+                        buttonData.m_pressedTime++;
+                    }
+
+                    if (buttonData.m_pressedTime >= buttonData.DEBOUNCE_TIME && !buttonData.m_isCurrentlyPressed)
+                    {
+                        buttonData.m_isCurrentlyPressed = true;
+                        buttonData.CallUserCallbacks();
+                    }
+                }
+                else
+                {
+                    buttonData.m_pressedTime = 0;
+                    buttonData.m_isCurrentlyPressed = false;
+                }
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(25));
 		}

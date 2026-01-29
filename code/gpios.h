@@ -28,6 +28,7 @@ struct ButtonData{
 	uint32_t m_pressedTime {0}; //! time when button was pressed
 	GPIO::GPIO_PULL m_pullMode; //! pull up or down
 	bool m_pressed; //! is button pressed
+	bool m_isStablePressed {false}; //! Tracks the button's current stable, debounced state (ON/OFF)
 	Callbacks m_callbacks; //! callbacks to call when button is pressed
 	static constexpr int DEBOUNCE_TIME = 2; //! debounce time in cycles
 
