@@ -20,6 +20,7 @@ namespace mandeye
         data_status["hardware_vers"] = m_hardware_vers;
         data_status["laser_num"] = m_laser_num;
         data_status["channel_num"] = m_channel_num;
+        data_status["timestamp"] = m_timestamp;
         nlohmann::json faults;
         for (auto& fault : m_faults) {
             nlohmann::json fault_info;
@@ -98,6 +99,7 @@ namespace mandeye
         param.input_param.device_ip_address = "192.168.1.201";  // lidar ip
         param.input_param.ptc_port = 9347; // lidar ptc port
         param.input_param.udp_port = 2368; // point cloud destination port
+        param.input_param.device_fault_port = 2369; // lidar fault port
         param.input_param.multicast_ip_address = "";
         param.input_param.ptc_mode = PtcMode::tcp;
         param.input_param.use_ptc_connected = true;  // true: use PTC connected, false: recv correction from local file
@@ -117,11 +119,11 @@ namespace mandeye
         //init lidar with param
 
         m_lidar = std::make_unique<HesaiLidarSdk<LidarPointXYZICRT>>();
-
         m_lidar->Init(param);
         m_lidar->RegRecvCallback([this](const LidarDecodedFrame<LidarPointXYZICRT>& dataFrame) {
             CallbackFrame(dataFrame);
         });
+
 
         m_lidar->RegRecvCallback([this](const LidarImuData& dataFrame) {
             CallbackIMU(dataFrame);
@@ -131,14 +133,16 @@ namespace mandeye
             CallbackFault(fault_message_info);
         });
         m_lidar->Start();
+
         while (!isDone)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
         m_lidar->Stop();
         std::cout << "HesaiClient: DataThreadFunction ended" << std::endl;
     }
     void HesaiClient::CallbackFrame(const LidarDecodedFrame<LidarPointXYZICRT>& dataFrame) {
+
         m_recivedPointMessages.fetch_add(1);
         m_lidar_state = dataFrame.lidar_state;
         m_work_mode = dataFrame.work_mode;
@@ -147,7 +151,7 @@ namespace mandeye
         m_hardware_vers = dataFrame.hardware_version;
         m_laser_num = dataFrame.laser_num;
         m_channel_num = dataFrame.channel_num;
-
+        m_timestamp = dataFrame.multi_frame_start_timestamp;
 
         std::lock_guard<std::mutex> lock(m_bufferPointMutex);
         if (m_bufferLidarPtr) {
@@ -160,6 +164,7 @@ namespace mandeye
                 data.intensity = point.intensity;
                 data.laser_id = 0;
                 data.timestamp = point.timestamp;
+                m_timestamp = point.timestamp;
                 m_bufferLidarPtr->push_back(data);
             }
         }
