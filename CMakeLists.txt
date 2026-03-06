@@ -40,8 +40,6 @@ set(MANDEYE_USE_LIVOX_SDK2 ON CACHE BOOL "Use Livox SDK (HAP/Mid360)")
 set(MANDEYE_USE_SICK OFF CACHE BOOL "Use SICK SCAN XD SDK (Multiscan MRS1000), requires SICK SDK to be installed")
 set(MANDEYE_USE_HESAI_SDK2 OFF CACHE BOOL "Use Hesai SDK2 (PandarXT/GT)")
 
-
-
 # NMEA and libserial
 find_path(LIBSERIAL_INCLUDE_DIR SerialPort.h
         PATH_SUFFIXES include
@@ -108,10 +106,10 @@ if (${MANDEYE_USE_LIVOX_SDK2})
     # Livox SDK2
 
     add_subdirectory(3rd/Livox-SDK2)
-    add_library(livox2_lib
+    add_library(livox2_lib SHARED
             code/lidars/livoxsdk2/LivoxClient.cpp
     )
-    target_link_libraries(livox2_lib PRIVATE livox_lidar_sdk_static)
+    target_link_libraries(livox2_lib PRIVATE livox_lidar_sdk_shared)
     target_include_directories(livox2_lib PRIVATE 3rd/Livox-SDK2/include)
     install(TARGETS livox2_lib LIBRARY DESTINATION /opt/mandeye/)
     list(APPEND LIDAR_LIBRARIES livox2_lib)
@@ -193,7 +191,7 @@ install(FILES packing/services/mandeye_controller.service  DESTINATION /usr/lib/
 install(FILES packing/services/mandeye_fake_pps.service  DESTINATION /usr/lib/systemd/system)
 install(FILES packing/services/mandeye_phc2sys-gm-eth0.service DESTINATION /usr/lib/systemd/system)
 install(FILES packing/services/mandeye_ptp4l-gm-eth0.service DESTINATION /usr/lib/systemd/system)
-install(FILES packing/config/gm-l2.conf DESTINATION /opt/mandeye/)
+install(FILES packing/config/gm-udp.conf DESTINATION /opt/mandeye/)
 install(FILES packing/check_services.sh DESTINATION /opt/mandeye/)
 # Packaging
 set(CPACK_GENERATOR "DEB")

@@ -72,6 +72,7 @@ namespace mandeye
         std::string m_hardware_vers;
         uint16_t m_laser_num;
         uint16_t m_channel_num;
+        double m_timestamp;
     };
 
 } // namespace mandeye

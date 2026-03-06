@@ -8,7 +8,7 @@ Requires=sys-subsystem-net-devices-eth0.device
 Type=simple
 User=root
 ExecStartPre=/sbin/ip link show dev eth0
-ExecStart=/usr/sbin/ptp4l -f /opt/mandeye/gm-l2.conf -i eth0 -m -2 --tx_timestamp_timeout 100
+ExecStart=/usr/sbin/ptp4l -f /opt/mandeye/gm-udp.conf -i eth0 --tx_timestamp_timeout 100
 Restart=always
 RestartSec=2
 
