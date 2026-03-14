@@ -1,5 +1,5 @@
 #pragma once
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <zmq.hpp>
 #include "utils/TimeStampReceiver.h"
 #include <thread>

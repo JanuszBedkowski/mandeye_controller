@@ -80,7 +80,7 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 	return GPIO::GPIO_PULL::UP;
 }
 
-[[maybe_unused]] inline const std::array<LED, 0> GetLidarSyncLEDs()
+[[maybe_unused]] inline const std::array<int, 0> GetLidarSyncGPIO()
 {
 	return {};  // No hardware sync
 }

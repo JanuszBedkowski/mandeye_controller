@@ -2,7 +2,7 @@
 
 #include "livox_lidar_def.h"
 #include <deque>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <mutex>
 #include <thread>
 #include "utils/TimeStampProvider.h"

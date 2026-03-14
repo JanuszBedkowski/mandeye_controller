@@ -1,7 +1,7 @@
 
 #include <stdint.h>
 #include <chrono>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <ostream>
 #include <thread>
 
@@ -815,7 +815,7 @@ int main(int argc, char** argv)
 
 
 	std::cout << "Buzzer is " << (mandeye::disableBuzzer ? "disabled" : "enabled") << std::endl;
-	std::cout << "Lidar SDK to use: " << mandeye::lidarSDKToUse << std::endl;
+	std::cout << "Lidar SDK to use (from  MANDEYE_LIDAR_SDK env): " << mandeye::lidarSDKToUse << std::endl;
 
 	auto server = std::make_shared<Http::Endpoint>(addr);
 	std::thread http_thread1([&]() {
@@ -846,7 +846,7 @@ int main(int argc, char** argv)
 	}
 
 	// intialize in this thread to prevent initialization fiasco
-        const std::string portName = hardware::GetGNSSPort();
+    const std::string portName = hardware::GetGNSSPort();
 	const auto baud = hardware::GetGNSSBaudrate();
         if (!portName.empty())
         {

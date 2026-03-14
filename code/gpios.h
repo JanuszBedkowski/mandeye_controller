@@ -1,6 +1,6 @@
 #pragma once
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <thread>
 #include <mutex>
 #include <unordered_map>
@@ -95,8 +95,6 @@ private:
 		{"LED_GPIO_COPY_DATA", LED::LED_GPIO_COPY_DATA},
 		{"LED_GPIO_CONTINOUS_SCANNING", LED::LED_GPIO_CONTINOUS_SCANNING},
 		{"BUZZER", LED::BUZZER},
-		{"LIDAR_SYNC_1", LED::LIDAR_SYNC_1},
-		{"LIDAR_SYNC_2", LED::LIDAR_SYNC_2},
 	};
 
 	const std::unordered_map<BUTTON, std::string> ButtonToName{

@@ -19,6 +19,7 @@ using namespace std::chrono_literals;
 #include <chrono>
 #include "LibCameraWrapper.h"
 #include "index.html.h"
+#include "../utils/ExtrasUtils.h"
 
 using namespace Pistache;
 
@@ -36,7 +37,7 @@ namespace global {
     std::string configFileName = "/media/usb/cam0_config.json";
     bool isContinousScanRunning() {
         std::lock_guard<std::mutex> lck(global::stateMutex);
-        return global::state=="SCANNING";
+        return global::state == mandeye::extras::keys::MODE_SCANNING;
     }
     std::string getContinousScanTarget() {
         std::lock_guard<std::mutex> lck(global::stateMutex);
@@ -46,19 +47,6 @@ namespace global {
 }
 
 
-namespace
-{
-    std::string getEnvString(const std::string& env, const std::string& def)
-    {
-        const char* env_p = std::getenv(env.c_str());
-        if(env_p == nullptr)
-        {
-            return def;
-        }
-        return std::string{env_p};
-    }
-
-} // namespace utils
 
 
 template <typename T>
@@ -182,48 +170,15 @@ struct HelloHandler : public Http::Handler {
 
 void clientThread()
 {
-    try {
-        zmq::context_t context(1);
-        zmq::socket_t socket(context, zmq::socket_type::sub);
-
-        // Connect to the publisher
-        socket.connect("tcp://localhost:5556");
-
-        // Subscribe to all messages (empty filter)
-        socket.set(zmq::sockopt::subscribe, "");
-
-        // Set CONFLATE option (keep only last message)
-        socket.set(zmq::sockopt::conflate, 1);
-
-        std::cout << "Connected to tcp://localhost:5556" << std::endl;
-        std::cout << "Waiting for messages..." << std::endl;
-
-        while (true) {
-            // Wait for a message
-            zmq::message_t message;
-            auto result = socket.recv(message, zmq::recv_flags::none);
-
-            if (result) {
-                std::string msg_str(static_cast<char*>(message.data()), message.size());
-
-                nlohmann::json j = nlohmann::json::parse(msg_str);
-                if (j.is_object()) {
-                    std::lock_guard<std::mutex> lck(global::stateMutex);
-                    if (j.contains("mode")) {
-                        global::state = j["mode"].get<std::string>();
-                    }
-                    if (j.contains("continousScanDirectory")) {
-                        global::continousScanTarget = j["continousScanDirectory"].get<std::string>();
-                    }
-                }
-            }
+    mandeye::extras::startZeroMQListener([](const nlohmann::json& j) {
+        std::lock_guard<std::mutex> lck(global::stateMutex);
+        if (j.contains(mandeye::extras::keys::MODE)) {
+            global::state = j[mandeye::extras::keys::MODE].get<std::string>();
         }
-    }
-    catch (const zmq::error_t& e)
-    {
-        std::cerr << "ZeroMQ Error: " << e.what() << std::endl;
-        std::abort();
-    }
+        if (j.contains(mandeye::extras::keys::CONTINUOUS_SCAN_DIRECTORY)) {
+            global::continousScanTarget = j[mandeye::extras::keys::CONTINUOUS_SCAN_DIRECTORY].get<std::string>();
+        }
+    });
 }
 
 

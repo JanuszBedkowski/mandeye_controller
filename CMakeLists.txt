@@ -25,13 +25,6 @@ message("INCBIN")
 # INCBIN
 include_directories(3rd/incbin)
 
-message("JSON")
-#JSON
-include_directories(3rd/json)
-
-
-
-
 
 include_directories(code/)
 
@@ -184,8 +177,12 @@ target_link_libraries(button_demo gpiod pthread)
 install(TARGETS control_program led_demo fake_pps button_demo
         RUNTIME DESTINATION /opt/mandeye/)
 
+add_subdirectory(extras/utils)
 add_subdirectory(extras/libcamera)
 add_subdirectory(extras/rtkNmea)
+add_subdirectory(extras/FakePPS)
+add_subdirectory(extras/SlavePPS)
+
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/services/mandeye_controller.service  DESTINATION /usr/lib/systemd/system)
 install(FILES packing/services/mandeye_fake_pps.service  DESTINATION /usr/lib/systemd/system)
