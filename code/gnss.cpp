@@ -52,7 +52,8 @@ nlohmann::json GNSSClient::produceStatus()
 	return data;
 }
 
-bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate baudRate) {
+bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate baudRate)
+{
 
 	try
 	{

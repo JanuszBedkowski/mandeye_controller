@@ -5,7 +5,7 @@
 #include <atomic>
 #include <thread>
 
-#include "json.hpp"
+#include <nlohmann/json.hpp>
 namespace mandeye
 {
 

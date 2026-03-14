@@ -49,14 +49,6 @@ constexpr int GetLED(LED led)
 	{
 		return 21;
 	}
-	if(led == LED::LIDAR_SYNC_1)
-	{
-		return 3;
-	}
-	if(led == LED::LIDAR_SYNC_2)
-	{
-		return 2;
-	}
 	if(led == LED::BUZZER)
 	{
 		return 24;
@@ -81,9 +73,9 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 	return GPIO::GPIO_PULL::DOWN;
 }
 
-[[maybe_unused]] inline const std::array<LED, 2> GetLidarSyncLEDs()
+[[maybe_unused]] inline const std::array<int, 2> GetLidarSyncGPIO()
 {
-	return {LED::LIDAR_SYNC_1, LED::LIDAR_SYNC_2};
+	return {3,2};
 }
 
 [[maybe_unused]] inline  const std::array<const std::string, 2> GetLidarSyncPorts()

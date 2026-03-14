@@ -1,0 +1,26 @@
+[Unit]
+Description=Mandeye Slave PPS - GPS time sync via PPS signal
+After=multi-user.target
+
+[Service]
+User=root
+StandardOutput=journal
+StandardError=journal
+ExecStartPre=/bin/sleep 20
+ExecStart=/opt/mandeye/extras/slave_pps
+Restart=always
+RestartSec=5
+
+# Configuration via environment variables:
+# SLAVE_PPS_UART_PORT      - UART device for NMEA input  (default: /dev/ttyAMA0)
+# SLAVE_PPS_UART_BAUD_RATE - baud rate                   (default: 9600)
+# SLAVE_PPS_DEVICE         - PPS device                  (default: /dev/pps0)
+#
+# Example override (create /etc/systemd/system/mandeye_slave_pps.service.d/override.conf):
+#   [Service]
+#   Environment="SLAVE_PPS_UART_PORT=/dev/ttyS0"
+#   Environment="SLAVE_PPS_UART_BAUD_RATE=115200"
+#   Environment="SLAVE_PPS_DEVICE=/dev/pps1"
+
+[Install]
+WantedBy=multi-user.target

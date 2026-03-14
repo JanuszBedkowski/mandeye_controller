@@ -18,7 +18,7 @@ pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 pkg_check_modules(ZMQ REQUIRED libzmq)
 
 add_executable(mandeye_libcamera main.cpp LibCameraWrapper.cpp LibCameraWrapper.h)
-target_link_libraries(mandeye_libcamera  ${ZMQ_LIBRARIES} PkgConfig::Pistache ${LIBCAMERA_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(mandeye_libcamera PkgConfig::Pistache ${LIBCAMERA_LIBRARIES} ${OpenCV_LIBS} mandeye_extra_utils)
 
 install(TARGETS mandeye_libcamera
         RUNTIME DESTINATION /opt/mandeye/extras/)

@@ -9,9 +9,6 @@
 #include <SerialStream.h>
 #include <hardware_config/mandeye.h>
 #include <gpiod.h>
-
-#include "hardware_config/mandeye.h"
-
 namespace NMEA
 {
 const unsigned int BufferLen = 128;

@@ -13,7 +13,7 @@
 #include "../../../3rd/ouster-sdk/ouster_client/include/ouster/lidar_scan.h"
 #include "../../../3rd/ouster-sdk/ouster_client/include/ouster/sensor_scan_source.h"
 #include "../../../3rd/ouster-sdk/ouster_client/include/ouster/types.h"
-#include "../../../cmake-build-debug/3rd/ouster-sdk/generated/ouster/impl/build.h"
+#include "../../../3rd/ouster-sdk/generated/ouster/impl/build.h"
 
 #include <../../../3rd/ouster-sdk/ouster_client/include/ouster/impl/logging.h>
 

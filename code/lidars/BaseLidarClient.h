@@ -1,7 +1,7 @@
 #pragma once
 #include "utils/TimeStampProvider.h"
 #include <deque>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <memory>
 #include <stdint.h>
 namespace mandeye

@@ -65,14 +65,6 @@ constexpr int GetLED(LED led)
 	{
 		return 13;
 	}
-	if(led == LED::LIDAR_SYNC_1)
-	{
-		return -1;
-	}
-	if(led == LED::LIDAR_SYNC_2)
-	{
-		return -1;
-	}
 	if(led == LED::BUZZER)
 	{
 		return 24;
@@ -97,7 +89,7 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 	return GPIO::GPIO_PULL::UP;
 }
 
-[[maybe_unused]] inline const std::array<LED, 0> GetLidarSyncLEDs()
+[[maybe_unused]] inline const std::array<int, 0> GetLidarSyncGPIO()
 {
 	return {};  // No hardware sync
 }
@@ -109,7 +101,7 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 
 [[maybe_unused]] inline const std::string GetGNSSPort()
 {
-	return "/dev/ttyAMA0";
+	return ""; // empty port, no GNSS.
 };
 
 

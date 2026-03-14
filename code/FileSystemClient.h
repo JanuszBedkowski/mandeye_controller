@@ -1,7 +1,7 @@
 #pragma once
 
 #include <deque>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <mutex>
 #include <string>
 

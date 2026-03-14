@@ -1,7 +1,7 @@
 #pragma once
 #include "lidars/BaseLidarClient.h"
 #include <string>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <optional>
 namespace mandeye
 {

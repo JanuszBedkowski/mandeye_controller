@@ -1,0 +1,26 @@
+[Unit]
+Description=Mandeye Fake PPS - generates PPS signal and NMEA for LiDAR sync
+After=multi-user.target
+
+[Service]
+User=root
+StandardOutput=journal
+StandardError=journal
+ExecStartPre=/bin/sleep 5
+ExecStart=/opt/mandeye/extras/mandeye_fake_pps
+Restart=always
+RestartSec=5
+
+# Configuration via environment variables:
+# FAKE_PPS_SERIAL_PORTS - comma-separated UART devices  (default: /dev/ttyAMA2,/dev/ttyAMA5)
+# FAKE_PPS_GPIO_CHIP    - GPIO chip device              (default: /dev/gpiochip0)
+# FAKE_PPS_GPIO_PINS    - comma-separated GPIO pin nos  (default: 3,2)
+#
+# Example override (create /etc/systemd/system/mandeye_fake_pps.service.d/override.conf):
+#   [Service]
+#   Environment="FAKE_PPS_SERIAL_PORTS=/dev/ttyAMA2"
+#   Environment="FAKE_PPS_GPIO_CHIP=/dev/gpiochip4"
+#   Environment="FAKE_PPS_GPIO_PINS=3"
+
+[Install]
+WantedBy=multi-user.target

@@ -1,8 +1,8 @@
-#include <zmq.hpp>
 #include <pistache/endpoint.h>
-#include <json.hpp>
 #include "gnss.h"
 #include <fstream>
+#include <nlohmann/json.hpp>
+#include "../utils/ExtrasUtils.h"
 
 
 static const std::unordered_map<int, LibSerial::BaudRate> baud_map = {
@@ -44,19 +44,6 @@ std::optional<LibSerial::BaudRate> baudrate_to_constant(int baud)
         return it->second;
     return std::nullopt;
 }
-namespace
-{
-    std::string getEnvString(const std::string& env, const std::string& def)
-    {
-        const char* env_p = std::getenv(env.c_str());
-        if(env_p == nullptr)
-        {
-            return def;
-        }
-        return std::string{env_p};
-    }
-
-} // namespace
 namespace global
 {
     mandeye::GNSSClient gnssClient;
@@ -80,53 +67,19 @@ namespace state
 }
 void clientThread()
 {
-    try {
-        zmq::context_t context(1);
-        zmq::socket_t socket(context, zmq::socket_type::sub);
-
-        // Connect to the publisher
-        socket.connect("tcp://localhost:5556");
-
-        // Subscribe to all messages (empty filter)
-        socket.set(zmq::sockopt::subscribe, "");
-
-        // Set CONFLATE option (keep only last message)
-        socket.set(zmq::sockopt::conflate, 1);
-
-        std::cout << "Connected to tcp://localhost:5556" << std::endl;
-        std::cout << "Waiting for messages..." << std::endl;
-
-        while (true) {
-            // Wait for a message
-            zmq::message_t message;
-            auto result = socket.recv(message, zmq::recv_flags::none);
-
-            if (result) {
-                std::string msg_str(static_cast<char*>(message.data()), message.size());
-
-                nlohmann::json j = nlohmann::json::parse(msg_str);
-                if (j.is_object()) {
-                    std::lock_guard<std::mutex> lck(state::stateMutex);
-                    if (j.contains("time"))
-                    {
-                        state::timestamp = j["time"].get<double>();
-                        global::gnssClient.setLaserTimestamp(state::timestamp);
-                    }
-                    if (j.contains("mode")) {
-                        state::modeName = j["mode"].get<std::string>();
-                    }
-                    if (j.contains("continousScanDirectory")) {
-                        state::continuousScanTarget = j["continousScanDirectory"].get<std::string>();
-                    }
-                }
-            }
+    mandeye::extras::startZeroMQListener([](const nlohmann::json& j) {
+        std::lock_guard<std::mutex> lck(state::stateMutex);
+        if (j.contains(mandeye::extras::keys::TIME)) {
+            state::timestamp = j[mandeye::extras::keys::TIME].get<double>();
+            global::gnssClient.setLaserTimestamp(state::timestamp);
         }
-    }
-    catch (const zmq::error_t& e)
-    {
-        std::cerr << "ZeroMQ Error: " << e.what() << std::endl;
-        std::abort();
-    }
+        if (j.contains(mandeye::extras::keys::MODE)) {
+            state::modeName = j[mandeye::extras::keys::MODE].get<std::string>();
+        }
+        if (j.contains(mandeye::extras::keys::CONTINUOUS_SCAN_DIRECTORY)) {
+            state::continuousScanTarget = j[mandeye::extras::keys::CONTINUOUS_SCAN_DIRECTORY].get<std::string>();
+        }
+    });
 }
 using namespace Pistache;
 struct HelloHandler : public Http::Handler {
@@ -210,19 +163,19 @@ void NMEACallback(const std::string& nmea)
         mode = state::modeName;
     }
 
-    if (lastMode!= mode && mode == "SCANNING")
+    if (lastMode != mode && mode == mandeye::extras::keys::MODE_SCANNING)
     {
         lastTime = std::chrono::steady_clock::now();
     }
     lastMode = mode;
     //
-    if (mode == "SCANNING")
+    if (mode == mandeye::extras::keys::MODE_SCANNING)
     {
         buffer.append(nmea);
     }
 
 
-    if (duration.count() > global::fileLengthMs || mode == "STOPPING" )
+    if (duration.count() > global::fileLengthMs || mode == mandeye::extras::keys::MODE_STOPPING)
     {
         if (!buffer.empty())
         {
@@ -254,11 +207,11 @@ int main(int argc, char** argv)
 
     // load from usb
 
-    std::string configPath = getEnvString("EXTRA_GNSS_CONFIG_PATH", "/media/usb/config_extra_gps.json");
+    std::string configPath = mandeye::extras::getEnvString("EXTRA_GNSS_CONFIG_PATH", "/media/usb/config_extra_gps.json");
     std::cout << "Loading configuration from usb : " << configPath << std::endl;
-    global::directoryName = getEnvString("EXTRA_GNSS_DIRECTORY_NAME", "EXTRA_GNSS");
-    global::uartPort = getEnvString("EXTRA_GNSS_UART_PORT", "/dev/ublox");
-    global::uartBaudRate = std::stoi(getEnvString("EXTRA_GNSS_UART_BAUD_RATE", "115200"));
+    global::directoryName = mandeye::extras::getEnvString("EXTRA_GNSS_DIRECTORY_NAME", "EXTRA_GNSS");
+    global::uartPort = mandeye::extras::getEnvString("EXTRA_GNSS_UART_PORT", "/dev/ublox");
+    global::uartBaudRate = std::stoi(mandeye::extras::getEnvString("EXTRA_GNSS_UART_BAUD_RATE", "115200"));
     nlohmann::json configJson;
 
     bool configOk = false;
