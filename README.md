@@ -254,9 +254,10 @@ mandeye_start
 
 There are optional services that can be started:
 
-PPS time synchronization generator using GPIO:
+## Fake PPS 
+PPS time synchronization generator using GPIO (to other devices)
 ```shell
-sudo systemctl enable mandeye_fakepps.service
+sudo systemctl enable mandeye_fake_pps.service
 mandeye_fakepps_start # PPS generator using GPIO
 ```
 
@@ -268,6 +269,22 @@ mandeye_phc2sys_start # PTP clock using eth0
 mandeye_ptp4l_grandmaster_start # 
 ```
 
+# SlavePPS
+
+Slave PPS is a serivce that will adjust system time using PPS signal from master PPS + NMEA.
+
+Disable NTP:
+```shell
+sudo systemctl stop systemd-timesyncd
+```
+
+Start service:
+```shell
+sudo systemctl enable mandeye_slave_pps.service
+sudo systemctl start mandeye_slave_pps.service
+```
+
+# Libcamera
 Cameras:
 ```shell
 sudo systemctl enable mandeye_libcamera_cam0.service
@@ -276,12 +293,14 @@ mandeye_cam0_start
 mandeye_cam1_start
 ```
 
+# USB Gnss
 Extra USB Gnss:
 ```shell
 sudo systemctl enable mandeye_extra_gnss.service 
 mandeye_extra_gnss_start
 ```
 
+# Services
 List state of services:
 ```shell
 mandeye_services_status
