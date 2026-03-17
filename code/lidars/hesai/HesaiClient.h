@@ -34,7 +34,7 @@ namespace mandeye
         // TimestampProvider overrides ...
         double getTimestamp() override
         {
-            return 0.0;
+            return m_timestamp;
         } // Dummy implementation
         double getSessionDuration() override
         {
@@ -48,6 +48,9 @@ namespace mandeye
         {
         } // Dummy implementation
 
+        bool isSynced() override {
+            return m_time_diff < 1.0; // laser report time with computer's timestamp
+        }
     private:
         void DataThreadFunction();
         void CallbackFrame(const LidarDecodedFrame<LidarPointXYZICRT>& dataFrame);
@@ -73,6 +76,7 @@ namespace mandeye
         uint16_t m_laser_num;
         uint16_t m_channel_num;
         double m_timestamp;
+        double m_time_diff;
     };
 
 } // namespace mandeye
