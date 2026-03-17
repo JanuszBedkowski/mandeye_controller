@@ -36,7 +36,7 @@ namespace mandeye
     {
         nlohmann::json data;
         data["init_success"] = init_succes;
-
+        data["is_synced"] = isSynced();
         if (!m_LivoxLidarInfo.empty())
         {
             data["LivoxLidarInfo"]["dev_type"] = m_LivoxLidarInfo.begin()->second.dev_type;

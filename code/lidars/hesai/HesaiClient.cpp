@@ -1,6 +1,7 @@
 #include "lidars/hesai/HesaiClient.h"
 
 #include <iostream>
+#include <chrono>
 namespace mandeye
 {
 
@@ -9,7 +10,8 @@ namespace mandeye
         nlohmann::json data;
 
         nlohmann::json data_status;
-        data_status["init_success"] = true; // Simulate successful initialization
+        data_status["init_success"] = true;
+        data["is_synced"] = isSynced();
         data_status["is_done"] = isDone.load(); // Current status of the data thread
         data_status["received_point_messages"] = m_recivedPointMessages.load(); // Number of received point messages
         data_status["received_imu_messages"] = m_recivedIMUMessages.load(); // Number of received IMU messages
@@ -20,7 +22,8 @@ namespace mandeye
         data_status["hardware_vers"] = m_hardware_vers;
         data_status["laser_num"] = m_laser_num;
         data_status["channel_num"] = m_channel_num;
-        data_status["timestamp"] = m_timestamp;
+        data_status["timestamp_sec"] = m_timestamp;
+        data_status["time_diff"] = m_time_diff;
         nlohmann::json faults;
         for (auto& fault : m_faults) {
             nlohmann::json fault_info;
@@ -151,7 +154,15 @@ namespace mandeye
         m_hardware_vers = dataFrame.hardware_version;
         m_laser_num = dataFrame.laser_num;
         m_channel_num = dataFrame.channel_num;
-        m_timestamp = dataFrame.multi_frame_start_timestamp;
+        if (dataFrame.points_num > 0) {
+            m_timestamp = dataFrame.points[0].timestamp;
+            //get current timestamp
+            using namespace std::chrono;
+            const auto now = system_clock::now();
+            auto duration = now.time_since_epoch();
+            double tp = std::chrono::duration<double>(duration).count();
+            m_time_diff = std::abs(tp - m_timestamp);
+        }
 
         std::lock_guard<std::mutex> lock(m_bufferPointMutex);
         if (m_bufferLidarPtr) {
