@@ -6,16 +6,19 @@
 
 namespace mandeye
 {
-    std::string sanitize_ascii(const std::string& input) {
-        std::string output;
-        for (char c : input) {
-            // Keep only printable ASCII and basic control chars like \r and \n
-            if ((c >= 32 && c <= 126) || c == '\r' || c == '\n') {
-                output += c;
-            }
-        }
-        return output;
-    }
+std::string sanitize_ascii(const std::string& input)
+{
+	std::string output;
+	for(char c : input)
+	{
+		// Keep only printable ASCII and basic control chars like \r and \n
+		if((c >= 32 && c <= 126) || c == '\r' || c == '\n')
+		{
+			output += c;
+		}
+	}
+	return output;
+}
 
 nlohmann::json GNSSClient::produceStatus()
 {
@@ -36,33 +39,35 @@ nlohmann::json GNSSClient::produceStatus()
 	data["gga"]["height"] = minmea_tofloat(&lastGGA.height);
 	data["gga"]["dgps_age"] = minmea_tofloat(&lastGGA.dgps_age);
 	data["message_count"] = m_messageCount.load();
-        data["ntrip_client"]["number_of_rtcm3_messages"] = m_numberOfRTCM3Messages.load();
-        data["ntrip_client"]["number_of_gga_messages"] = m_numberOfGGAMessagesToCaster.load();
+	data["ntrip_client"]["number_of_rtcm3_messages"] = m_numberOfRTCM3Messages.load();
+	data["ntrip_client"]["number_of_gga_messages"] = m_numberOfGGAMessagesToCaster.load();
 	return data;
 }
 
-bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate baudRate) {
+bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate baudRate)
+{
 
-    	m_baudRate = baudRate;
-    	m_portName = portName;
+	m_baudRate = baudRate;
+	m_portName = portName;
 	try
 	{
-		if (init_succes)
+		if(init_succes)
 		{
 			return true;
 		}
-		if (m_serialPort.IsOpen())
+		if(m_serialPort.IsOpen())
 		{
 			m_serialPort.Close();
 		}
-		m_serialPort.Open(portName, std::ios_base::in|std::ios_base::out);
+		m_serialPort.Open(portName, std::ios_base::in | std::ios_base::out);
 		m_serialPort.SetBaudRate(baudRate);
 		init_succes = true;
 		m_serialPortThread = std::thread(&GNSSClient::worker, this);
 		m_serialPortThread.detach();
-	}catch(std::exception& e)
+	}
+	catch(std::exception& e)
 	{
-		std::cout << "Failed to open port " << portName <<" : " << e.what()  << std::endl;
+		std::cout << "Failed to open port " << portName << " : " << e.what() << std::endl;
 		init_succes = false;
 		return false;
 	}
@@ -72,10 +77,11 @@ bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate 
 void GNSSClient::worker()
 {
 	std::cout << "Worker started" << std::endl;
-    	int errorCounter = 0;
+	int errorCounter = 0;
 	while(errorCounter < 10)
 	{
-		try {
+		try
+		{
 
 			std::string line;
 			m_serialPort.ReadLine(line, '\n', 1000);
@@ -84,17 +90,17 @@ void GNSSClient::worker()
 				m_lastLine = line;
 			}
 			bool is_valid = minmea_check(line.c_str(), true);
-			if (is_valid)
+			if(is_valid)
 			{
 				errorCounter = 0;
 				minmea_sentence_gga gga;
 				bool isGGA = minmea_parse_gga(&gga, line.c_str());
-				if (isGGA)
+				if(isGGA)
 				{
 					std::lock_guard<std::mutex> lock(m_ggaMutex);
 					lastGGA = gga;
 				}
-				if (m_dataCallback)
+				if(m_dataCallback)
 				{
 					double laserTimestamp = 0.0;
 					{
@@ -109,20 +115,19 @@ void GNSSClient::worker()
 				std::cout << "Invalid line: " << line << std::endl;
 			}
 		}
-		catch (std::exception& e) {
+		catch(std::exception& e)
+		{
 			errorCounter++;
 			std::cout << "Exception: " << e.what() << std::endl;
 		}
 	}
-    	std::cout << "Worker stopped" << std::endl;
-    	std::abort();
-
-
+	std::cout << "Worker stopped" << std::endl;
+	std::abort();
 }
 void GNSSClient::setLaserTimestamp(uint64_t laserTimestamp)
 {
-        std::lock_guard<std::mutex> lock(m_laserTsMutex);
-        m_laserTimestamp = laserTimestamp;
+	std::lock_guard<std::mutex> lock(m_laserTsMutex);
+	m_laserTimestamp = laserTimestamp;
 }
 
 //! Convert a minmea_sentence_gga to a CSV line
@@ -135,8 +140,8 @@ std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, uint64_t la
 	std::stringstream oss;
 	oss << laserTimestamp << " ";
 	oss << minmea_tocoord(&gga.latitude) << " ";
-	oss	<< minmea_tocoord(&gga.longitude) << " ";
-	oss	<< minmea_tofloat(&gga.altitude) << " ";
+	oss << minmea_tocoord(&gga.longitude) << " ";
+	oss << minmea_tofloat(&gga.altitude) << " ";
 	oss << minmea_tofloat(&gga.hdop) << " ";
 	oss << gga.satellites_tracked << " ";
 	oss << minmea_tofloat(&gga.height) << " ";
@@ -166,61 +171,46 @@ void GNSSClient::setDataCallback(const std::function<void(const std::string& lin
 }
 
 void GNSSClient::setNtripClient(
-    const std::string& userName,
-    const std::string& password,
-    const std::string& mountPoint,
-    const std::string& host,
-    const std::string& port)
+	const std::string& userName, const std::string& password, const std::string& mountPoint, const std::string& host, const std::string& port)
 {
-    std::thread t(
-        [this, userName, password, mountPoint, host, port]()
-        {
-            boost::asio::io_context io;
-            m_ntripClient = std::make_unique<NtripClient>(
-                io,
-                host,
-                port,
-                mountPoint,
-                userName,
-                password,
-                [this](const uint8_t* data, size_t size)
-                {
-                    m_numberOfRTCM3Messages++;
-                    std::vector<uint8_t> dataVec(data, data + size);
-                    if (m_serialPort.IsOpen())
-                    {
-                        m_serialPort.Write(dataVec);
-                    }
-                });
-            m_ntripClient->start();
-            boost::asio::steady_timer timer(io);
-            scheduleGgaSend(timer);
-            io.run();
-        });
+	std::thread t([this, userName, password, mountPoint, host, port]() {
+		boost::asio::io_context io;
+		m_ntripClient = std::make_unique<NtripClient>(io, host, port, mountPoint, userName, password, [this](const uint8_t* data, size_t size) {
+			m_numberOfRTCM3Messages++;
+			std::vector<uint8_t> dataVec(data, data + size);
+			if(m_serialPort.IsOpen())
+			{
+				m_serialPort.Write(dataVec);
+			}
+		});
+		m_ntripClient->start();
+		boost::asio::steady_timer timer(io);
+		scheduleGgaSend(timer);
+		io.run();
+	});
 
-    m_ntripThread = std::move(t);
-    m_ntripThread.detach();
+	m_ntripThread = std::move(t);
+	m_ntripThread.detach();
 }
 
 void GNSSClient::setNtripClient(const nlohmann::json& ntripClientConfig)
 {
-    if (!ntripClientConfig.is_object())
-    {
-        return;
-    }
+	if(!ntripClientConfig.is_object())
+	{
+		return;
+	}
 
-    std::string userName = ntripClientConfig.value("user_name", "");
-    std::string password = ntripClientConfig.value("password", "");
-    std::string mountPoint = ntripClientConfig.value("mount_point", "");
-    std::string host = ntripClientConfig.value("host", "");
-    std::string port = ntripClientConfig.value("port", "2101");
-    if (userName.empty() || password.empty() || mountPoint.empty() || host.empty() || port.empty())
-    {
-            std::cerr << "NTRIP client configuration is incomplete." << std::endl;
-            return;
-    }
-    setNtripClient(userName, password, mountPoint, host, port);
+	std::string userName = ntripClientConfig.value("user_name", "");
+	std::string password = ntripClientConfig.value("password", "");
+	std::string mountPoint = ntripClientConfig.value("mount_point", "");
+	std::string host = ntripClientConfig.value("host", "");
+	std::string port = ntripClientConfig.value("port", "2101");
+	if(userName.empty() || password.empty() || mountPoint.empty() || host.empty() || port.empty())
+	{
+		std::cerr << "NTRIP client configuration is incomplete." << std::endl;
+		return;
+	}
+	setNtripClient(userName, password, mountPoint, host, port);
 }
-
 
 } // namespace mandeye

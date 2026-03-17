@@ -1,18 +1,16 @@
 #pragma once
 
-#include "livox_lidar_def.h"
-#include <deque>
-#include <nlohmann/json.hpp>
-#include <mutex>
-#include <thread>
-#include "utils/TimeStampProvider.h"
-#include <set>
-#include <optional>
 #include "lidars/BaseLidarClient.h"
+#include "livox_lidar_def.h"
+#include "utils/TimeStampProvider.h"
+#include <deque>
+#include <mutex>
+#include <nlohmann/json.hpp>
+#include <optional>
+#include <set>
+#include <thread>
 namespace mandeye
 {
-
-
 
 class LivoxClient : public BaseLidarClient
 {
@@ -36,7 +34,6 @@ public:
 	//! Returns if Lidar is synced (PPS or PTP)
 	bool isSynced() override;
 
-
 	// mandeye_utils::TimeStampProvider overrides ...
 	double getTimestamp() override;
 	double getSessionDuration() override;
@@ -59,7 +56,7 @@ private:
 	uint64_t m_elapsed;
 	std::optional<uint64_t> m_sessionStart;
 
-	static void saveTimeStamp(LivoxClient *client, uint64_t timestamp);
+	static void saveTimeStamp(LivoxClient* client, uint64_t timestamp);
 	//! Multilovx support
 	mutable std::mutex m_lidarInfoMutex;
 	std::unordered_map<uint32_t, uint64_t> m_recivedImuMsgs;
@@ -68,10 +65,8 @@ private:
 	std::unordered_map<uint32_t, int32_t> m_LivoxLidarWorkMode;
 	std::unordered_map<uint32_t, int32_t> m_LivoxLidarTimeSync;
 
-
 	std::unordered_map<uint32_t, uint64_t> m_handleToLastTimestamp;
 	std::unordered_map<uint32_t, std::string> m_handleToSerialNumber;
-
 
 	//! This is a set of serial numbers that we have already seen, its used to find lidarId
 	std::set<std::string> m_serialNumbers;
@@ -83,9 +78,8 @@ private:
 	//! @param handle the handle to convert
 	uint16_t handleToLidarId(uint32_t handle) const;
 
-
 	static constexpr char config[] =
-R"(
+		R"(
 {
 	"MID360": {
 		"lidar_net_info" : {
@@ -134,45 +128,28 @@ R"(
 )";
 
 	// callbacks
-	static void PointCloudCallback(uint32_t handle,
-								   const uint8_t dev_type,
-								   LivoxLidarEthernetPacket* data,
-								   void* client_data);
+	static void PointCloudCallback(uint32_t handle, const uint8_t dev_type, LivoxLidarEthernetPacket* data, void* client_data);
 
-	static void ImuDataCallback(uint32_t handle,
-								const uint8_t dev_type,
-								LivoxLidarEthernetPacket* data,
-								void* client_data);
+	static void ImuDataCallback(uint32_t handle, const uint8_t dev_type, LivoxLidarEthernetPacket* data, void* client_data);
 
-	static void WorkModeCallback(livox_status status,
-								 uint32_t handle,
-								 LivoxLidarAsyncControlResponse* response,
-								 void* client_data);
+	static void WorkModeCallback(livox_status status, uint32_t handle, LivoxLidarAsyncControlResponse* response, void* client_data);
 
-	static void SetIpInfoCallback(livox_status status,
-								  uint32_t handle,
-								  LivoxLidarAsyncControlResponse* response,
-								  void* client_data);
+	static void SetIpInfoCallback(livox_status status, uint32_t handle, LivoxLidarAsyncControlResponse* response, void* client_data);
 
-	static void RebootCallback(livox_status status,
-							   uint32_t handle,
-							   LivoxLidarRebootResponse* response,
-							   void* client_data);
+	static void RebootCallback(livox_status status, uint32_t handle, LivoxLidarRebootResponse* response, void* client_data);
 
-	static void QueryInternalInfoCallback(livox_status status,
-										  uint32_t handle,
-										  LivoxLidarDiagInternalInfoResponse* packet,
-										  void* client_data);
+	static void QueryInternalInfoCallback(livox_status status, uint32_t handle, LivoxLidarDiagInternalInfoResponse* packet, void* client_data);
 
-	static void
-	LidarInfoChangeCallback(const uint32_t handle, const LivoxLidarInfo* info, void* client_data);
+	static void LidarInfoChangeCallback(const uint32_t handle, const LivoxLidarInfo* info, void* client_data);
 };
 
 } // namespace mandeye
-extern "C" void* create_livox_client() {
+extern "C" void* create_livox_client()
+{
 	return new mandeye::LivoxClient();
 }
 
-extern "C" void destroy_livox_client(void* ptr) {
+extern "C" void destroy_livox_client(void* ptr)
+{
 	delete static_cast<mandeye::LivoxClient*>(ptr);
 }

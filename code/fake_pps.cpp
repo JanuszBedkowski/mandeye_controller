@@ -1,14 +1,14 @@
+#include <atomic>
 #include <chrono>
 #include <gpios.h>
 #include <iostream>
-#include <thread>
-#include <atomic>
 #include <stdio.h>
+#include <thread>
 
 #include <SerialPort.h>
 #include <SerialStream.h>
-#include <hardware_config/mandeye.h>
 #include <gpiod.h>
+#include <hardware_config/mandeye.h>
 
 #include "hardware_config/mandeye.h"
 
@@ -90,25 +90,24 @@ void oneSecondThread()
 	const auto& chipPath = mandeye::GetGPIOChip();
 	std::cout << "Opening GPIO chip " << chipPath << std::endl;
 
-	gpiod_chip *chip = gpiod_chip_open(chipPath);
-	if (chip == nullptr)
+	gpiod_chip* chip = gpiod_chip_open(chipPath);
+	if(chip == nullptr)
 	{
 		std::cerr << "Error: Unable to open GPIO chip." << std::endl;
 		std::abort();
 	}
 
-
-	for (const auto& pin : ouputs)
+	for(const auto& pin : ouputs)
 	{
 		auto line = gpiod_chip_get_line(chip, pin);
-		if (line == nullptr)
+		if(line == nullptr)
 		{
 			std::cerr << "Error: Unable to open GPIO line." << std::endl;
 			gpiod_chip_close(chip);
 			std::abort();
 		}
 		int ret = gpiod_line_request_output(line, "mandeye_fake_pps", 0);
-		if (ret < 0)
+		if(ret < 0)
 		{
 			std::cerr << "Error: Unable to request GPIO line." << std::endl;
 			gpiod_chip_close(chip);
@@ -139,25 +138,25 @@ void oneSecondThread()
 		const uint64_t secs = millisFromEpoch / 1000;
 		NMEA::timestamp ts = NMEA::GetTimestampFromSec(secs);
 
-		for (auto& syncOut : syncOutsLines)
+		for(auto& syncOut : syncOutsLines)
 		{
 			gpiod_line_set_value(syncOut, 0);
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		for (auto& syncOut : syncOutsLines)
+		for(auto& syncOut : syncOutsLines)
 		{
 			gpiod_line_set_value(syncOut, 1);
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		const std::string nmeaMessage = NMEA::produceNMEA(ts);
-		for (auto& serialPort : serialPorts)
+		for(auto& serialPort : serialPorts)
 		{
 			serialPort->Write(nmeaMessage);
 		}
 
 		std::this_thread::sleep_until(waKeUpTime);
 	}
-	for (auto& syncOut : syncOutsLines)
+	for(auto& syncOut : syncOutsLines)
 	{
 		gpiod_line_release(syncOut);
 	}

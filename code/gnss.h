@@ -1,23 +1,21 @@
 #pragma once
 
 #include <deque>
-#include <nlohmann/json.hpp>
 #include <mutex>
+#include <nlohmann/json.hpp>
 
-#include <SerialPort.h>
-#include <SerialStream.h>
+#include "minmea.h"
 #include "thread"
 #include "utils/TimeStampReceiver.h"
-#include "minmea.h"
+#include <SerialPort.h>
+#include <SerialStream.h>
 #include <atomic>
 namespace mandeye
 {
 
-
 class GNSSClient : public mandeye_utils::TimeStampReceiver
 {
 public:
-
 	nlohmann::json produceStatus();
 
 	//! Spins up a thread that reads from the serial port
@@ -35,7 +33,6 @@ public:
 	//! Retrieve all data from the buffer, in form of CSV lines
 	std::deque<std::string> retrieveRawData();
 
-
 	//! Addcallback on data received
 	void setDataCallback(const std::function<void(const minmea_sentence_gga& gga)>& callback);
 
@@ -51,7 +48,7 @@ private:
 	LibSerial::SerialStream m_serialPortStream;
 	std::thread m_serialPortThread;
 	std::string m_portName;
-	int m_baudRate {0};
+	int m_baudRate{0};
 	void worker();
 
 	bool init_succes{false};

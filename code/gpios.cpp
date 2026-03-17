@@ -1,15 +1,15 @@
+#include "hardware_config/mandeye.h"
 #include <fstream>
+#include <gpiod.h>
 #include <gpios.h>
 #include <iostream>
-#include <gpiod.h>
-#include "hardware_config/mandeye.h"
 namespace mandeye
 {
 using namespace hardware;
 using namespace GPIO;
 bool GpioClient::ButtonData::GetButtonState(const GpioClient::ButtonData& button)
 {
-	if (button.m_line == nullptr)
+	if(button.m_line == nullptr)
 	{
 		return false;
 	}
@@ -40,7 +40,7 @@ GpioClient::GpioClient(bool sim)
 	{
 		m_buttons[id].m_name = name;
 	}
-	for (auto& [led, name] : LedToName)
+	for(auto& [led, name] : LedToName)
 	{
 		m_ledGpio[led].m_name = name;
 	}
@@ -51,14 +51,15 @@ GpioClient::GpioClient(bool sim)
 		std::cout << "Opening GPIO chip " << chipPath << std::endl;
 
 		m_chip = gpiod_chip_open(chipPath);
-		if (!m_chip) {
+		if(!m_chip)
+		{
 			std::cerr << "Error: Unable to open GPIO chip." << std::endl;
 			return;
 		}
 		std::lock_guard<std::mutex> lck{m_lock};
 
 		// initialize leds
-		for (auto &[led, name] : LedToName)
+		for(auto& [led, name] : LedToName)
 		{
 			LedData& ledData = m_ledGpio[led];
 			ledData.m_name = name;
@@ -74,18 +75,17 @@ GpioClient::GpioClient(bool sim)
 				if(!ledData.m_line)
 				{
 					std::cerr << "Failed to create line at pin " << ledData.m_pin << " of " << ledData.m_name << std::endl;
-					continue ;
+					continue;
 				}
 				int ret = gpiod_line_request_output(ledData.m_line, ledData.m_name.c_str(), 0);
 				if(ret < 0)
 				{
 					std::cerr << "Failed to create line at pin " << ledData.m_pin << " of " << ledData.m_name << std::endl;
-					continue ;
+					continue;
 				}
 			}
 		}
-		std::cout<< "LEDs initialized" << std::endl;
-
+		std::cout << "LEDs initialized" << std::endl;
 
 		for(auto& [button, name] : ButtonToName)
 		{
@@ -94,7 +94,7 @@ GpioClient::GpioClient(bool sim)
 			buttonData.m_pullMode = hardware::GetPULL(button);
 			if(buttonData.m_pin == -1)
 			{
-				std::cerr << "No button with id " <<  name << " in hardware config " << hardware::mandeyeHarwareType() << std::endl;
+				std::cerr << "No button with id " << name << " in hardware config " << hardware::mandeyeHarwareType() << std::endl;
 			}
 			else
 			{
@@ -117,14 +117,11 @@ GpioClient::GpioClient(bool sim)
 				if(ret < 0)
 				{
 					std::cerr << "Failed to create line at pin " << buttonData.m_pin << " of " << buttonData.m_name << std::endl;
-					continue ;
+					continue;
 				}
-
 			}
-
 		}
 	}
-
 
 	for(auto& [buttonID, ButtonName] : ButtonToName)
 	{
@@ -165,7 +162,7 @@ GpioClient::GpioClient(bool sim)
 }
 GpioClient::~GpioClient()
 {
-	if (m_gpioReadBackThread.joinable())
+	if(m_gpioReadBackThread.joinable())
 	{
 		m_running.store(false);
 		m_gpioReadBackThread.join();
@@ -188,7 +185,6 @@ GpioClient::~GpioClient()
 		}
 		gpiod_chip_close(m_chip);
 	}
-
 }
 
 nlohmann::json GpioClient::produceStatus()
@@ -235,7 +231,7 @@ void GpioClient::setLed(LedData& led, bool state)
 	led.m_state = state;
 	if(!m_useSimulatedGPIO && led.m_line)
 	{
-		gpiod_line_set_value(led.m_line, state?1:0);
+		gpiod_line_set_value(led.m_line, state ? 1 : 0);
 	}
 }
 

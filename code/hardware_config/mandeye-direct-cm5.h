@@ -31,21 +31,23 @@ constexpr const char* GetGPIOChip()
 
 inline void ReportState([[maybe_unused]] const mandeye::States state)
 {
-	if (state == mandeye::States::USB_IO_ERROR) {
+	if(state == mandeye::States::USB_IO_ERROR)
+	{
 		std::cerr << "USB IO ERROR - will restart shortly" << std::endl;
 		static int count = 0;
-		if (count ++ >= 2) {
+		if(count++ >= 2)
+		{
 			std::cerr << "Restarting..." << std::endl;
 			std::abort();
 		}
 	}
-
 }
 
 inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
 {
 	std::cout << "Saved LAZ file: " << filename << std::endl;
-	if (mandeye::gpioClientPtr) {
+	if(mandeye::gpioClientPtr)
+	{
 		mandeye::gpioClientPtr->beep({50, 100, 50, 100});
 	}
 }
@@ -91,10 +93,10 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 
 [[maybe_unused]] inline const std::array<int, 0> GetLidarSyncGPIO()
 {
-	return {};  // No hardware sync
+	return {}; // No hardware sync
 }
 
-[[maybe_unused]] inline  const std::array<const std::string, 0> GetLidarSyncPorts()
+[[maybe_unused]] inline const std::array<const std::string, 0> GetLidarSyncPorts()
 {
 	return {}; // No hardware sync
 };
@@ -104,11 +106,9 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 	return ""; // empty port, no GNSS.
 };
 
-
 [[maybe_unused]] inline const LibSerial::BaudRate GetGNSSBaudrate()
 {
 	return LibSerial::BaudRate::BAUD_115200;
 };
-
 
 } // namespace hardware
