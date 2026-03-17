@@ -58,7 +58,7 @@ constexpr int GetLED(LED led)
 	}
 	if(led == LED::BUZZER)
 	{
-		return 12 ;
+		return 12;
 	}
 	return -1;
 }
@@ -82,10 +82,10 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 
 [[maybe_unused]] inline const std::array<int, 0> GetLidarSyncGPIO()
 {
-	return {};  // No hardware sync
+	return {}; // No hardware sync
 }
 
-[[maybe_unused]] inline  const std::array<const std::string, 0> GetLidarSyncPorts()
+[[maybe_unused]] inline const std::array<const std::string, 0> GetLidarSyncPorts()
 {
 	return {}; // No hardware sync
 };
@@ -95,11 +95,9 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 	return "/dev/S0";
 };
 
-
 [[maybe_unused]] inline const LibSerial::BaudRate GetGNSSBaudrate()
 {
 	return LibSerial::BaudRate::BAUD_38400;
 };
-
 
 } // namespace hardware

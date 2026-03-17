@@ -1,10 +1,10 @@
 #pragma once
-#include <nlohmann/json.hpp>
-#include <zmq.hpp>
 #include "utils/TimeStampReceiver.h"
-#include <thread>
 #include <atomic>
 #include <mutex>
+#include <nlohmann/json.hpp>
+#include <thread>
+#include <zmq.hpp>
 namespace mandeye
 {
 class Publisher : public mandeye_utils::TimeStampReceiver
@@ -19,6 +19,7 @@ public:
 	void publish(const nlohmann::json& data);
 	void SetWorkingDirectory(const std::string& stopScanDirectory, const std::string& continousScanDirectory);
 	void SetMode(const std::string& mode);
+
 private:
 	void worker();
 	std::atomic<bool> m_running{true};
@@ -29,6 +30,6 @@ private:
 	zmq::socket_t m_publisher;
 	std::thread m_thread;
 	std::mutex m_mutex;
-	double m_lastTime=0;
+	double m_lastTime = 0;
 };
-}
+} // namespace mandeye

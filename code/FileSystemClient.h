@@ -1,8 +1,8 @@
 #pragma once
 
 #include <deque>
-#include <nlohmann/json.hpp>
 #include <mutex>
+#include <nlohmann/json.hpp>
 #include <string>
 
 namespace mandeye
@@ -32,13 +32,14 @@ public:
 
 	std::vector<std::string> GetDirectories();
 
-	bool CreateDirectoryForContinousScanning(std::string &, const int &);
+	bool CreateDirectoryForContinousScanning(std::string&, const int&);
 
-	bool CreateDirectoryForStopScans(std::string &, int &id_manifest);
+	bool CreateDirectoryForStopScans(std::string&, int& id_manifest);
 
 	double BenchmarkWriteSpeed(const std::string& filename, size_t fileSizeMB);
 
 	nlohmann::json GetConfig();
+
 private:
 	int32_t m_nextId{0};
 	std::string ConvertToText(float mb);

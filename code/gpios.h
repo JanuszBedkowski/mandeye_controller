@@ -1,11 +1,11 @@
 #pragma once
 
+#include "hardware_config/hardware_common.h"
+#include <atomic>
+#include <mutex>
 #include <nlohmann/json.hpp>
 #include <thread>
-#include <mutex>
 #include <unordered_map>
-#include <atomic>
-#include "hardware_config/hardware_common.h"
 
 // Forward declaration for GPIOD
 struct gpiod_chip;
@@ -16,31 +16,32 @@ namespace mandeye
 using namespace hardware;
 // forward declaration of cppgpio type that I want to keep inside compliation unit
 
-
 class GpioClient
 {
 	using Callbacks = std::unordered_map<std::string, std::function<void()>>;
 
-struct ButtonData{
-	std::string m_name; //! button name
-	int m_pin; //! pin number
-	gpiod_line *m_line{nullptr};
-	uint32_t m_pressedTime {0}; //! time when button was pressed
-	GPIO::GPIO_PULL m_pullMode; //! pull up or down
-	bool m_pressed; //! is button pressed
-	Callbacks m_callbacks; //! callbacks to call when button is pressed
-	static constexpr int DEBOUNCE_TIME = 2; //! debounce time in cycles
+	struct ButtonData
+	{
+		std::string m_name; //! button name
+		int m_pin; //! pin number
+		gpiod_line* m_line{nullptr};
+		uint32_t m_pressedTime{0}; //! time when button was pressed
+		GPIO::GPIO_PULL m_pullMode; //! pull up or down
+		bool m_pressed; //! is button pressed
+		Callbacks m_callbacks; //! callbacks to call when button is pressed
+		static constexpr int DEBOUNCE_TIME = 2; //! debounce time in cycles
 
-	static bool GetButtonState(const ButtonData& button);
-	void CallUserCallbacks();
-};
+		static bool GetButtonState(const ButtonData& button);
+		void CallUserCallbacks();
+	};
 
-struct LedData{
-	std::string m_name;
-	bool m_state{false};
-	int m_pin;
-	gpiod_line *m_line{nullptr};
-};
+	struct LedData
+	{
+		std::string m_name;
+		bool m_state{false};
+		int m_pin;
+		gpiod_line* m_line{nullptr};
+	};
 
 public:
 	//! Constructor
@@ -60,17 +61,15 @@ public:
 	void setLed(hardware::LED led, bool state);
 	void setLed(LedData& led, bool state);
 
-
 	//! addcalback
-	void addButtonCallback(hardware::BUTTON btn,
-						   const std::string& callbackName,
-						   const std::function<void()>& callback);
+	void addButtonCallback(hardware::BUTTON btn, const std::string& callbackName, const std::function<void()>& callback);
 
 	//! allow to beep the buzzer with a given duration
-	void beep(const std::vector<int> &durations );
+	void beep(const std::vector<int>& durations);
+
 private:
-	std::thread  m_gpioReadBackThread;
-	gpiod_chip *m_chip{nullptr}; //!< GPIO chip
+	std::thread m_gpioReadBackThread;
+	gpiod_chip* m_chip{nullptr}; //!< GPIO chip
 
 	//! use simulated GPIOs instead real one
 	bool m_useSimulatedGPIO{true};
@@ -80,7 +79,6 @@ private:
 
 	//! available Buttons
 	std::unordered_map<hardware::BUTTON, ButtonData> m_buttons;
-
 
 	//! useful translations
 	const std::unordered_map<LED, std::string> LedToName{

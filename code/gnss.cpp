@@ -1,20 +1,19 @@
 #include "gnss.h"
+#include "minmea.h"
+#include <exception>
 #include <iostream>
 #include <thread>
-#include <exception>
-#include "minmea.h"
 
 namespace mandeye
 {
-
 
 //! Removes all non-printable characters from the line, replacing them with the format <0xXX>, where XX is the hexadecimal value of the character.
 std::string sanitizeLine(const std::string& line)
 {
 	std::ostringstream sanitizedLine;
-	for (char c : line)
+	for(char c : line)
 	{
-		if (std::isprint(c) || std::isspace(c))
+		if(std::isprint(c) || std::isspace(c))
 		{
 			sanitizedLine << c;
 		}
@@ -57,11 +56,11 @@ bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate 
 
 	try
 	{
-		if (init_succes)
+		if(init_succes)
 		{
 			return true;
 		}
-		if (m_serialPort.IsOpen())
+		if(m_serialPort.IsOpen())
 		{
 			m_serialPort.Close();
 		}
@@ -69,9 +68,10 @@ bool GNSSClient::startListener(const std::string& portName, LibSerial::BaudRate 
 		m_serialPort.SetBaudRate(baudRate);
 		init_succes = true;
 		m_serialPortThread = std::thread(&GNSSClient::worker, this);
-	}catch(std::exception& e)
+	}
+	catch(std::exception& e)
 	{
-		std::cout << "Failed to open port " << portName <<" : " << e.what()  << std::endl;
+		std::cout << "Failed to open port " << portName << " : " << e.what() << std::endl;
 		init_succes = false;
 		return false;
 	}
@@ -90,15 +90,15 @@ void GNSSClient::worker()
 			m_lastLine = line;
 		}
 		bool is_vaild = minmea_check(line.c_str(), true);
-		if (is_vaild)
+		if(is_vaild)
 		{
 			const double laserTimestamp = GetTimeStamp();
 			m_rawbuffer.emplace_back(RawEntryToLine(line, GetTimeStamp()));
 			minmea_sentence_gga gga;
 			bool isGGA = minmea_parse_gga(&gga, line.c_str());
-			if (isGGA)
+			if(isGGA)
 			{
-				if (m_dataCallback)
+				if(m_dataCallback)
 				{
 					m_dataCallback(gga);
 				}
@@ -119,16 +119,17 @@ void GNSSClient::worker()
 			std::cout << "Invalid line: " << line << std::endl;
 		}
 	}
-
 }
-void GNSSClient::startLog() {
+void GNSSClient::startLog()
+{
 	std::lock_guard<std::mutex> lock(m_bufferMutex);
 	m_buffer.clear();
 	m_rawbuffer.clear();
 	m_isLogging = true;
 }
 
-void GNSSClient::stopLog() {
+void GNSSClient::stopLog()
+{
 	std::lock_guard<std::mutex> lock(m_bufferMutex);
 	m_isLogging = false;
 }
@@ -158,8 +159,8 @@ std::string GNSSClient::GgaToCsvLine(const minmea_sentence_gga& gga, double lase
 	std::stringstream oss;
 	oss << std::setprecision(20) << static_cast<uint_least64_t>(laserTimestamp * 1000000000.0) << " ";
 	oss << minmea_tocoord(&gga.latitude) << " ";
-	oss	<< minmea_tocoord(&gga.longitude) << " ";
-	oss	<< minmea_tofloat(&gga.altitude) << " ";
+	oss << minmea_tocoord(&gga.longitude) << " ";
+	oss << minmea_tofloat(&gga.altitude) << " ";
 	oss << minmea_tofloat(&gga.hdop) << " ";
 	oss << gga.satellites_tracked << " ";
 	oss << minmea_tofloat(&gga.height) << " ";

@@ -75,15 +75,14 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 
 [[maybe_unused]] inline const std::array<int, 2> GetLidarSyncGPIO()
 {
-	return {3,2};
+	return {3, 2};
 }
 
-[[maybe_unused]] inline  const std::array<const std::string, 2> GetLidarSyncPorts()
+[[maybe_unused]] inline const std::array<const std::string, 2> GetLidarSyncPorts()
 {
 	// The newer version of kernels, has different numbering of ports
 	// https://github.com/raspberrypi/linux/issues/5667#issuecomment-1772544866
-	return {"/dev/ttyAMA2",
-		"/dev/ttyAMA5"}; 
+	return {"/dev/ttyAMA2", "/dev/ttyAMA5"};
 };
 
 [[maybe_unused]] inline const std::string GetGNSSPort()

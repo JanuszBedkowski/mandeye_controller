@@ -1,16 +1,18 @@
 #pragma once
 #include <functional>
-#include <string>
 #include <nlohmann/json.hpp>
-namespace mandeye::extras {
+#include <string>
+namespace mandeye::extras
+{
 
-namespace keys {
-    constexpr const char* ZMQ_ENDPOINT               = "tcp://localhost:5556";
-    constexpr const char* MODE                        = "mode";
-    constexpr const char* CONTINUOUS_SCAN_DIRECTORY   = "continousScanDirectory";
-    constexpr const char* TIME                        = "time";
-    constexpr const char* MODE_SCANNING               = "SCANNING";
-    constexpr const char* MODE_STOPPING               = "STOPPING";
+namespace keys
+{
+constexpr const char* ZMQ_ENDPOINT = "tcp://localhost:5556";
+constexpr const char* MODE = "mode";
+constexpr const char* CONTINUOUS_SCAN_DIRECTORY = "continousScanDirectory";
+constexpr const char* TIME = "time";
+constexpr const char* MODE_SCANNING = "SCANNING";
+constexpr const char* MODE_STOPPING = "STOPPING";
 } // namespace keys
 
 //! Returns environment variable value or default

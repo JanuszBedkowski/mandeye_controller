@@ -61,13 +61,9 @@ constexpr const char* GetGPIOChip()
 	return "/dev/gpiochip4";
 }
 
-inline void ReportState([[maybe_unused]] const mandeye::States state)
-{
-}
+inline void ReportState([[maybe_unused]] const mandeye::States state) { }
 
-inline void OnSavedLaz([[maybe_unused]] const std::string& filename)
-{
-}
+inline void OnSavedLaz([[maybe_unused]] const std::string& filename) { }
 
 constexpr int GetLED(LED led)
 {
@@ -113,7 +109,7 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 	return {17}; // GPIO 17 (pin11) is used to send fake
 }
 
-[[maybe_unused]] inline  const std::array<const std::string, 1> GetLidarSyncPorts()
+[[maybe_unused]] inline const std::array<const std::string, 1> GetLidarSyncPorts()
 {
 	return {"/dev/ttyAMA1"};
 };
@@ -123,11 +119,9 @@ constexpr GPIO::GPIO_PULL GetPULL([[maybe_unused]] BUTTON btn)
 	return "/dev/ttyAMA0";
 };
 
-
 [[maybe_unused]] inline const LibSerial::BaudRate GetGNSSBaudrate()
 {
 	return LibSerial::BaudRate::BAUD_115200;
 };
-
 
 } // namespace hardware

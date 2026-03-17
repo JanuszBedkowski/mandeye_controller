@@ -2,7 +2,8 @@
 #include <iostream>
 #include <laszip/laszip_api.h>
 
-nlohmann::json mandeye::LazStats::produceStatus() const {
+nlohmann::json mandeye::LazStats::produceStatus() const
+{
 	nlohmann::json status;
 	status["filename"] = m_filename;
 	status["points_count"] = m_pointsCount;
@@ -48,7 +49,7 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 	if(laszip_create(&laszip_writer))
 	{
 		fprintf(stderr, "DLL ERROR: creating laszip writer\n");
-		return  nullopt;
+		return nullopt;
 	}
 
 	// get a pointer to the header of the writer so we can populate it
@@ -65,16 +66,19 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 
 	// heuristically determine the decimation step
 	int step = 1;
-	if(buffer->size() > 4000000){
+	if(buffer->size() > 4000000)
+	{
 		step = ceil((double)buffer->size() / 2000000.0);
 	}
-	if(step < 1){
+	if(step < 1)
+	{
 		step = 1;
 	}
 
 	int num_points = 0;
-	for(int i = 0; i < buffer->size(); i += step){
-		num_points ++;
+	for(int i = 0; i < buffer->size(); i += step)
+	{
+		num_points++;
 	}
 	stats.m_decimationStep = step;
 
@@ -86,8 +90,8 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 	//    header->file_creation_year = 2013;
 	header->point_data_format = 1;
 	header->point_data_record_length = 0;
-	header->number_of_point_records = num_points;//buffer->size();
-	header->number_of_points_by_return[0] = num_points;//buffer->size();
+	header->number_of_point_records = num_points; //buffer->size();
+	header->number_of_points_by_return[0] = num_points; //buffer->size();
 	header->number_of_points_by_return[1] = 0;
 	header->point_data_record_length = 28;
 	header->x_scale_factor = scale;
@@ -108,7 +112,7 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 	if(laszip_open_writer(laszip_writer, filename.c_str(), compress))
 	{
 		fprintf(stderr, "DLL ERROR: opening laszip writer for '%s'\n", filename.c_str());
-		return  nullopt;
+		return nullopt;
 	}
 
 	fprintf(stderr, "writing file '%s' %scompressed\n", filename.c_str(), (compress ? "" : "un"));
@@ -181,9 +185,10 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 	const std::chrono::duration<float> elapsed_seconds = end - start;
 	stats.m_saveDurationSec1 = elapsed_seconds.count();
 
-	if (std::filesystem::exists(filename)) {
+	if(std::filesystem::exists(filename))
+	{
 		std::uintmax_t size = std::filesystem::file_size(filename);
-		stats.m_sizeMb = static_cast<float>(size)/(1024*1024);
+		stats.m_sizeMb = static_cast<float>(size) / (1024 * 1024);
 	}
 
 	return stats;

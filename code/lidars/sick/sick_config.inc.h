@@ -2,7 +2,6 @@
 
 #include <string>
 
-
 // static launchfile for sick multiScan136
 std::string Launchfile = R"xml(<?xml version="1.0"?>
 <launch>
