@@ -120,7 +120,8 @@ void oneSecondThread()
 
 	// Set realtime scheduling (SCHED_FIFO) to minimise wakeup jitter
 	{
-		struct sched_param sp{};
+		struct sched_param sp
+		{ };
 		sp.sched_priority = 80;
 		if(pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0)
 			std::cerr << "Warning: failed to set SCHED_FIFO (run as root?)" << std::endl;
@@ -131,7 +132,8 @@ void oneSecondThread()
 		std::cerr << "Warning: mlockall failed" << std::endl;
 
 	// Round up to the next whole second boundary
-	struct timespec wakeup{};
+	struct timespec wakeup
+	{ };
 	clock_gettime(CLOCK_REALTIME, &wakeup);
 	wakeup.tv_sec += 1;
 	wakeup.tv_nsec = 0;
