@@ -19,10 +19,11 @@ jobs:
         run: |
           apt-get update -qq
           apt-get install -y -qq --no-install-recommends \
-            build-essential cmake git pkg-config \
+            build-essential cmake git pkg-config ca-certificates \
             libserial-dev libgpiod-dev libzmq3-dev \
             libpistache-dev rapidjson-dev \
             libcamera-dev libopencv-dev
+          update-ca-certificates
 
       - uses: actions/checkout@v4
         with:
