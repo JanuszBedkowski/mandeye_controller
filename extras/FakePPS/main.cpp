@@ -88,7 +88,7 @@ void oneSecondThread()
 		serialPorts.emplace_back(std::move(serialPort));
 	}
 	const auto ouputs = hardware::GetLidarSyncGPIO();
-	const auto& chipPath = mandeye::GetGPIOChip();
+	const auto& chipPath = hardware::GetGPIOChip();
 	std::cout << "Opening GPIO chip " << chipPath << std::endl;
 
 	gpiod_chip* chip = gpiod_chip_open(chipPath);

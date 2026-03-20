@@ -27,7 +27,7 @@ add_library(minmeaRtk STATIC ../../3rd/minmea/minmea.c)
 
 add_executable(mandeye_extra_gnss main.cpp gnss.cpp ntrip.cpp)
 MESSAGE("Libserial  ${LIBSERIAL_LIBRARY}")
-target_link_libraries(mandeye_extra_gnss ${LIBSERIAL_LIBRARY} minmeaRtk PkgConfig::Pistache mandeye_extra_utils)
+target_link_libraries(mandeye_extra_gnss ${LIBSERIAL_LIBRARY} minmeaRtk PkgConfig::Pistache zmq mandeye_extra_utils)
 
 install(TARGETS mandeye_extra_gnss
         RUNTIME DESTINATION /opt/mandeye/extras/)

@@ -197,7 +197,6 @@ bool TriggerContinousScanning()
 	return false;
 }
 
-
 void saveStatusData(const std::string& directory, int chunk)
 {
 	using namespace std::chrono_literals;
@@ -209,7 +208,6 @@ void saveStatusData(const std::string& directory, int chunk)
 	lidarStream << produceReport(false);
 	system("sync");
 }
-
 
 void stateWatcher()
 {
@@ -539,7 +537,8 @@ void stateWatcher()
 			else
 			{
 				auto [fn, saveStats] = savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
-				if(saveStats) lastFileSaveStats = *saveStats;
+				if(saveStats)
+					lastFileSaveStats = *saveStats;
 				saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				auto lidarList = lidarClientPtr->getSerialNumberToLidarIdMapping();
@@ -633,7 +632,8 @@ void stateWatcher()
 			else
 			{
 				auto [fn, saveStats] = savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
-				if(saveStats) lastFileSaveStats = *saveStats;
+				if(saveStats)
+					lastFileSaveStats = *saveStats;
 				saveImuData(imuBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveStatusData(stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 

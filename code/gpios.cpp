@@ -47,7 +47,7 @@ GpioClient::GpioClient(bool sim)
 
 	if(!sim)
 	{
-		const auto& chipPath = mandeye::GetGPIOChip();
+		const auto& chipPath = hardware::GetGPIOChip();
 		std::cout << "Opening GPIO chip " << chipPath << std::endl;
 
 		m_chip = gpiod_chip_open(chipPath);
