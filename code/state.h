@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <string>
 namespace mandeye
 {
 enum class States
