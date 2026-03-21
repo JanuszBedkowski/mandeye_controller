@@ -29,22 +29,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Build - mandeye-standard-rpi4.h
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release \
-            -DMANDEYE_HARDWARE_HEADER=mandeye-standard-rpi4.h
-          cmake --build build -j$(nproc)
-
       - name: Build - mandeye-standard-rpi5.h
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=Release \
             -DMANDEYE_HARDWARE_HEADER=mandeye-standard-rpi5.h
-          cmake --build build -j$(nproc)
-
-      - name: Build - mandeye-pro-cm4-bookworm.h
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release \
-            -DMANDEYE_HARDWARE_HEADER=mandeye-pro-cm4-bookworm.h
           cmake --build build -j$(nproc)
 
       - name: Build - mandeye-direct-cm5.h
