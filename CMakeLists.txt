@@ -186,6 +186,7 @@ endif()
 add_subdirectory(extras/rtkNmea)
 add_subdirectory(extras/FakePPS)
 add_subdirectory(extras/SlavePPS)
+add_subdirectory(extras/oled_status)
 
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/services/mandeye_controller.service  DESTINATION /usr/lib/systemd/system)
