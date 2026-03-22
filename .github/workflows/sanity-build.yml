@@ -21,7 +21,7 @@ jobs:
           apt-get install -y -qq --no-install-recommends \
             build-essential cmake git pkg-config ca-certificates \
             libserial-dev libgpiod-dev libzmq3-dev \
-            libpistache-dev rapidjson-dev nlohmann-json3-dev libzmq3-dev cppzmq-dev \
+            libpistache-dev rapidjson-dev nlohmann-json3-dev libzmq3-dev cppzmq-dev libtime-dev \
             libcamera-dev libopencv-dev
           update-ca-certificates
 
