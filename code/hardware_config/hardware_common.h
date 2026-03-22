@@ -1,7 +1,8 @@
 #pragma once
-#include "gpios.h"
+
 #include "state.h"
 #include <SerialPortConstants.h>
+#include <array>
 
 namespace hardware
 {

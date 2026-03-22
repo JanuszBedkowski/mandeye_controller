@@ -40,4 +40,9 @@ alias mandeye_extra_gnss_start="sudo systemctl start mandeye_extra_gnss.service"
 alias mandeye_extra_gnss_stop="sudo systemctl stop mandeye_extra_gnss.service"
 alias mandeye_extra_gnss_log="journalctl -u mandeye_extra_gnss.service"
 
+alias mandeye_oled_status="sudo systemctl status mandeye_oled_status.service"
+alias mandeye_oled_start="sudo systemctl start mandeye_oled_status.service"
+alias mandeye_oled_stop="sudo systemctl stop mandeye_oled_status.service"
+alias mandeye_oled_log="journalctl -u mandeye_oled_status.service"
+
 alias mandeye_services_status="bash /opt/mandeye/check_services.sh"

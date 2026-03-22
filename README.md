@@ -300,6 +300,29 @@ sudo systemctl enable mandeye_extra_gnss.service
 mandeye_extra_gnss_start
 ```
 
+# OLED Status Display
+
+An optional 128×64 SSD1306 OLED display connected via hardware I2C shows live scan status.
+
+Display layout (5 lines, font 6×10):
+
+| Line | Content                                           |
+|------|---------------------------------------------------|
+| 1    | Current mode + LAZ/CSV file counts                |
+| 2    | Unix timestamp (seconds)                          |
+| 3    | Per-camera directory file counts (`C0:N C1:N …`)  |
+| 4    | Per-lepton directory file counts (`L0:N L1:N …`)  |
+
+Install the service:
+```shell
+sudo cp extras/oled_status/services/mandeye_oled_status.service /usr/lib/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable mandeye_oled_status.service
+mandeye_oled_start
+```
+
+See [`extras/oled_status/README.md`](extras/oled_status/README.md) for wiring and build instructions.
+
 # Services
 List state of services:
 ```shell
