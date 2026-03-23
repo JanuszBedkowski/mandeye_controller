@@ -138,6 +138,30 @@ ScanStats scanDirectory(const std::string& path)
 	return stats;
 }
 
+namespace scanState
+{
+	std::mutex scanMutex;
+	ScanStats stats;
+} // namespace scanState
+
+void scanThread()
+{
+	for(;;)
+	{
+		std::string scanPath;
+		{
+			std::lock_guard<std::mutex> lck(state::stateMutex);
+			scanPath = state::continuousScanTarget;
+		}
+		ScanStats fresh = scanDirectory(scanPath);
+		{
+			std::lock_guard<std::mutex> lck(scanState::scanMutex);
+			scanState::stats = std::move(fresh);
+		}
+		std::this_thread::sleep_for(std::chrono::seconds(2));
+	}
+}
+
 void clientThread()
 {
 	mandeye::extras::startZeroMQListener([](const nlohmann::json& j) {
@@ -159,6 +183,7 @@ void clientThread()
 
 int main(void) {
 	std::thread zmqThread (clientThread);
+	std::thread scanWorker(scanThread);
 	// GPIO chip doesn't matter for hardware I2C
 	u8g2.initI2cHw(I2C_BUS);
 	u8g2.setI2CAddress(I2C_ADDRESS);
@@ -172,16 +197,12 @@ int main(void) {
 	constexpr int Y3 = LINE_H*4;
 	constexpr int Y4 = LINE_H*5;
 
-
 	for (;;) {
-		std::string scanPath;
+		ScanStats stats;
 		{
-			std::lock_guard<std::mutex> lck(state::stateMutex);
-			scanPath = state::continuousScanTarget;
+			std::lock_guard<std::mutex> lck(scanState::scanMutex);
+			stats = scanState::stats;
 		}
-
-		const ScanStats stats = scanDirectory(scanPath);
-
 
 
 		u8g2.clearBuffer();
@@ -226,8 +247,10 @@ int main(void) {
 		}
 
 		u8g2.sendBuffer();
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 	u8g2.doneI2c();
 	u8g2.doneUserData();
 	zmqThread.join();
+	scanWorker.join();
 }

@@ -1,6 +1,6 @@
 [Unit]
 Description=Mandeye_libcamera_cam1
-After=multi-user.target
+After=multi-user.target systemd-udev-settle.service
 
 [Service]
 User=pi

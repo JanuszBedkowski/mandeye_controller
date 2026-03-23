@@ -70,6 +70,7 @@ private:
 
 	//! This is a set of serial numbers that we have already seen, its used to find lidarId
 	std::set<std::string> m_serialNumbers;
+	double m_time_diff{0};
 
 	bool init_succes{false};
 

@@ -93,6 +93,8 @@ nlohmann::json LivoxClient::produceStatus()
 	std::lock_guard<std::mutex> lcK2(m_bufferImuMutex);
 	data["LivoxLidarInfo"]["timestamp"] = m_timestamp;
 	data["LivoxLidarInfo"]["timestamp_s"] = double(m_timestamp) / 1e9;
+	data["LivoxLidarInfo"]["diff_to_host"] =  m_time_diff;
+
 	data["LivoxLidarInfo"]["m_sessionStart"] = m_sessionStart.value_or(-1.f);
 	data["LivoxLidarInfo"]["m_sessionStart_s"] = double(m_sessionStart.value_or(-1.f)) / 1e9;
 	data["LivoxLidarInfo"]["m_elapsed"] = m_elapsed;
@@ -242,6 +244,12 @@ void LivoxClient::saveTimeStamp(LivoxClient* client, uint64_t timestamp)
 	assert(client);
 	std::lock_guard<std::mutex> lcK(client->m_timestampMutex);
 	client->m_timestamp = timestamp;
+	using namespace std::chrono;
+	const auto now = system_clock::now();
+	auto duration = now.time_since_epoch();
+	double tp = std::chrono::duration<double>(duration).count();
+	client->m_time_diff = std::abs(tp - client->m_timestamp/1e9);
+
 
 	if(client->m_sessionStart != std::nullopt)
 	{

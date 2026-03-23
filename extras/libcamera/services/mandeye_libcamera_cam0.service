@@ -1,6 +1,6 @@
 [Unit]
 Description=Mandeye_libcamera
-After=multi-user.target
+After=multi-user.target systemd-udev-settle.service
 
 [Service]
 User=pi
@@ -9,6 +9,8 @@ StandardError=journal
 ExecStartPre=/bin/sleep 20
 ExecStart=/opt/mandeye/extras/mandeye_libcamera --camera 0 --port 8004 --prefix cam0_ --config /media/usb/cam0_config.json
 Restart=always
+RestartSec=5
+StartLimitIntervalSec=0
 
 [Install]
 WantedBy=multi-user.target

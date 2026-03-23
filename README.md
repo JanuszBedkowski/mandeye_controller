@@ -293,6 +293,32 @@ mandeye_cam0_start
 mandeye_cam1_start
 ```
 
+Some cameras cause crashes inside libcamera. 
+I would recommend to run it in screensession in crontab:
+```aiignore
+
+crontab -e -u pi
+
+#Add:
+@reboot sleep 20 && until screen -dmS libcamera_cam0 /opt/mandeye/extras/mandeye_libcamera --camera 0 --port 8004 --prefix cam0_ --config /media/usb/cam0_config.json; do sleep 5; done &
+@reboot sleep 25 && until screen -dmS libcamera_cam1 /opt/mandeye/extras/mandeye_libcamera --camera 1 --port 8005 --prefix cam1_ --config /media/usb/cam1_config.json; do sleep 5; done &
+
+screen -ls                    # list sessions
+screen -r libcamera_cam0      # attach to cam0
+screen -r libcamera_cam1      # attach to cam1
+
+
+
+# Disable:
+sudo systemctl disable mandeye_libcamera_cam0.service
+sudo systemctl disable mandeye_libcamera_cam1.service
+sudo systemctl stop mandeye_libcamera_cam0.service
+sudo systemctl stop mandeye_libcamera_cam1.service
+
+
+
+```
+
 # USB Gnss
 Extra USB Gnss:
 ```shell

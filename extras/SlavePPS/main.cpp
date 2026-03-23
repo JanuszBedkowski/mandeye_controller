@@ -87,6 +87,7 @@ int main()
 		return 1;
 	}
 	setup_uart(uart, *baud);
+	tcflush(uart, TCIFLUSH); // discard bytes buffered before we started
 	FILE* gps = fdopen(uart, "r");
 
 	int ppsfd = open(ppsDevice.c_str(), O_RDONLY);
