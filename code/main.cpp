@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <thread>
 
+#include "save_data.h"
 #include "save_laz.h"
 #include "state.h"
 #include <FileSystemClient.h>
@@ -45,7 +46,7 @@ std::shared_ptr<GNSSClient> gnssClientPtr;
 
 std::shared_ptr<FileSystemClient> fileSystemClientPtr;
 std::shared_ptr<Publisher> publisherPtr;
-mandeye::LazStats lastFileSaveStats;
+mandeye::LazStats lastFileSaveStats; // updated by savePointcloudData return value
 double usbWriteSpeed10Mb = 0.0;
 double usbWriteSpeed1Mb = 0.0;
 
@@ -196,50 +197,6 @@ bool TriggerContinousScanning()
 	return false;
 }
 
-std::string savePointcloudData(LidarPointsBufferPtr buffer, const std::string& directory, int chunk)
-{
-	using namespace std::chrono_literals;
-	char lidarName[256];
-
-	const auto start = std::chrono::steady_clock::now();
-	snprintf(lidarName, 256, "lidar%04d.laz", chunk);
-	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig lidar buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
-	auto saveStatus = saveLaz(lidarFilePath.string(), buffer);
-
-	system("sync");
-	const auto end = std::chrono::steady_clock::now();
-	const std::chrono::duration<float> elapsed_seconds = end - start;
-	if(saveStatus)
-	{
-		saveStatus->m_saveDurationSec2 = elapsed_seconds.count();
-		mandeye::lastFileSaveStats = *saveStatus;
-		hardware::OnSavedLaz(lidarFilePath);
-	}
-	else
-	{
-		std::cout << "Error saving laz file " << lidarFilePath << std::endl;
-	}
-	return lidarFilePath.string();
-}
-
-void saveLidarList(const std::unordered_map<uint32_t, std::string>& lidars, const std::string& directory, int chunk)
-{
-	using namespace std::chrono_literals;
-	char lidarName[256];
-	snprintf(lidarName, 256, "lidar%04d.sn", chunk);
-	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig lidar list of size " << lidars.size() << " to " << lidarFilePath << std::endl;
-
-	std::ofstream lidarStream(lidarFilePath);
-	for(const auto& [id, sn] : lidars)
-	{
-		lidarStream << id << " " << sn << "\n";
-	}
-	system("sync");
-	return;
-}
-
 void saveStatusData(const std::string& directory, int chunk)
 {
 	using namespace std::chrono_literals;
@@ -250,74 +207,6 @@ void saveStatusData(const std::string& directory, int chunk)
 	std::ofstream lidarStream(lidarFilePath);
 	lidarStream << produceReport(false);
 	system("sync");
-}
-
-void saveImuData(LidarIMUBufferPtr buffer, const std::string& directory, int chunk)
-{
-	using namespace std::chrono_literals;
-	char lidarName[256];
-	snprintf(lidarName, 256, "imu%04d.csv", chunk);
-	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig imu buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
-	std::ofstream lidarStream(lidarFilePath.c_str());
-	lidarStream << "timestamp gyroX gyroY gyroZ accX accY accZ imuId timestampUnix\n";
-	std::stringstream ss;
-
-	for(const auto& p : *buffer)
-	{
-		if(p.timestamp > 0)
-		{
-			ss << p.timestamp << " " << p.gyro_x << " " << p.gyro_y << " " << p.gyro_z << " " << p.acc_x << " " << p.acc_y << " " << p.acc_z << " "
-			   << p.laser_id << " " << p.epoch_time << "\n";
-		}
-	}
-	lidarStream << ss.rdbuf();
-
-	lidarStream.close();
-	system("sync");
-	return;
-}
-
-void saveGnssData(std::deque<std::string>& buffer, const std::string& directory, int chunk)
-{
-	using namespace std::chrono_literals;
-	char lidarName[256];
-	snprintf(lidarName, 256, "gnss%04d.gnss", chunk);
-	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig gnss buffer of size " << buffer.size() << " to " << lidarFilePath << std::endl;
-	std::ofstream lidarStream(lidarFilePath.c_str());
-	std::stringstream ss;
-
-	for(const auto& p : buffer)
-	{
-		ss << p;
-	}
-	lidarStream << ss.rdbuf();
-
-	lidarStream.close();
-	system("sync");
-	return;
-}
-
-void saveGnssRawData(std::deque<std::string>& buffer, const std::string& directory, int chunk)
-{
-	using namespace std::chrono_literals;
-	char lidarName[256];
-	snprintf(lidarName, 256, "gnss%04d.nmea", chunk);
-	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig gnss raw buffer of size " << buffer.size() << " to " << lidarFilePath << std::endl;
-	std::ofstream lidarStream(lidarFilePath.c_str());
-	std::stringstream ss;
-
-	for(const auto& p : buffer)
-	{
-		ss << p;
-	}
-	lidarStream << ss.rdbuf();
-
-	lidarStream.close();
-	system("sync");
-	return;
 }
 
 void stateWatcher()
@@ -647,7 +536,9 @@ void stateWatcher()
 			}
 			else
 			{
-				const auto fn = savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				auto [fn, saveStats] = savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				if(saveStats)
+					lastFileSaveStats = *saveStats;
 				saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				auto lidarList = lidarClientPtr->getSerialNumberToLidarIdMapping();
@@ -740,7 +631,9 @@ void stateWatcher()
 			}
 			else
 			{
-				const auto fn = savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				auto [fn, saveStats] = savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				if(saveStats)
+					lastFileSaveStats = *saveStats;
 				saveImuData(imuBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				saveStatusData(stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 

@@ -1,5 +1,4 @@
 #pragma once
-#include "gpios.h"
 #include "state.h"
 #include <SerialPortConstants.h>
 
@@ -11,6 +10,8 @@ enum class LED
 	LED_GPIO_COPY_DATA,
 	LED_GPIO_CONTINOUS_SCANNING,
 	BUZZER,
+	LIDAR_SYNC_1,
+	LIDAR_SYNC_2,
 };
 
 enum class BUTTON
@@ -29,3 +30,5 @@ enum class GPIO_PULL
 	OFF
 };
 };
+
+#include "gpios.h"
