@@ -147,7 +147,7 @@ endif()
 add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h
         ${LIDAR_SOURCES}
         ${LIDAR_SOURCES}
-        code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp
+        code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp code/save_data.cpp
         code/utils/TimeStampReceiver.cpp code/publisher.cpp)
 
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic " )
@@ -177,8 +177,12 @@ target_link_libraries(button_demo gpiod pthread)
 install(TARGETS control_program led_demo fake_pps button_demo
         RUNTIME DESTINATION /opt/mandeye/)
 
+set(MANDEYE_USE_LIBCAMERA ON CACHE BOOL "Build libcamera extra")
+
 add_subdirectory(extras/utils)
-add_subdirectory(extras/libcamera)
+if(MANDEYE_USE_LIBCAMERA)
+    add_subdirectory(extras/libcamera)
+endif()
 add_subdirectory(extras/rtkNmea)
 add_subdirectory(extras/FakePPS)
 add_subdirectory(extras/SlavePPS)
