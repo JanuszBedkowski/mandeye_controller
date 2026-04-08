@@ -1,0 +1,14 @@
+[Unit]
+Description=Mandeye OLED status display service
+After=multi-user.target mandeye_controller.service
+
+[Service]
+User=pi
+StandardOutput=journal
+StandardError=journal
+ExecStartPre=/bin/sleep 10
+ExecStart=/opt/mandeye/extras/oled_status
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

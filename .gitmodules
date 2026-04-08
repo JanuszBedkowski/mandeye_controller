@@ -19,3 +19,6 @@
 [submodule "3rd/hesai_sdk"]
 	path = 3rd/hesai_sdk
 	url = https://github.com/HesaiTechnology/HesaiLidar_SDK_2.0.git
+[submodule "extras/oled_status/u8g8-arm"]
+	path = extras/oled_status/u8g8-arm
+	url = https://github.com/wuhanstudio/u8g2-arm-linux.git

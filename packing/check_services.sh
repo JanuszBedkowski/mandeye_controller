@@ -8,6 +8,7 @@ services=(
   mandeye_ptp4l-gm-eth0.service
   mandeye_phc2sys-gm-eth0.service
   mandeye_extra_gnss.service
+  mandeye_oled_status.service
 
 )
 
