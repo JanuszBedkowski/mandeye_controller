@@ -5,27 +5,26 @@
 #define I2C_ADDRESS 0x3c * 2
 // Check https://github.com/olikraus/u8g2/wiki/u8g2setupcpp for all supported devices
 static U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/
-		U8X8_PIN_NONE);
+												U8X8_PIN_NONE);
 
-
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include <vector>
+#include "../utils/ExtrasUtils.h"
 #include <algorithm>
 #include <filesystem>
-#include "../utils/ExtrasUtils.h"
-#include <thread>
+#include <iomanip>
 #include <mutex>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
 
 namespace fs = std::filesystem;
 
 namespace state
 {
-	std::mutex stateMutex;
-	std::string modeName;
-	uint64_t timestamp;
-	std::string continuousScanTarget;
+std::mutex stateMutex;
+std::string modeName;
+uint64_t timestamp;
+std::string continuousScanTarget;
 } // namespace state
 
 struct FileGroupStats
@@ -38,11 +37,10 @@ struct FileGroupStats
 struct ScanStats
 {
 	FileGroupStats lidar; // .laz in root
-	FileGroupStats imu;   // .csv in root
-	std::vector<FileGroupStats> cameras;  // one per CAMERA* dir
-	std::vector<FileGroupStats> leptons;  // one per LEPTON* dir, name trimmed
-	std::vector<FileGroupStats> extra_gnss;  // one per LEPTON* dir, name trimmed
-
+	FileGroupStats imu; // .csv in root
+	std::vector<FileGroupStats> cameras; // one per CAMERA* dir
+	std::vector<FileGroupStats> leptons; // one per LEPTON* dir, name trimmed
+	std::vector<FileGroupStats> extra_gnss; // one per LEPTON* dir, name trimmed
 };
 
 static void accumulateDir(const fs::path& dir, FileGroupStats& g)
@@ -113,10 +111,8 @@ ScanStats scanDirectory(const std::string& path)
 		}
 	}
 
-	std::sort(stats.cameras.begin(), stats.cameras.end(),
-		[](const FileGroupStats& a, const FileGroupStats& b) { return a.label < b.label; });
-	std::sort(stats.leptons.begin(), stats.leptons.end(),
-		[](const FileGroupStats& a, const FileGroupStats& b) { return a.label < b.label; });
+	std::sort(stats.cameras.begin(), stats.cameras.end(), [](const FileGroupStats& a, const FileGroupStats& b) { return a.label < b.label; });
+	std::sort(stats.leptons.begin(), stats.leptons.end(), [](const FileGroupStats& a, const FileGroupStats& b) { return a.label < b.label; });
 
 	return stats;
 }
@@ -140,8 +136,9 @@ void clientThread()
 	});
 }
 
-int main(void) {
-	std::thread zmqThread (clientThread);
+int main(void)
+{
+	std::thread zmqThread(clientThread);
 	// GPIO chip doesn't matter for hardware I2C
 	u8g2.initI2cHw(I2C_BUS);
 	u8g2.setI2CAddress(I2C_ADDRESS);
@@ -150,13 +147,12 @@ int main(void) {
 
 	constexpr int LINE_H = 11;
 	constexpr int Y0 = LINE_H;
-	constexpr int Y1 = LINE_H*2;
-	constexpr int Y2 = LINE_H*3;
-	constexpr int Y3 = LINE_H*4;
+	constexpr int Y1 = LINE_H * 2;
+	constexpr int Y2 = LINE_H * 3;
+	constexpr int Y3 = LINE_H * 4;
 
-
-
-	for (;;) {
+	for(;;)
+	{
 		std::string scanPath;
 		{
 			std::lock_guard<std::mutex> lck(state::stateMutex);
@@ -165,17 +161,13 @@ int main(void) {
 
 		const ScanStats stats = scanDirectory(scanPath);
 
-
-
 		u8g2.clearBuffer();
 
 		// Line 1: mode + LAZ/CSV summary
 		{
 			std::lock_guard<std::mutex> lck(state::stateMutex);
 			std::ostringstream ss;
-			ss << state::modeName
-			   << " L:" << stats.lidar.count
-			   << " C:" << stats.imu.count;
+			ss << state::modeName << " L:" << stats.lidar.count << " C:" << stats.imu.count;
 			u8g2.drawStr(1, Y0, ss.str().c_str());
 		}
 		// line2 : timestamp
@@ -188,16 +180,18 @@ int main(void) {
 		// line3 cameras:
 		{
 			std::ostringstream ss;
-			for (int i = 0; i < stats.cameras.size(); i++) {
-				ss << "C"<<i<<":"<<stats.cameras[i].count<<"MB ";
+			for(int i = 0; i < stats.cameras.size(); i++)
+			{
+				ss << "C" << i << ":" << stats.cameras[i].count << "MB ";
 			}
 			u8g2.drawStr(1, Y2, ss.str().c_str());
 		}
 		// line4 leptons:
 		{
 			std::ostringstream ss;
-			for (int i = 0; i < stats.leptons.size(); i++) {
-				ss << "L"<<i<<":"<<stats.leptons[i].count<<"MB ";
+			for(int i = 0; i < stats.leptons.size(); i++)
+			{
+				ss << "L" << i << ":" << stats.leptons[i].count << "MB ";
 			}
 			u8g2.drawStr(1, Y3, ss.str().c_str());
 		}
