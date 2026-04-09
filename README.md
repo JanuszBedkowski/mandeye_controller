@@ -56,7 +56,7 @@ The software can run other distros (e.g. Ubuntu), but it is not tested and maint
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install build-essential cmake git rapidjson-dev libjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev libpistache-dev libcamera-dev linuxptp debhelper libopencv-dev pps-tools ppsh
+sudo apt-get install build-essential cmake git rapidjson-dev debhelper build-essential ntfs-3g libserial-dev libgpiod-dev libzmq3-dev libpistache-dev libcamera-dev linuxptp debhelper libopencv-dev pps-tools ppsh nlohmann-json3-dev
 ```
 
 ## Static IP for eth0
