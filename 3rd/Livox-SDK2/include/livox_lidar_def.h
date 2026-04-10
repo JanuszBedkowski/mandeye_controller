@@ -63,6 +63,8 @@ typedef enum {
   kLivoxLidarTypeMid70 = 6,
   kLivoxLidarTypeAvia = 7,
   kLivoxLidarTypeMid360 = 9,
+  kLivoxLidarTypeMid360s = 35,
+
   kLivoxLidarTypeIndustrialHAP = 10,
   kLivoxLidarTypeHAP = 15,
   kLivoxLidarTypePA = 16,

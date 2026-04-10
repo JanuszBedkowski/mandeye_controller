@@ -53,14 +53,14 @@ bool Mid360CommandHandler::Init(bool is_view) {
 bool Mid360CommandHandler::Init(std::shared_ptr<std::vector<LivoxLidarCfg>>& lidars_cfg_ptr,
     std::shared_ptr<std::vector<LivoxLidarCfg>>& custom_lidars_cfg_ptr) {
   for (auto it = lidars_cfg_ptr->begin(); it != lidars_cfg_ptr->end(); ++it) {
-    if (it->device_type == kLivoxLidarTypeMid360) {
+    if (it->device_type == kLivoxLidarTypeMid360s || it->device_type == kLivoxLidarTypeMid360) {
       general_lidar_cfg_ = *it;
       break;
     }
   }
 
   for (auto it = custom_lidars_cfg_ptr->begin(); it != custom_lidars_cfg_ptr->end(); ++it) {
-    if (it->device_type == kLivoxLidarTypeMid360) {
+    if (it->device_type == kLivoxLidarTypeMid360s || it->device_type == kLivoxLidarTypeMid360) {
       uint32_t handle = inet_addr(it->lidar_net_info.lidar_ipaddr.c_str());
       lidars_custom_[handle] = *it;
     }
