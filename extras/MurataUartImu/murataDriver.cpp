@@ -185,7 +185,10 @@ int murataThread()
         const double   acc_y  = pkt.acc[1] / SENSITIVITY_ACC;
         const double   acc_z  = pkt.acc[2] / SENSITIVITY_ACC;
         const uint64_t ts_ns  = pkt.timestamp_us * 1000ULL;
-
+        //auto duration = std::chrono::system_clock::now().time_since_epoch();
+        //double tp = std::chrono::duration<double>(duration).count();
+        //double imu_ts = double(pkt.timestamp_us) / 1000000.0;
+        //std::cout <<   std::fixed << imu_ts << " " << tp << std::endl;
         size_t      state_id;
         std::string scanTarget;
         {
@@ -224,7 +227,7 @@ int murataThread()
 
         auto now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::seconds>(now - statsTime).count() >= 1) {
-            auto duration = now.time_since_epoch();
+            auto duration = std::chrono::system_clock::now().time_since_epoch();
             double tp = std::chrono::duration<double>(duration).count();
             double imu_ts = double(pkt.timestamp_us) / 1000000.0;
             double diff = tp - imu_ts;

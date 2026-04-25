@@ -184,11 +184,14 @@ std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> LivoxClient::retrieveData()
 }
 void LivoxClient::testThread()
 {
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	std::cout << "Livox periodical watch thread" << std::endl;
 	while(!isDone)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+
+		std::cout << "m_time_diff " << m_time_diff << std::endl;
 
 		std::lock_guard<std::mutex> lcK(this->m_lidarInfoMutex);
 		for(auto& it : this->m_handleToSerialNumber)
@@ -310,6 +313,7 @@ void LivoxClient::PointCloudCallback(uint32_t handle, const uint8_t dev_type, Li
 	{
 		LivoxLidarSpherPoint* p_point_data = (LivoxLidarSpherPoint*)data->data;
 	}
+
 }
 
 bool LivoxClient::isSynced()
@@ -329,7 +333,6 @@ bool LivoxClient::isSynced()
 			return false;
 		}
 	}
-	std::cout << "Time sync is synced" << std::endl;
 	return true;
 }
 

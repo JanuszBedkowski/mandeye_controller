@@ -195,7 +195,6 @@ add_subdirectory(extras/SlavePPS)
 
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/services/mandeye_controller.service  DESTINATION /usr/lib/systemd/system)
-install(FILES packing/services/mandeye_fake_pps.service  DESTINATION /usr/lib/systemd/system)
 
 install(FILES packing/services/mandeye_phc2sys-gm-eth0.service DESTINATION /usr/lib/systemd/system)
 install(FILES packing/services/mandeye_ptp4l-gm-eth0.service DESTINATION /usr/lib/systemd/system)
