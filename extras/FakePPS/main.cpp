@@ -1,18 +1,17 @@
-#include <atomic>
 #include <chrono>
 #include <gpios.h>
 #include <iostream>
-#include <pthread.h>
-#include <sched.h>
-#include <stdio.h>
-#include <sys/mman.h>
 #include <thread>
-#include <time.h>
+#include <atomic>
+#include <stdio.h>
 
 #include <SerialPort.h>
 #include <SerialStream.h>
-#include <gpiod.h>
 #include <hardware_config/mandeye.h>
+#include <gpiod.h>
+
+#include "hardware_config/mandeye.h"
+
 namespace NMEA
 {
 const unsigned int BufferLen = 128;
@@ -88,27 +87,28 @@ void oneSecondThread()
 		serialPorts.emplace_back(std::move(serialPort));
 	}
 	const auto ouputs = hardware::GetLidarSyncGPIO();
-	const auto& chipPath = hardware::GetGPIOChip();
+	const auto& chipPath = mandeye::GetGPIOChip();
 	std::cout << "Opening GPIO chip " << chipPath << std::endl;
 
-	gpiod_chip* chip = gpiod_chip_open(chipPath);
-	if(chip == nullptr)
+	gpiod_chip *chip = gpiod_chip_open(chipPath);
+	if (chip == nullptr)
 	{
 		std::cerr << "Error: Unable to open GPIO chip." << std::endl;
 		std::abort();
 	}
 
-	for(const auto& pin : ouputs)
+
+	for (const auto& pin : ouputs)
 	{
 		auto line = gpiod_chip_get_line(chip, pin);
-		if(line == nullptr)
+		if (line == nullptr)
 		{
 			std::cerr << "Error: Unable to open GPIO line." << std::endl;
 			gpiod_chip_close(chip);
 			std::abort();
 		}
 		int ret = gpiod_line_request_output(line, "mandeye_fake_pps", 0);
-		if(ret < 0)
+		if (ret < 0)
 		{
 			std::cerr << "Error: Unable to request GPIO line." << std::endl;
 			gpiod_chip_close(chip);
@@ -116,60 +116,48 @@ void oneSecondThread()
 		}
 		syncOutsLines.emplace_back(line);
 	}
-	assert(serialPorts.size() == syncOutsLines.size());
+	assert(serialPorts.size() == syncOuts.size());
 
-	// Set realtime scheduling (SCHED_FIFO) to minimise wakeup jitter
-	{
-		struct sched_param sp
-		{ };
-		sp.sched_priority = 80;
-		if(pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0)
-			std::cerr << "Warning: failed to set SCHED_FIFO (run as root?)" << std::endl;
-	}
+	//setup pps gpio
+	constexpr uint64_t Rate = 1000;
+	const auto now = std::chrono::system_clock::now();
+	uint64_t millisFromEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+	millisFromEpoch += Rate;
 
-	// Lock all memory pages to prevent page-fault latency
-	if(mlockall(MCL_CURRENT | MCL_FUTURE) != 0)
-		std::cerr << "Warning: mlockall failed" << std::endl;
-
-	// Round up to the next whole second boundary
-	struct timespec wakeup
-	{ };
-	clock_gettime(CLOCK_REALTIME, &wakeup);
-	wakeup.tv_sec += 1;
-	wakeup.tv_nsec = 0;
-
-	constexpr long PulsWidthNs = 100'000'000L; // 100 ms pulse width
+	//round to next second
+	millisFromEpoch = (millisFromEpoch / Rate) * Rate;
+	auto waKeUpTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(millisFromEpoch));
 
 	while(!stop)
 	{
-		// Sleep until exact second boundary
-		clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &wakeup, nullptr);
+		std::this_thread::sleep_until(waKeUpTime);
+		auto currentTime = std::chrono::system_clock::now();
+		millisFromEpoch += Rate;
 
-		// Rising edge AT the second boundary
-		for(auto& syncOut : syncOutsLines)
-			gpiod_line_set_value(syncOut, 1);
+		waKeUpTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(millisFromEpoch));
 
-		// Falling edge after pulse width
-		struct timespec pulseEnd = wakeup;
-		pulseEnd.tv_nsec += PulsWidthNs;
-		if(pulseEnd.tv_nsec >= 1'000'000'000L)
+		const uint64_t secs = millisFromEpoch / 1000;
+		NMEA::timestamp ts = NMEA::GetTimestampFromSec(secs-1);
+
+		for (auto& syncOut : syncOutsLines)
 		{
-			pulseEnd.tv_sec += 1;
-			pulseEnd.tv_nsec -= 1'000'000'000L;
+			gpiod_line_set_value(syncOut, 1);
 		}
-		clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &pulseEnd, nullptr);
-		for(auto& syncOut : syncOutsLines)
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
+		for (auto& syncOut : syncOutsLines)
+		{
 			gpiod_line_set_value(syncOut, 0);
-
-		// NMEA sent after the pulse
-		const std::string nmeaMessage = NMEA::produceNMEA(NMEA::GetTimestampFromSec(wakeup.tv_sec));
-		for(auto& serialPort : serialPorts)
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(0));
+		const std::string nmeaMessage = NMEA::produceNMEA(ts);
+		for (auto& serialPort : serialPorts)
+		{
 			serialPort->Write(nmeaMessage);
+		}
 
-		// Advance to next second
-		wakeup.tv_sec += 1;
+		std::this_thread::sleep_until(waKeUpTime);
 	}
-	for(auto& syncOut : syncOutsLines)
+	for (auto& syncOut : syncOutsLines)
 	{
 		gpiod_line_release(syncOut);
 	}

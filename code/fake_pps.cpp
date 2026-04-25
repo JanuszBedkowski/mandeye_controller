@@ -52,7 +52,7 @@ std::string produceNMEA(const NMEA::timestamp& ts)
 		NMEAChecksumComputed ^= payload[i];
 	}
 	// attach cheksum
-	snprintf(buffer, NMEA::BufferLen, "$%s*%02X\n", payload, NMEAChecksumComputed);
+	snprintf(buffer, NMEA::BufferLen, "$%s*%02X\r\n", payload, NMEAChecksumComputed);
 	return std::string(buffer);
 }
 
@@ -120,41 +120,47 @@ void oneSecondThread()
 	//setup pps gpio
 	constexpr uint64_t Rate = 1000;
 	const auto now = std::chrono::system_clock::now();
-	uint64_t millisFromEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-	millisFromEpoch += Rate;
 
-	//round to next second
-	millisFromEpoch = (millisFromEpoch / Rate) * Rate;
-	auto waKeUpTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(millisFromEpoch));
+
 
 	while(!stop)
 	{
-		std::this_thread::sleep_until(waKeUpTime);
 		auto currentTime = std::chrono::system_clock::now();
-		millisFromEpoch += Rate;
 
-		waKeUpTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(millisFromEpoch));
+		// get deadline for next second
+		const auto millisFromEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime.time_since_epoch()).count();
+		const auto nextMillisFromEpoch = ((millisFromEpoch / Rate) + 1) * Rate;
 
-		const uint64_t secs = millisFromEpoch / 1000;
+
+		const auto waKeUpTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(nextMillisFromEpoch));
+		std::this_thread::sleep_until(waKeUpTime);
+
+		const uint64_t secs = nextMillisFromEpoch / 1000;
 		NMEA::timestamp ts = NMEA::GetTimestampFromSec(secs);
 
 		for(auto& syncOut : syncOutsLines)
 		{
-			gpiod_line_set_value(syncOut, 0);
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		for(auto& syncOut : syncOutsLines)
-		{
 			gpiod_line_set_value(syncOut, 1);
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		const std::string nmeaMessage = NMEA::produceNMEA(ts);
+		std::cout << "Sending NMEA message: " << nmeaMessage ;
+		std::this_thread::sleep_for(std::chrono::milliseconds());
 		for(auto& serialPort : serialPorts)
 		{
 			serialPort->Write(nmeaMessage);
 		}
 
-		std::this_thread::sleep_until(waKeUpTime);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				for(auto& syncOut : syncOutsLines)
+		{
+			gpiod_line_set_value(syncOut, 0);
+		}
+
+
+
+
 	}
 	for(auto& syncOut : syncOutsLines)
 	{
