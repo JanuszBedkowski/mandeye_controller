@@ -164,17 +164,13 @@ add_executable(led_demo code/led_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
 target_link_libraries(led_demo gpiod pthread)
 
-add_executable(fake_pps code/fake_pps.cpp code/gpios.cpp)
-set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
-target_link_libraries(fake_pps ${LIBSERIAL_LIBRARY} gpiod pthread)
-
 
 add_executable(button_demo code/button_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
 target_link_libraries(button_demo gpiod pthread)
 
 # Define install directories
-install(TARGETS control_program led_demo fake_pps button_demo
+install(TARGETS control_program led_demo button_demo
         RUNTIME DESTINATION /opt/mandeye/)
 
 set(MANDEYE_USE_LIBCAMERA ON CACHE BOOL "Build libcamera extra")

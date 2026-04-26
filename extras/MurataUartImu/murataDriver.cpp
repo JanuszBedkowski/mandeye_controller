@@ -6,6 +6,7 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include <deque>
 #include <iostream>
 #include <cstdint>
 #include <cmath>
@@ -73,7 +74,7 @@ namespace state {
     std::string modeName            = MODES::UNKNOWN;
     auto        hashCode            = MODES::UNKNOWN_ID;
     std::string continuousScanTarget;
-    uint64_t timestamp;
+    uint64_t    timestamp;
 }
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -116,10 +117,8 @@ void clientThread()
             if (!j.is_object()) continue;
 
             std::lock_guard<std::mutex> lk(state::stateMutex);
-            if (j.contains("time")) {
+            if (j.contains("time"))
                 state::timestamp = j["time"].get<uint64_t>();
-
-            }
             if (j.contains("mode")) {
                 state::modeName = j["mode"].get<std::string>();
                 state::hashCode = std::hash<std::string>{}(state::modeName);
@@ -131,6 +130,27 @@ void clientThread()
         std::cerr << "ZMQ error: " << e.what() << std::endl;
         std::abort();
     }
+}
+
+// ── Row stored in memory ──────────────────────────────────────────────────────
+struct ImuRow {
+    uint64_t ts_ns;
+    double gx, gy, gz;
+    double ax, ay, az;
+};
+
+// ── Flush buffer to file in a detached thread ─────────────────────────────────
+void saveToFile(std::deque<ImuRow> rows, std::string path)
+{
+    std::ofstream f(path);
+    if (!f) { std::cerr << "Failed to open " << path << std::endl; return; }
+    f << "timestamp gyroX gyroY gyroZ accX accY accZ timestampUnix\n";
+    for (const auto& r : rows)
+        f << r.ts_ns << ' '
+          << r.gx << ' ' << r.gy << ' ' << r.gz << ' '
+          << r.ax << ' ' << r.ay << ' ' << r.az << ' '
+          << r.ts_ns << '\n';
+    std::cout << "Saved " << rows.size() << " rows to " << path << std::endl;
 }
 
 // ── IMU UART thread ──────────────────────────────────────────────────────────
@@ -150,27 +170,24 @@ int murataThread()
     }
     std::cout << "Opened " << global::uartPort << " @ 460800" << std::endl;
 
-    std::ofstream logFile;
-    std::string   logFileName;
+    std::deque<ImuRow> buffer;
     auto fileStartTime = std::chrono::steady_clock::now();
     auto statsTime     = std::chrono::steady_clock::now();
     int  pktCount = 0, errCount = 0;
+    bool collecting = false;
 
     uint8_t buf[PKT_SIZE];
 
     for (;;) {
-        // Sync on 0xAA
+        // ── Sync on 0xAA ──────────────────────────────────────────────────────
         try {
             uint8_t b;
             serial.ReadByte(b, 0);
             if (b != SYNC_BYTE) { errCount++; continue; }
-
             buf[0] = b;
             for (size_t i = 1; i < PKT_SIZE; i++)
                 serial.ReadByte(buf[i], 0);
-        } catch (const LibSerial::ReadTimeout&) {
-            continue;
-        }
+        } catch (const LibSerial::ReadTimeout&) { continue; }
 
         if (crc8(buf, PKT_SIZE - 1) != buf[PKT_SIZE - 1]) { errCount++; continue; }
 
@@ -178,17 +195,17 @@ int murataThread()
         memcpy(&pkt, buf, PKT_SIZE);
         pktCount++;
 
-        const double   gyro_x = deg2rad(pkt.rate[0] / SENSITIVITY_RATE);
-        const double   gyro_y = deg2rad(pkt.rate[1] / SENSITIVITY_RATE);
-        const double   gyro_z = deg2rad(pkt.rate[2] / SENSITIVITY_RATE);
-        const double   acc_x  = pkt.acc[0] / SENSITIVITY_ACC;
-        const double   acc_y  = pkt.acc[1] / SENSITIVITY_ACC;
-        const double   acc_z  = pkt.acc[2] / SENSITIVITY_ACC;
-        const uint64_t ts_ns  = pkt.timestamp_us * 1000ULL;
-        //auto duration = std::chrono::system_clock::now().time_since_epoch();
-        //double tp = std::chrono::duration<double>(duration).count();
-        //double imu_ts = double(pkt.timestamp_us) / 1000000.0;
-        //std::cout <<   std::fixed << imu_ts << " " << tp << std::endl;
+        // ── Decode into row ───────────────────────────────────────────────────
+        ImuRow row;
+        row.ts_ns = pkt.timestamp_us * 1000ULL;
+        row.gx    = deg2rad(pkt.rate[0] / SENSITIVITY_RATE);
+        row.gy    = deg2rad(pkt.rate[1] / SENSITIVITY_RATE);
+        row.gz    = deg2rad(pkt.rate[2] / SENSITIVITY_RATE);
+        row.ax    = pkt.acc[0] / SENSITIVITY_ACC;
+        row.ay    = pkt.acc[1] / SENSITIVITY_ACC;
+        row.az    = pkt.acc[2] / SENSITIVITY_ACC;
+
+        // ── Read mode ─────────────────────────────────────────────────────────
         size_t      state_id;
         std::string scanTarget;
         {
@@ -197,41 +214,46 @@ int murataThread()
             scanTarget = state::continuousScanTarget;
         }
 
-        if (state_id == MODES::SCANNING_ID && !logFile.is_open()) {
+        // ── Accumulate to memory ──────────────────────────────────────────────
+        if (state_id == MODES::SCANNING_ID) {
+            if (!collecting) {
+                collecting    = true;
+                fileStartTime = std::chrono::steady_clock::now();
+            }
+            buffer.push_back(row);
+        }
+
+        // ── Flush: time rotation or stop ──────────────────────────────────────
+        const bool timeUp   = collecting &&
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - fileStartTime).count() > global::fileLengthMs;
+        const bool stopping = collecting && (state_id == MODES::STOPPING_ID);
+
+        if (timeUp || stopping) {
             const fs::path dir = fs::path(scanTarget) / global::directoryName;
             fs::create_directories(dir);
-            fileStartTime = std::chrono::steady_clock::now();
-            logFileName   = (dir / ("murata_imu_" + std::to_string(pkt.timestamp_us) + ".csv")).string();
-            std::cout << "Logging to " << logFileName << std::endl;
-            logFile.open(logFileName);
-            logFile << "timestamp gyroX gyroY gyroZ accX accY accZ timestampUnix\n";
+            std::string path = (dir / ("murata_imu_" + std::to_string(pkt.timestamp_us) + ".csv")).string();
+
+            // Move buffer ownership to a detached thread — no disk I/O on this thread
+            std::thread(saveToFile, std::move(buffer), std::move(path)).detach();
+            buffer = {};
+
+            if (stopping)
+                collecting = false;
+            else
+                fileStartTime = std::chrono::steady_clock::now();
         }
 
-        if (logFile.is_open()) {
-            logFile << ts_ns  << ' '
-                    << gyro_x << ' ' << gyro_y << ' ' << gyro_z << ' '
-                    << acc_x  << ' ' << acc_y  << ' ' << acc_z  << ' '
-                    << ts_ns  << '\n';
-
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now() - fileStartTime).count() > global::fileLengthMs) {
-                std::cout << "Closing " << logFileName << std::endl;
-                logFile.close();
-            }
-        }
-
-        if (state_id == MODES::STOPPING_ID && logFile.is_open()) {
-            std::cout << "Closing " << logFileName << std::endl;
-            logFile.close();
-        }
-
+        // ── Stats ─────────────────────────────────────────────────────────────
         auto now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::seconds>(now - statsTime).count() >= 1) {
-            auto duration = std::chrono::system_clock::now().time_since_epoch();
-            double tp = std::chrono::duration<double>(duration).count();
+            double tp     = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
             double imu_ts = double(pkt.timestamp_us) / 1000000.0;
-            double diff = tp - imu_ts;
-            std::cout << "pkts/s: " << pktCount << "  errors: " << errCount <<" diff : " << diff << std::endl;
+            std::cout << "pkts/s: " << pktCount
+                      << "  errors: " << errCount
+                      << "  diff: "   << (tp - imu_ts)
+                      << "  buffered: " << buffer.size()
+                      << std::endl;
             pktCount = errCount = 0;
             statsTime = now;
         }
