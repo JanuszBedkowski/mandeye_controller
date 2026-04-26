@@ -186,12 +186,11 @@ void LivoxClient::testThread()
 {
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	std::cout << "Livox periodical watch thread" << std::endl;
+
 	while(!isDone)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-
-		std::cout << "m_time_diff " << m_time_diff << std::endl;
 
 		std::lock_guard<std::mutex> lcK(this->m_lidarInfoMutex);
 		for(auto& it : this->m_handleToSerialNumber)
@@ -346,7 +345,10 @@ void LivoxClient::ImuDataCallback(uint32_t handle, const uint8_t dev_type, Livox
 	auto duration = now.time_since_epoch();
 	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 
+
 	LivoxClient* this_ptr = (LivoxClient*)client_data;
+	// std::cout << "m_time_diff " <<this_ptr->m_time_diff << std::endl;
+
 	if(data->data_type == kLivoxLidarImuData)
 	{
 		const auto laser_id = this_ptr->handleToLidarId(handle);
