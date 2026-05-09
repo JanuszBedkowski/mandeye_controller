@@ -42,8 +42,8 @@
                     else if (fixQuality == 5)  fixLabel = "RTK Float";
                     else                       fixLabel = "Unknown fix: " + fixQuality;
 
-                    var html = "satellites: "+ satellites ;
-                    html += "<br> Fix:" + fixQuality ;
+                    var html = "Satellites: "+ satellites ;
+                    html += "<br> Fix: " + fixQuality+ " ("+fixLabel+")" ;
                     if (obj.gnss.hasOwnProperty('ntrip_client'))
                     {
                         html += "<br>RTCM3: " + obj.gnss.ntrip_client.number_of_rtcm3_messages;
