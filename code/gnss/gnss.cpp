@@ -195,6 +195,21 @@ void GNSSClient::setDataCallback(const std::function<void(const minmea_sentence_
 	m_dataCallback = callback;
 }
 
+void GNSSClient::stopNtripClient()
+{
+    if(m_ntripClient)
+    {
+        m_ntripClient->stop();
+    }
+    m_ntripIo.stop();
+    if(m_ntripThread.joinable())
+    {
+        m_ntripThread.join();
+    }
+    m_ntripClient.reset();
+    m_ntripIo.restart();
+}
+
 void GNSSClient::setNtripClient(
     const std::string& userName,
     const std::string& password,
@@ -202,12 +217,13 @@ void GNSSClient::setNtripClient(
     const std::string& host,
     const std::string& port)
 {
-    std::thread t(
+    stopNtripClient();
+
+    m_ntripThread = std::thread(
         [this, userName, password, mountPoint, host, port]()
         {
-            boost::asio::io_context io;
             m_ntripClient = std::make_unique<NtripClient>(
-                io,
+                m_ntripIo,
                 host,
                 port,
                 mountPoint,
@@ -217,18 +233,16 @@ void GNSSClient::setNtripClient(
                 {
                     m_numberOfRTCM3Messages++;
                     std::vector<uint8_t> dataVec(data, data + size);
-                    if (m_serialPort.IsOpen())
+                    if(m_serialPort.IsOpen())
                     {
                         m_serialPort.Write(dataVec);
                     }
                 });
             m_ntripClient->start();
-            boost::asio::steady_timer timer(io);
+            boost::asio::steady_timer timer(m_ntripIo);
             sheduleGgaSend(timer);
-            io.run();
+            m_ntripIo.run();
         });
-
-    m_ntripThread = std::move(t);
 }
 
 void GNSSClient::setNtripClient(const nlohmann::json& ntripClientConfig)

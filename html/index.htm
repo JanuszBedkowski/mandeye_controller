@@ -79,6 +79,39 @@
         setInterval(function() {populate1();}, 100);
         setInterval(function() {populate2();}, 1000);
 
+        function loadNtripConfig() {
+            $.ajax({ url: host_global+"/json/ntrip_config" }).then(function(data) {
+                var obj = jQuery.parseJSON(data);
+                $('#ntrip_host').val(obj.host || '');
+                $('#ntrip_port').val(obj.port || '2101');
+                $('#ntrip_mount').val(obj.mount_point || '');
+                $('#ntrip_user').val(obj.user_name || '');
+                $('#ntrip_pass').val(obj.password || '');
+            });
+        }
+
+        function saveNtripConfig() {
+            var payload = {
+                host:        $('#ntrip_host').val(),
+                port:        $('#ntrip_port').val(),
+                mount_point: $('#ntrip_mount').val(),
+                user_name:   $('#ntrip_user').val(),
+                password:    $('#ntrip_pass').val()
+            };
+            $.ajax({
+                url: host_global+"/json/ntrip_config",
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload)
+            }).then(function() {
+                $('#ntrip_status').text('Saved and restarted.');
+            }).fail(function(xhr) {
+                $('#ntrip_status').text('Error: ' + xhr.responseText);
+            });
+        }
+
+        $(document).ready(function() { loadNtripConfig(); });
+
 
         function start_bag() {
             $.ajax({
@@ -222,5 +255,19 @@
     <ul id="dirs">
         <li><a href="#"></a></li>
     </ul>
+
+    <details>
+        <summary style="cursor:pointer; font-size:1.2em; font-weight:bold; padding:8px 0;">NTRIP Configuration</summary>
+        <table>
+            <tr><th>Field</th><th>Value</th></tr>
+            <tr><td>Host</td><td><input id="ntrip_host" type="text" size="30"></td></tr>
+            <tr><td>Port</td><td><input id="ntrip_port" type="text" size="6"></td></tr>
+            <tr><td>Mountpoint</td><td><input id="ntrip_mount" type="text" size="20"></td></tr>
+            <tr><td>User</td><td><input id="ntrip_user" type="text" size="20"></td></tr>
+            <tr><td>Password</td><td><input id="ntrip_pass" type="password" size="20"></td></tr>
+        </table>
+        <button type="button" onclick="saveNtripConfig()" class="block">Save NTRIP config</button>
+        <div id="ntrip_status"></div>
+    </details>
 </body>
 </html>

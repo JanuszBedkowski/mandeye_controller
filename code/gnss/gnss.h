@@ -93,7 +93,10 @@ private:
 	std::function<void(const minmea_sentence_gga& gga)> m_dataCallback;
 	std::atomic<uint32_t> m_messageCount{0};
     std::unique_ptr<mandeye::NtripClient> m_ntripClient;
+    boost::asio::io_context m_ntripIo;
     std::thread m_ntripThread;
+
+    void stopNtripClient();
 
 };
 } // namespace mandeye

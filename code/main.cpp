@@ -731,6 +731,42 @@ struct PistacheServerHandler : public Http::Handler
 			writer.send(Http::Code::Ok, "");
 			return;
 		}
+		else if(request.resource() == "/json/ntrip_config" && request.method() == Http::Method::Get)
+		{
+			nlohmann::json ntripCfg = mandeye::configJson.value("ntrip", nlohmann::json::object());
+			writer.send(Http::Code::Ok, ntripCfg.dump(4));
+			return;
+		}
+		else if(request.resource() == "/json/ntrip_config" && request.method() == Http::Method::Post)
+		{
+			try
+			{
+				auto body = nlohmann::json::parse(request.body());
+				for(const auto& key : {"host", "port", "mount_point", "user_name", "password"})
+				{
+					if(!body.contains(key) || !body[key].is_string())
+					{
+						writer.send(Http::Code::Bad_Request, std::string("Missing field: ") + key);
+						return;
+					}
+				}
+				mandeye::configJson["ntrip"] = body;
+				if(mandeye::fileSystemClientPtr)
+				{
+					mandeye::fileSystemClientPtr->SaveConfig(mandeye::configJson);
+				}
+				if(mandeye::gnssClientPtr)
+				{
+					mandeye::gnssClientPtr->setNtripClient(body);
+				}
+				writer.send(Http::Code::Ok, "{}");
+			}
+			catch(const nlohmann::json::exception& e)
+			{
+				writer.send(Http::Code::Bad_Request, e.what());
+			}
+			return;
+		}
 		writer.send(Http::Code::Ok, gINDEX_HTMData);
 	}
 };

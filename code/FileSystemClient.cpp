@@ -1,6 +1,7 @@
 #include "FileSystemClient.h"
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdbool.h>
@@ -236,6 +237,19 @@ bool FileSystemClient::GetIsWritable()
 	{
 		return false;
 	}
+}
+
+bool FileSystemClient::SaveConfig(const nlohmann::json& cfg)
+{
+	std::filesystem::path configPath = std::filesystem::path(m_repository) / std::filesystem::path(config);
+	std::ofstream configFile(configPath);
+	if(!configFile.is_open())
+	{
+		std::cerr << "Failed to open config file for writing at " << configPath.string() << std::endl;
+		return false;
+	}
+	configFile << std::setw(4) << cfg;
+	return true;
 }
 
 nlohmann::json FileSystemClient::GetConfig()

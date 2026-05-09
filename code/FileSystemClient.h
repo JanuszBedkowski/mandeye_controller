@@ -39,6 +39,7 @@ public:
 	double BenchmarkWriteSpeed(const std::string& filename, size_t fileSizeMB);
 
 	nlohmann::json GetConfig();
+	bool SaveConfig(const nlohmann::json& config);
 
 private:
 	int32_t m_nextId{0};
