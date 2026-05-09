@@ -48,6 +48,7 @@ void NtripClient::schedule_reconnect() {
 }
 
 void NtripClient::do_connect() {
+    response_.consume(response_.size());
     std::cout << "[NtripClient] Resolving host " << host_ << ":" << port_ << "\n";
     resolver_.async_resolve(host_, port_,
         [this](const boost::system::error_code& ec, const auto& results) {
@@ -98,11 +99,12 @@ void NtripClient::send_request() {
 
 void NtripClient::read_headers() {
     boost::asio::async_read_until(socket_, response_, "\r\n\r\n",
-        [this](const boost::system::error_code& ec, std::size_t) {
+        [this](const boost::system::error_code& ec, std::size_t bytes_transferred) {
             if (ec) {
                 std::cerr << "[NtripClient] Read headers error: " << ec.message() << "\n";
                 schedule_reconnect();
             } else {
+                response_.consume(bytes_transferred);
                 header_parsed_ = true;
                 read_stream();
             }

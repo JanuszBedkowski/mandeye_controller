@@ -145,6 +145,8 @@ if (${MANDEYE_USE_HESAI_SDK2})
     add_compile_definitions(MANDEYE_USE_HESAI_SDK2)
 endif()
 
+set_source_files_properties(code/main.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/html/index.htm")
+
 add_executable(control_program code/main.cpp code/gnss/gnss.cpp code/gnss/ntrip.cpp code/web_page.h
         ${LIDAR_SOURCES}
         ${LIDAR_SOURCES}

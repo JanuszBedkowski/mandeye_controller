@@ -34,31 +34,22 @@
                 {
                     var satellites = obj.gnss.gga.satellites_tracked;
                     var fixQuality = obj.gnss.gga.fix_quality;
-                    if (fixQuality == 0)
-                    {
-                        $('.gnss').text( satellites + " (No Fix)");
-                    }
-                    else if (fixQuality == 1)
-                    {
-                        $('.gnss').text( satellites + " (GPS)");
-                    }
-                    else if (fixQuality == 2)
-                    {
-                        $('.gnss').text( satellites + " (DGPS)");
-                    }
-                    else if (fixQuality == 4)
-                    {
-                        $('.gnss').text( satellites + " (RTK Fixed)");
-                    }
-                    else if (fixQuality == 5)
-                    {
-                        $('.gnss').text( satellites + " (RTK Float)");
-                    }
-                    else
-                    {
-                        $('.gnss').text( satellites + " (Unknown fix: " + fixQuality + ")");
-                    }
+                    var fixLabel;
+                    if (fixQuality == 0)       fixLabel = "No Fix";
+                    else if (fixQuality == 1)  fixLabel = "GPS";
+                    else if (fixQuality == 2)  fixLabel = "DGPS";
+                    else if (fixQuality == 4)  fixLabel = "RTK Fixed";
+                    else if (fixQuality == 5)  fixLabel = "RTK Float";
+                    else                       fixLabel = "Unknown fix: " + fixQuality;
 
+                    var html = "satellites: "+ satellites ;
+                    html += "<br> Fix:" + fixQuality ;
+                    if (obj.gnss.hasOwnProperty('ntrip_client'))
+                    {
+                        html += "<br>RTCM3: " + obj.gnss.ntrip_client.number_of_rtcm3_messages;
+                        html += "<br>GGA: " + obj.gnss.ntrip_client.number_of_gga_messages;
+                    }
+                    $('.gnss').html(html);
                 }
                 else
                 {
