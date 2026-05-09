@@ -3,7 +3,7 @@
 #include <deque>
 #include <mutex>
 #include <nlohmann/json.hpp>
-
+#include <boost/asio.hpp>
 #include "minmea.h"
 #include "thread"
 #include "utils/TimeStampReceiver.h"
@@ -11,6 +11,8 @@
 #include <SerialStream.h>
 #include <atomic>
 #include <iostream>
+
+#include "ntrip.h"
 namespace mandeye
 {
 

@@ -14,7 +14,7 @@
 #include "lidars/LidarImplementations.h"
 
 #include "compilation_constants.h"
-#include "gnss.h"
+#include "gnss/gnss.h"
 #include "publisher.h"
 #include <fstream>
 #include <gpios.h>
