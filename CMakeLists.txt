@@ -71,6 +71,7 @@ include_directories(${CMAKE_BINARY_DIR})
 #executable
 set(LIDAR_SOURCES
     code/lidars/dummy/ButterLidar.cpp
+    code/lidars/replay/ReplayLidar.cpp
     code/lidars/LidarImplementation.cpp
 )
 set(LIDAR_LIBRARIES )

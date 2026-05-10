@@ -1,5 +1,6 @@
 #include "LidarImplementations.h"
 #include "lidars/dummy/ButterLidar.h"
+#include "lidars/replay/ReplayLidar.h"
 
 #include <dlfcn.h>
 #include <iostream>
@@ -105,6 +106,13 @@ BaseLidarClientPtr createLidarClient(const std::string& lidarType, const nlohman
 	else if(lidarType == "BUTTER_LIDAR")
 	{
 		return std::make_shared<ButterLidar>();
+	}
+
+	else if(lidarType == "REPLAY")
+	{
+		auto client = std::make_shared<ReplayLidar>();
+		client->Init(config);
+		return client;
 	}
 
 	else if(lidarType == "OUSTER")
