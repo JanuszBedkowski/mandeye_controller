@@ -310,3 +310,16 @@ List state of services:
 ```shell
 mandeye_services_status
 ```
+
+# Tooling
+
+## Replay Lidar
+
+Replay lidar is a Lidar driver that replays Lidar data from a LAZ/CSV file, after converting it to MCAP format.
+It can be used to test the system without actual Lidar, and is being use to implement new features.
+MCAP format is compatible with ROS 2.
+
+## Laz2Mcap
+Laz2Mcap is a tool that converts LAZ files to MCAP format.
+It can be used to test the system without actual Lidar, and is being use to implement new features.
+MCAP format is compatible with ROS 2 and Foxglove Studio. 
