@@ -47,7 +47,7 @@ class BaseLidarClient : public mandeye_utils::TimeStampProvider
 {
 public:
 	//! Initialize the client with a configuration
-	virtual void Init(const nlohmann::json& config) { };
+	virtual void Init(const nlohmann::json& config) {};
 	virtual ~BaseLidarClient() = default;
 
 	//! Produce a status report in JSON format
@@ -57,7 +57,7 @@ public:
 	virtual bool startListener(const std::string& interfaceIp) = 0;
 
 	//! Stops the listener on a specific interface IP
-	virtual void stopListener() { };
+	virtual void stopListener() {};
 
 	//! Start logging data from the Lidar and IMU
 	virtual void startLog() = 0;
