@@ -170,8 +170,7 @@ void HesaiClient::CallbackFrame(const LidarDecodedFrame<LidarPointXYZICRT>& data
 			data.z = point.z;
 			data.intensity = point.intensity;
 			data.laser_id = 0;
-			data.timestamp = point.timestamp;
-			m_timestamp = point.timestamp;
+			data.timestamp = point.timestamp * 1e9; // convert to nanosecs
 			m_bufferLidarPtr->push_back(data);
 		}
 	}
@@ -188,13 +187,13 @@ void HesaiClient::CallbackIMU(const LidarImuData& dataFrame)
 		auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 
 		LidarIMU data;
-		data.timestamp = dataFrame.timestamp;
+		data.timestamp = dataFrame.timestamp * 1e9;
 		data.acc_x = dataFrame.imu_accel_x;
 		data.acc_y = dataFrame.imu_accel_y;
 		data.acc_z = dataFrame.imu_accel_z;
-		data.gyro_x = dataFrame.imu_ang_vel_x;
-		data.gyro_y = dataFrame.imu_ang_vel_y;
-		data.gyro_z = dataFrame.imu_ang_vel_z;
+		data.gyro_x = M_PI * dataFrame.imu_ang_vel_x / 180.0; // to rads
+		data.gyro_y = M_PI * dataFrame.imu_ang_vel_y / 180.0;
+		data.gyro_z = M_PI * dataFrame.imu_ang_vel_z / 180.0;
 		data.laser_id = 0;
 		data.epoch_time = millis.count();
 		m_bufferIMUPtr->push_back(data);

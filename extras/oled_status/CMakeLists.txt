@@ -66,3 +66,6 @@ target_compile_definitions(u8g2_arm PRIVATE __ARM_LINUX__)
 add_executable(oled_status u8g2_hw_i2c.cpp)
 target_link_libraries(oled_status u8g2_arm m mandeye_extra_utils)
 target_compile_definitions(oled_status PRIVATE __ARM_LINUX__)
+
+install(FILES services/mandeye_oled_status.service DESTINATION /usr/lib/systemd/system)
+install(TARGETS oled_status RUNTIME DESTINATION  /opt/mandeye/extras/)

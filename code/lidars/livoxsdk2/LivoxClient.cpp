@@ -97,7 +97,7 @@ nlohmann::json LivoxClient::produceStatus()
 	data["LivoxLidarInfo"]["m_sessionStart_s"] = double(m_sessionStart.value_or(-1.f)) / 1e9;
 	data["LivoxLidarInfo"]["m_elapsed"] = m_elapsed;
 	data["LivoxLidarInfo"]["m_elapsed_s"] = double(m_elapsed) / 1e9;
-
+	data["LivoxLidarInfo"]["m_time_diff"] = m_time_diff;
 	auto arrayworkMode = nlohmann::json::array();
 	for(auto& mode : m_LivoxLidarWorkMode)
 	{
@@ -184,8 +184,9 @@ std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> LivoxClient::retrieveData()
 }
 void LivoxClient::testThread()
 {
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	std::cout << "Livox periodical watch thread" << std::endl;
+
 	while(!isDone)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -247,6 +248,11 @@ void LivoxClient::saveTimeStamp(LivoxClient* client, uint64_t timestamp)
 	{
 		client->m_elapsed = client->m_timestamp - client->m_sessionStart.value();
 	}
+	using namespace std::chrono;
+	const auto now = system_clock::now();
+	auto duration = now.time_since_epoch();
+	double tp = std::chrono::duration<double>(duration).count();
+	client->m_time_diff = std::abs(tp - double(client->m_timestamp) / 1e9);
 }
 
 void LivoxClient::PointCloudCallback(uint32_t handle, const uint8_t dev_type, LivoxLidarEthernetPacket* data, void* client_data)
@@ -324,7 +330,6 @@ bool LivoxClient::isSynced()
 			return false;
 		}
 	}
-	std::cout << "Time sync is synced" << std::endl;
 	return true;
 }
 
@@ -339,6 +344,8 @@ void LivoxClient::ImuDataCallback(uint32_t handle, const uint8_t dev_type, Livox
 	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 
 	LivoxClient* this_ptr = (LivoxClient*)client_data;
+	// std::cout << "m_time_diff " <<this_ptr->m_time_diff << std::endl;
+
 	if(data->data_type == kLivoxLidarImuData)
 	{
 		const auto laser_id = this_ptr->handleToLidarId(handle);

@@ -164,17 +164,13 @@ add_executable(led_demo code/led_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
 target_link_libraries(led_demo gpiod pthread)
 
-add_executable(fake_pps code/fake_pps.cpp code/gpios.cpp)
-set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
-target_link_libraries(fake_pps ${LIBSERIAL_LIBRARY} gpiod pthread)
-
 
 add_executable(button_demo code/button_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
 target_link_libraries(button_demo gpiod pthread)
 
 # Define install directories
-install(TARGETS control_program led_demo fake_pps button_demo
+install(TARGETS control_program led_demo button_demo
         RUNTIME DESTINATION /opt/mandeye/)
 
 set(MANDEYE_USE_LIBCAMERA ON CACHE BOOL "Build libcamera extra")
@@ -184,13 +180,18 @@ if(MANDEYE_USE_LIBCAMERA)
     add_subdirectory(extras/libcamera)
 endif()
 add_subdirectory(extras/rtkNmea)
+set(MANDEYE_BUILD_EXTRAS_MURATA_UART_IMU ON CACHE BOOL "Build Murata UART IMU extra module - Experimental")
+if (MANDEYE_BUILD_EXTRAS_MURATA_UART_IMU)
+    message(STATUS "Building Murata SPI IMU extra module")
+    add_subdirectory(extras/MurataUartImu)
+endif()
+
 add_subdirectory(extras/FakePPS)
 add_subdirectory(extras/SlavePPS)
 add_subdirectory(extras/oled_status)
 
 install(FILES packing/helpers.sh DESTINATION /opt/mandeye/)
 install(FILES packing/services/mandeye_controller.service  DESTINATION /usr/lib/systemd/system)
-install(FILES packing/services/mandeye_fake_pps.service  DESTINATION /usr/lib/systemd/system)
 
 install(FILES packing/services/mandeye_phc2sys-gm-eth0.service DESTINATION /usr/lib/systemd/system)
 install(FILES packing/services/mandeye_ptp4l-gm-eth0.service DESTINATION /usr/lib/systemd/system)
