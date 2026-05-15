@@ -31,28 +31,27 @@ namespace mandeye
 class McapFileWriter
 {
 public:
-    explicit McapFileWriter(const std::filesystem::path& path,
-                            const std::string& frame_id = "lidar");
-    ~McapFileWriter();
+	explicit McapFileWriter(const std::filesystem::path& path, const std::string& frame_id = "lidar");
+	~McapFileWriter();
 
-    // Non-copyable, movable
-    McapFileWriter(const McapFileWriter&) = delete;
-    McapFileWriter& operator=(const McapFileWriter&) = delete;
+	// Non-copyable, movable
+	McapFileWriter(const McapFileWriter&) = delete;
+	McapFileWriter& operator=(const McapFileWriter&) = delete;
 
-    // Write a batch of points.  timestamp_ns is the message publish time.
-    void writePointCloud(uint64_t timestamp_ns, const LidarPointsBuffer& points);
+	// Write a batch of points.  timestamp_ns is the message publish time.
+	void writePointCloud(uint64_t timestamp_ns, const LidarPointsBuffer& points);
 
-    // Write a batch of IMU samples.  Each sample carries its own timestamp.
-    void writeImu(uint64_t timestamp_ns, const LidarIMUBuffer& imu);
+	// Write a batch of IMU samples.  Each sample carries its own timestamp.
+	void writeImu(uint64_t timestamp_ns, const LidarIMUBuffer& imu);
 
-    // Write a single IMU sample.
-    void writeImuSample(const LidarIMU& imu);
+	// Write a single IMU sample.
+	void writeImuSample(const LidarIMU& imu);
 
-    bool isOpen() const;
+	bool isOpen() const;
 
 private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+	struct Impl;
+	std::unique_ptr<Impl> impl_;
 };
 
 } // namespace mandeye

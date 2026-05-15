@@ -22,7 +22,7 @@ jobs:
             build-essential cmake git pkg-config ca-certificates \
             libserial-dev libgpiod-dev libzmq3-dev libboost-all-dev \
             libpistache-dev rapidjson-dev nlohmann-json3-dev libzmq3-dev cppzmq-dev \
-            libcamera-dev libopencv-dev pps-tools
+            libcamera-dev libopencv-dev pps-tools liblz4-dev libzstd-dev
           update-ca-certificates
 
       - uses: actions/checkout@v4
