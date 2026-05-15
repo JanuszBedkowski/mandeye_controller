@@ -191,7 +191,6 @@ void LivoxClient::testThread()
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-
 		std::lock_guard<std::mutex> lcK(this->m_lidarInfoMutex);
 		for(auto& it : this->m_handleToSerialNumber)
 		{
@@ -253,7 +252,7 @@ void LivoxClient::saveTimeStamp(LivoxClient* client, uint64_t timestamp)
 	const auto now = system_clock::now();
 	auto duration = now.time_since_epoch();
 	double tp = std::chrono::duration<double>(duration).count();
-	client->m_time_diff = std::abs(tp - double(client->m_timestamp)/1e9);
+	client->m_time_diff = std::abs(tp - double(client->m_timestamp) / 1e9);
 }
 
 void LivoxClient::PointCloudCallback(uint32_t handle, const uint8_t dev_type, LivoxLidarEthernetPacket* data, void* client_data)
@@ -312,7 +311,6 @@ void LivoxClient::PointCloudCallback(uint32_t handle, const uint8_t dev_type, Li
 	{
 		LivoxLidarSpherPoint* p_point_data = (LivoxLidarSpherPoint*)data->data;
 	}
-
 }
 
 bool LivoxClient::isSynced()
@@ -344,7 +342,6 @@ void LivoxClient::ImuDataCallback(uint32_t handle, const uint8_t dev_type, Livox
 	auto now = std::chrono::system_clock::now();
 	auto duration = now.time_since_epoch();
 	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-
 
 	LivoxClient* this_ptr = (LivoxClient*)client_data;
 	// std::cout << "m_time_diff " <<this_ptr->m_time_diff << std::endl;

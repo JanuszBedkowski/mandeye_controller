@@ -34,8 +34,7 @@ static std::optional<speed_t> baudrate_to_constant(int baud)
 
 static void setup_uart(int fd, speed_t baud)
 {
-	struct termios tty
-	{ };
+	struct termios tty{};
 	if(tcgetattr(fd, &tty) != 0)
 	{
 		perror("tcgetattr");
@@ -114,8 +113,7 @@ int main()
 		if(minmea_sentence_id(buf, false) != MINMEA_SENTENCE_RMC)
 			continue;
 
-		struct minmea_sentence_rmc rmc
-		{ };
+		struct minmea_sentence_rmc rmc{};
 		if(!minmea_parse_rmc(&rmc, buf) || !rmc.valid)
 			continue;
 
@@ -125,8 +123,7 @@ int main()
 
 		std::cout << "RMC: " << buf;
 
-		struct tm tm
-		{ };
+		struct tm tm{};
 		tm.tm_hour = rmc.time.hours;
 		tm.tm_min = rmc.time.minutes;
 		tm.tm_sec = rmc.time.seconds;

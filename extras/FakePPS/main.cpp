@@ -1,16 +1,16 @@
+#include <SerialPort.h>
+#include <SerialStream.h>
 #include <atomic>
 #include <chrono>
 #include <cmath>
-#include <gpios.h>
-#include <iostream>
-#include <stdio.h>
-#include <thread>
-#include <sched.h>
-#include <sys/mman.h>
-#include <SerialPort.h>
-#include <SerialStream.h>
 #include <gpiod.h>
+#include <gpios.h>
 #include <hardware_config/mandeye.h>
+#include <iostream>
+#include <sched.h>
+#include <stdio.h>
+#include <sys/mman.h>
+#include <thread>
 
 #include "hardware_config/mandeye.h"
 
@@ -33,12 +33,18 @@ struct JitterStats
 
 	void report(long long lastUs) const
 	{
-		if(count == 0) return;
+		if(count == 0)
+			return;
 		double mean = sumUs / count;
 		double variance = (sumSqUs / count) - (mean * mean);
 		double stddev = variance > 0.0 ? std::sqrt(variance) : 0.0;
 		printf("PPS jitter [us] last=%+lld  min=%lld  max=%lld  mean=%.1f  stddev=%.1f  n=%llu\n",
-			   lastUs, minUs, maxUs, mean, stddev, (unsigned long long)count);
+			   lastUs,
+			   minUs,
+			   maxUs,
+			   mean,
+			   stddev,
+			   (unsigned long long)count);
 		fflush(stdout);
 	}
 };
@@ -160,7 +166,7 @@ void oneSecondThread()
 		const auto nextMillisFromEpoch = ((millisFromEpoch / Rate) + 1) * Rate;
 
 		const auto waKeUpTime = std::chrono::system_clock::time_point(std::chrono::milliseconds(nextMillisFromEpoch));
-				// Sleep until spinMarginUs before the deadline, then busy-spin for precision.
+		// Sleep until spinMarginUs before the deadline, then busy-spin for precision.
 		// Spin margin must exceed worst-case sleep overrun (~15us observed).
 		constexpr int64_t spinMarginUs = 200;
 		std::this_thread::sleep_until(waKeUpTime - std::chrono::microseconds(spinMarginUs));
@@ -169,14 +175,14 @@ void oneSecondThread()
 			asm volatile("" ::: "memory"); // prevent loop from being optimized away
 		}
 
-		
-
 		const auto actualTime = std::chrono::system_clock::now();
 		const auto jitterUs = std::chrono::duration_cast<std::chrono::microseconds>(actualTime - waKeUpTime).count();
-		if (jitterUs > 10 || jitterUs < -10) {
+		if(jitterUs > 10 || jitterUs < -10)
+		{
 			std::cerr << "Warning: PPS jitter exceeded 10us: " << jitterUs << "us" << std::endl;
 			continue; // skip this pulse if jitter is too high
-		}else
+		}
+		else
 		{
 			std::cout << "PPS pulse generated with jitter: " << jitterUs << "us" << std::endl;
 			for(auto& syncOut : syncOutsLines)
@@ -190,10 +196,9 @@ void oneSecondThread()
 			const uint64_t secs = nextMillisFromEpoch / 1000;
 			NMEA::timestamp ts = NMEA::GetTimestampFromSec(secs);
 
-
 			auto t = std::thread([&serialPorts, ts]() {
-					std::this_thread::sleep_for(std::chrono::milliseconds(5));
-					const std::string nmeaMessage = NMEA::produceNMEA(ts);
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
+				const std::string nmeaMessage = NMEA::produceNMEA(ts);
 				for(auto& serialPort : serialPorts)
 				{
 					serialPort->Write(nmeaMessage);
@@ -207,14 +212,8 @@ void oneSecondThread()
 				gpiod_line_set_value(syncOut, 0);
 			}
 
-
-
-
-
 			t.join();
-
 		}
-		
 	}
 	for(auto& syncOut : syncOutsLines)
 	{
@@ -224,20 +223,19 @@ void oneSecondThread()
 }
 int main(int arc, char* argv[])
 {
-	    // Set realtime scheduling
-    struct sched_param param;
-    param.sched_priority = 99;  // highest priority
-    if(sched_setscheduler(0, SCHED_FIFO, &param) < 0)
-    {
-        std::cerr << "Failed to set realtime priority, run as root" << std::endl;
-    }
+	// Set realtime scheduling
+	struct sched_param param;
+	param.sched_priority = 99; // highest priority
+	if(sched_setscheduler(0, SCHED_FIFO, &param) < 0)
+	{
+		std::cerr << "Failed to set realtime priority, run as root" << std::endl;
+	}
 
-    // Lock memory to prevent page faults
-    if(mlockall(MCL_CURRENT | MCL_FUTURE) < 0)
-    {
-        std::cerr << "Failed to lock memory" << std::endl;
-    }
-
+	// Lock memory to prevent page faults
+	if(mlockall(MCL_CURRENT | MCL_FUTURE) < 0)
+	{
+		std::cerr << "Failed to lock memory" << std::endl;
+	}
 
 	std::cout << "fake pps" << std::endl;
 
