@@ -81,6 +81,27 @@ private:
 	static constexpr char config[] =
 		R"(
 {
+	"MID360s": {
+		"lidar_net_info" : {
+			"cmd_data_port": 56100,
+			"push_msg_port": 56200,
+			"point_data_port": 56300,
+			"imu_data_port": 56400,
+			"log_data_port": 56500
+		},
+		"host_net_info" : {
+			"cmd_data_ip" : "${HOSTIP}",
+			"cmd_data_port": 56101,
+			"push_msg_ip": "${HOSTIP}",
+			"push_msg_port": 56201,
+			"point_data_ip": "${HOSTIP}",
+			"point_data_port": 56301,
+			"imu_data_ip" : "${HOSTIP}",
+			"imu_data_port": 56401,
+			"log_data_ip" : "${HOSTIP}",
+			"log_data_port": 56501
+		}
+	},
 	"MID360": {
 		"lidar_net_info" : {
 			"cmd_data_port": 56100,
