@@ -13,6 +13,7 @@ struct gpiod_line;
 
 namespace mandeye
 {
+
 using namespace hardware;
 // forward declaration of cppgpio type that I want to keep inside compliation unit
 
@@ -108,7 +109,8 @@ private:
 	std::mutex m_lock;
 	std::atomic<bool> m_running{true};
 };
-static std::mutex gpioClientPtrLock;
-static std::shared_ptr<GpioClient> gpioClientPtr;
+
+inline std::mutex gpioClientPtrLock;
+inline std::shared_ptr<GpioClient> gpioClientPtr;
 
 } // namespace mandeye
