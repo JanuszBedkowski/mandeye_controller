@@ -42,6 +42,7 @@ jobs:
             arm64v8/debian:bookworm \
             bash -c "
               set -e
+              git config --global --add safe.directory '*'
               apt-get update -qq
               apt-get install -y -qq --no-install-recommends \
                 build-essential cmake git pkg-config ca-certificates \
