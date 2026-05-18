@@ -1,0 +1,66 @@
+name: Build Debian Package (ARM64)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-deb:
+    name: Debian package - ${{ matrix.config.name }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: standard-rpi5
+            hardware_header: mandeye-standard-rpi5.h
+            cmake_extra: -DMANDEYE_USE_LIBCAMERA=FALSE
+          - name: direct-cm5
+            hardware_header: mandeye-direct-cm5.h
+            cmake_extra: ""
+
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Build Debian package
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            arm64v8/debian:bookworm \
+            bash -c "
+              set -e
+              apt-get update -qq
+              apt-get install -y -qq --no-install-recommends \
+                build-essential cmake git pkg-config ca-certificates \
+                libserial-dev libgpiod-dev libzmq3-dev libboost-all-dev \
+                libpistache-dev rapidjson-dev nlohmann-json3-dev cppzmq-dev \
+                libcamera-dev libopencv-dev pps-tools
+              update-ca-certificates
+              cmake -B build-pkg \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DMANDEYE_HARDWARE_HEADER=${{ matrix.config.hardware_header }} \
+                ${{ matrix.config.cmake_extra }}
+              cmake --build build-pkg -j\$(nproc)
+              cd build-pkg
+              cpack -G DEB
+            "
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: mandeye-deb-${{ matrix.config.name }}
+          path: build-pkg/*.deb
+          if-no-files-found: error
