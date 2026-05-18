@@ -42,7 +42,6 @@ jobs:
             arm64v8/debian:bookworm \
             bash -c "
               set -e
-              git config --global --add safe.directory '*'
               apt-get update -qq
               apt-get install -y -qq --no-install-recommends \
                 build-essential cmake git pkg-config ca-certificates \
@@ -50,6 +49,7 @@ jobs:
                 libpistache-dev rapidjson-dev nlohmann-json3-dev cppzmq-dev \
                 libcamera-dev libopencv-dev pps-tools
               update-ca-certificates
+              git config --global --add safe.directory '*'
               cmake -B build-pkg \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DMANDEYE_HARDWARE_HEADER=${{ matrix.config.hardware_header }} \
