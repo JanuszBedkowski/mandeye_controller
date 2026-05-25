@@ -310,7 +310,7 @@ void ReplayLidar::DataThreadFunction()
 		auto view = reader.readMessages();
 
 		bool started = false;
-		uint64_t mcapStart = 0;
+		uint64_t mcapStartNs = 0;
 		auto wallStart = std::chrono::steady_clock::now();
 		int msgIdx = 0;
 
@@ -321,7 +321,7 @@ void ReplayLidar::DataThreadFunction()
 
 			if(!started)
 			{
-				mcapStart = msgNs;
+				mcapStartNs = msgNs;
 				wallStart = std::chrono::steady_clock::now();
 				m_sessionStart = msgNs * 1e-9;
 				started = true;
@@ -331,6 +331,10 @@ void ReplayLidar::DataThreadFunction()
 
 			m_currentTimestamp = msgNs * 1e-9;
 			m_currentChunk = ++msgIdx;
+
+			const auto mcapDurationNs = msgNs - mcapStartNs;
+			const auto wallDue = wallStart + std::chrono::nanoseconds(msgNs - mcapStartNs);
+			std::this_thread::sleep_until(wallDue);
 
 			const auto* bytes = reinterpret_cast<const uint8_t*>(mv.message.data);
 			const size_t sz = mv.message.dataSize;
@@ -345,7 +349,6 @@ void ReplayLidar::DataThreadFunction()
 					if(m_bufferLidarPtr)
 						m_bufferLidarPtr->insert(m_bufferLidarPtr->end(), pts->begin(), pts->end());
 				}
-				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 			}
 			else if(topic == "/imu")
 			{
@@ -357,6 +360,7 @@ void ReplayLidar::DataThreadFunction()
 						m_bufferIMUPtr->push_back(*imu);
 				}
 			}
+
 		}
 
 		reader.close();
