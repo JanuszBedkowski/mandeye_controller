@@ -2,9 +2,9 @@
 
 #include <chrono>
 #include <iostream>
+
 namespace mandeye
 {
-
 nlohmann::json HesaiClient::produceStatus()
 {
 	nlohmann::json data;
@@ -45,6 +45,7 @@ nlohmann::json HesaiClient::produceStatus()
 
 	return data;
 }
+
 bool HesaiClient::startListener(const std::string& interfaceIp)
 {
 	std::cout << "HesaiClient: startListener called with interfaceIp: " << interfaceIp << std::endl;
@@ -95,7 +96,6 @@ std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> HesaiClient::retrieveData()
 
 void HesaiClient::DataThreadFunction()
 {
-
 	std::cout << "HesaiClient: DataThreadFunction started" << std::endl;
 	DriverParam param;
 	param.input_param.source_type = DATA_FROM_LIDAR;
@@ -136,9 +136,9 @@ void HesaiClient::DataThreadFunction()
 	m_lidar->Stop();
 	std::cout << "HesaiClient: DataThreadFunction ended" << std::endl;
 }
+
 void HesaiClient::CallbackFrame(const LidarDecodedFrame<LidarPointXYZICRT>& dataFrame)
 {
-
 	m_recivedPointMessages.fetch_add(1);
 	m_lidar_state = dataFrame.lidar_state;
 	m_work_mode = dataFrame.work_mode;
@@ -176,14 +176,15 @@ void HesaiClient::CallbackFrame(const LidarDecodedFrame<LidarPointXYZICRT>& data
 	}
 }
 
-uint64_t HesaiClient::GetBufferSize() const {
+uint64_t HesaiClient::GetBufferSize() const
+{
 	std::lock_guard<std::mutex> lock(m_bufferPointMutex);
-	if (!m_bufferLidarPtr) {
+	if(!m_bufferLidarPtr)
+	{
 		return 0;
 	}
 	return m_bufferLidarPtr->size();
 }
-
 
 void HesaiClient::CallbackIMU(const LidarImuData& dataFrame)
 {
@@ -218,5 +219,4 @@ void HesaiClient::CallbackFault(const FaultMessageInfo& fault_message_info)
 		m_faults.pop_front();
 	}
 }
-
 } // namespace mandeye

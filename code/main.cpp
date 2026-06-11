@@ -23,6 +23,7 @@
 
 #include "hardware_config/mandeye.h"
 #include <chrono>
+#include <tracy/Tracy.hpp>
 
 #define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
 #define MANDEYE_LIDAR_SKD "LIVOX_SDK2"
@@ -492,7 +493,8 @@ void stateWatcher()
 				else
 				{
 					auto [fn, saveStats] = savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
-					if(saveStats) lastFileSaveStats = *saveStats;
+					if(saveStats)
+						lastFileSaveStats = *saveStats;
 					saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					auto lidarList = lidarClientPtr->getSerialNumberToLidarIdMapping();
@@ -849,11 +851,11 @@ int main(int argc, char** argv)
 		// start zeromq publisher
 		mandeye::publisherPtr = std::make_shared<mandeye::Publisher>();
 		mandeye::publisherPtr->SetTimeStampProvider(mandeye::lidarClientPtr);
-		while (mandeye::isRunning)
+		while(mandeye::isRunning)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			auto bufferSize = mandeye::lidarClientPtr->GetBufferSize();
-			TracyPlot("bufferSize", double(bufferSize)/1e6);
+			TracyPlot("bufferSize", double(bufferSize) / 1e6);
 		}
 	});
 
