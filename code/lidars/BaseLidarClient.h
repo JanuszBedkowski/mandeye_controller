@@ -68,6 +68,11 @@ public:
 	//! Move the data from the internal buffers to the caller, preparing new buffers
 	virtual std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> retrieveData() = 0;
 
+	//! gets a buffer size
+	virtual uint64_t GetBufferSize() const
+	{
+		return 0;
+	}
 	//! Get the current mapping from serial number to lidar id
 	virtual std::unordered_map<uint32_t, std::string> getSerialNumberToLidarIdMapping() const
 	{

@@ -1,6 +1,7 @@
 #include "save_laz.h"
 #include <iostream>
 #include <laszip/laszip_api.h>
+#include <tracy/Tracy.hpp>
 
 nlohmann::json mandeye::LazStats::produceStatus() const
 {
@@ -15,6 +16,9 @@ nlohmann::json mandeye::LazStats::produceStatus() const
 }
 std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, LidarPointsBufferPtr buffer)
 {
+	ZoneScoped;
+	TracyPlot("laz_buffer_points", (int64_t)buffer->size());
+
 	mandeye::LazStats stats;
 	stats.m_filename = filename;
 	stats.m_pointsCount = buffer->size();
@@ -28,19 +32,22 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 	double min_y{std::numeric_limits<double>::max()};
 	double min_z{std::numeric_limits<double>::max()};
 
-	for(auto& p : *buffer)
 	{
-		double x = p.x;
-		double y = p.y;
-		double z = p.z;
+		ZoneScopedN("find_bounds");
+		for(auto& p : *buffer)
+		{
+			double x = p.x;
+			double y = p.y;
+			double z = p.z;
 
-		max_x = std::max(max_x, x);
-		max_y = std::max(max_y, y);
-		max_z = std::max(max_z, z);
+			max_x = std::max(max_x, x);
+			max_y = std::max(max_y, y);
+			max_z = std::max(max_z, z);
 
-		min_x = std::min(min_x, x);
-		min_y = std::min(min_y, y);
-		min_z = std::min(min_z, z);
+			min_x = std::min(min_x, x);
+			min_y = std::min(min_y, y);
+			min_z = std::min(min_z, z);
+		}
 	}
 
 	std::cout << "processing: " << filename << "points " << buffer->size() << std::endl;
@@ -129,29 +136,32 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 	laszip_I64 p_count = 0;
 	laszip_F64 coordinates[3];
 
-	//for(int i = 0; i < buffer->size(); i++)
-	for(int i = 0; i < buffer->size(); i += step)
 	{
-
-		const auto& p = buffer->at(i);
-		point->intensity = p.intensity;
-		point->gps_time = p.timestamp * 1e-9;
-		point->classification = p.tag;
-		point->user_data = p.laser_id;
-		p_count++;
-		coordinates[0] = p.x;
-		coordinates[1] = p.y;
-		coordinates[2] = p.z;
-		if(laszip_set_coordinates(laszip_writer, coordinates))
+		ZoneScopedN("write_points");
+		//for(int i = 0; i < buffer->size(); i++)
+		for(int i = 0; i < buffer->size(); i += step)
 		{
-			fprintf(stderr, "DLL ERROR: setting coordinates for point %I64d\n", p_count);
-			return nullopt;
-		}
 
-		if(laszip_write_point(laszip_writer))
-		{
-			fprintf(stderr, "DLL ERROR: writing point %I64d\n", p_count);
-			return nullopt;
+			const auto& p = buffer->at(i);
+			point->intensity = p.intensity;
+			point->gps_time = p.timestamp * 1e-9;
+			point->classification = p.tag;
+			point->user_data = p.laser_id;
+			p_count++;
+			coordinates[0] = p.x;
+			coordinates[1] = p.y;
+			coordinates[2] = p.z;
+			if(laszip_set_coordinates(laszip_writer, coordinates))
+			{
+				fprintf(stderr, "DLL ERROR: setting coordinates for point %I64d\n", p_count);
+				return nullopt;
+			}
+
+			if(laszip_write_point(laszip_writer))
+			{
+				fprintf(stderr, "DLL ERROR: writing point %I64d\n", p_count);
+				return nullopt;
+			}
 		}
 	}
 
@@ -189,7 +199,9 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 	{
 		std::uintmax_t size = std::filesystem::file_size(filename);
 		stats.m_sizeMb = static_cast<float>(size) / (1024 * 1024);
+		TracyPlot("laz_file_size_mb", (double)stats.m_sizeMb);
 	}
+	TracyPlot("laz_save_duration_sec", (double)stats.m_saveDurationSec1);
 
 	return stats;
 }

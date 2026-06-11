@@ -51,6 +51,8 @@ public:
 		return m_time_diff < 1.0; // laser report time with computer's timestamp
 	}
 
+	uint64_t GetBufferSize() const override;
+
 private:
 	void DataThreadFunction();
 	void CallbackFrame(const LidarDecodedFrame<LidarPointXYZICRT>& dataFrame);
@@ -58,8 +60,8 @@ private:
 	void CallbackFault(const FaultMessageInfo& fault_message_info);
 
 	// Add any private members or methods if needed
-	std::mutex m_bufferImuMutex;
-	std::mutex m_bufferPointMutex;
+	mutable std::mutex m_bufferImuMutex;
+	mutable std::mutex m_bufferPointMutex;
 	LidarPointsBufferPtr m_bufferLidarPtr;
 	LidarIMUBufferPtr m_bufferIMUPtr;
 	std::thread m_watchThread;
