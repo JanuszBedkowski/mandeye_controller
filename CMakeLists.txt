@@ -25,6 +25,19 @@ message("INCBIN")
 # INCBIN
 include_directories(3rd/incbin)
 
+# Tracy profiler — headers always available (macros are no-ops without TRACY_ENABLE)
+include_directories(3rd/tracy/public)
+set(MANDEYE_USE_TRACY OFF CACHE BOOL "Enable Tracy profiler")
+if(MANDEYE_USE_TRACY)
+    message(STATUS "Tracy profiler enabled")
+    option(TRACY_ENABLE "" ON)
+    option(TRACY_ON_DEMAND "" ON)
+    add_subdirectory(3rd/tracy)
+    set_property(TARGET TracyClient PROPERTY POSITION_INDEPENDENT_CODE ON)
+else()
+    message(STATUS "Tracy profiler disabled")
+endif()
+
 
 include_directories(code/)
 
@@ -154,6 +167,11 @@ set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic " )
 
 
 target_link_libraries(control_program pthread ${LIDAR_LIBRARIES} pistache atomic laszip ${LIBSERIAL_LIBRARY} minea gpiod zmq)
+
+if(MANDEYE_USE_TRACY)
+    target_link_libraries(control_program TracyClient)
+    target_compile_definitions(control_program PRIVATE TRACY_ENABLE)
+endif()
 
 set_target_properties(control_program PROPERTIES
         INSTALL_RPATH "/opt/mandeye/lib"

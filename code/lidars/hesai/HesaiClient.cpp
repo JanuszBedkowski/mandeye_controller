@@ -176,6 +176,15 @@ void HesaiClient::CallbackFrame(const LidarDecodedFrame<LidarPointXYZICRT>& data
 	}
 }
 
+uint64_t HesaiClient::GetBufferSize() const {
+	std::lock_guard<std::mutex> lock(m_bufferPointMutex);
+	if (!m_bufferLidarPtr) {
+		return 0;
+	}
+	return m_bufferLidarPtr->size();
+}
+
+
 void HesaiClient::CallbackIMU(const LidarImuData& dataFrame)
 {
 	m_recivedIMUMessages.fetch_add(1);

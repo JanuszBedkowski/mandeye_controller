@@ -57,6 +57,48 @@ mandeye::States app_state{mandeye::States::WAIT_FOR_RESOURCES};
 
 using json = nlohmann::json;
 
+double readCpuTemperature()
+{
+	std::ifstream f("/sys/class/thermal/thermal_zone0/temp");
+	if(!f.is_open())
+		return -1.0;
+	int millideg = 0;
+	f >> millideg;
+	return millideg / 1000.0;
+}
+
+struct MemInfo
+{
+	long total_mb = 0;
+	long available_mb = 0;
+	long swap_total_mb = 0;
+	long swap_free_mb = 0;
+};
+
+MemInfo readMemInfo()
+{
+	MemInfo info;
+	std::ifstream f("/proc/meminfo");
+	if(!f.is_open())
+		return info;
+	std::string key;
+	long value = 0;
+	std::string unit;
+	while(f >> key >> value)
+	{
+		f >> unit; // kB
+		if(key == "MemTotal:")
+			info.total_mb = value / 1024;
+		else if(key == "MemAvailable:")
+			info.available_mb = value / 1024;
+		else if(key == "SwapTotal:")
+			info.swap_total_mb = value / 1024;
+		else if(key == "SwapFree:")
+			info.swap_free_mb = value / 1024;
+	}
+	return info;
+}
+
 std::string produceReport(bool reportUSB = true)
 {
 	json j;
@@ -68,6 +110,14 @@ std::string produceReport(bool reportUSB = true)
 	j["lidar_sdk"] = lidarSDKToUse;
 	j["buzzer"] = !disableBuzzer;
 	j["state"] = StatesToString.at(app_state);
+
+	j["cpu_temp_c"] = readCpuTemperature();
+	const auto mem = readMemInfo();
+	j["mem_total_mb"] = mem.total_mb;
+	j["mem_available_mb"] = mem.available_mb;
+	j["mem_used_mb"] = mem.total_mb - mem.available_mb;
+	j["swap_total_mb"] = mem.swap_total_mb;
+	j["swap_used_mb"] = mem.swap_total_mb - mem.swap_free_mb;
 	if(lidarClientPtr)
 	{
 		j["lidar"] = lidarClientPtr->produceStatus();
@@ -419,7 +469,7 @@ void stateWatcher()
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_CONTINOUS_SCANNING, true);
 				std::this_thread::sleep_for(100ms);
 			}
-			if(now - chunkStart > std::chrono::seconds(10) && app_state == States::SCANNING)
+			if(now - chunkStart > std::chrono::seconds(5) && app_state == States::SCANNING)
 			{
 
 				mandeye::gpioClientPtr->setLed(hardware::LED::LED_GPIO_COPY_DATA, true);
@@ -441,7 +491,8 @@ void stateWatcher()
 				}
 				else
 				{
-					const auto fn = savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+					auto [fn, saveStats] = savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+					if(saveStats) lastFileSaveStats = *saveStats;
 					saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					auto lidarList = lidarClientPtr->getSerialNumberToLidarIdMapping();
@@ -798,6 +849,12 @@ int main(int argc, char** argv)
 		// start zeromq publisher
 		mandeye::publisherPtr = std::make_shared<mandeye::Publisher>();
 		mandeye::publisherPtr->SetTimeStampProvider(mandeye::lidarClientPtr);
+		while (mandeye::isRunning)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			auto bufferSize = mandeye::lidarClientPtr->GetBufferSize();
+			TracyPlot("bufferSize", double(bufferSize)/1e6);
+		}
 	});
 
 	std::thread thStateMachine([&]() { mandeye::stateWatcher(); });
