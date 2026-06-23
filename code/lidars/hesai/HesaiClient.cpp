@@ -5,24 +5,24 @@
 
 namespace mandeye {
 	constexpr uint64_t HESAI_DECIMATION_STEP_1 = 2; // Decimation step for Hesai lidar data
-	constexpr uint64_t HESAI_DECIMATION_1_THRESHOLD = 20 * 1024 * 1024 / sizeof(LidarPoint);
+	constexpr uint64_t HESAI_DECIMATION_1_THRESHOLD = 5 * 1e6;
 	// 20 MB threshold for decimation step 1
 
 	constexpr uint64_t HESAI_DECIMATION_STEP_2 = 5; // Decimation step for Hesai lidar data
-	constexpr uint64_t HESAI_DECIMATION_2_THRESHOLD = 30 * 1024 * 1024 / sizeof(LidarPoint);
+	constexpr uint64_t HESAI_DECIMATION_2_THRESHOLD = 10 * 1e6;
 	// 20 MB threshold for decimation step 1
 
 	constexpr uint64_t HESAI_DECIMATION_STEP_3 = 32; // Decimation step for Hesai lidar data
-	constexpr uint64_t HESAI_DECIMATION_3_THRESHOLD = 50 * 1024 * 1024 / sizeof(LidarPoint);
+	constexpr uint64_t HESAI_DECIMATION_3_THRESHOLD = 20 * 1e6;
 	// 20 MB threshold for decimation step 1
 
-	constexpr uint64_t HESAI_MAX_BUFFER_SIZE = 60 * 1024 * 1024 / sizeof(LidarPoint);
+	constexpr uint64_t HESAI_MAX_BUFFER_SIZE = 25 * 1e6;
 	// 20 MB threshold for decimation step 1
 
 	nlohmann::json HesaiClient::produceStatus() {
 		nlohmann::json data;
 
-	nlohmann::json data_status;
+		nlohmann::json data_status;
 	data_status["init_success"] = true;
 	data["is_synced"] = isSynced();
 	data_status["is_done"] = isDone.load(); // Current status of the data thread
@@ -39,6 +39,7 @@ namespace mandeye {
 	data_status["time_diff"] = m_time_diff; {
 		std::unique_lock<std::mutex> lock(m_bufferPointMutex);
 		data_status["mem_decimation"] = m_decimation;
+		data_status["mem_points"] = m_bufferLidarPtr ? m_bufferLidarPtr->size() : 0;
 	}
 	nlohmann::json faults;
 	for(auto& fault : m_faults)
@@ -181,7 +182,7 @@ void HesaiClient::CallbackFrame(const LidarDecodedFrame<LidarPointXYZICRT>& data
 		if (bufferSize >= HESAI_MAX_BUFFER_SIZE)
 			return;
 
-
+		m_decimation = 1; // Default decimation step
 		if (bufferSize >= HESAI_DECIMATION_3_THRESHOLD)
 			m_decimation = HESAI_DECIMATION_STEP_3;
 		else if (bufferSize >= HESAI_DECIMATION_2_THRESHOLD)
