@@ -79,6 +79,7 @@ private:
 	uint16_t m_channel_num;
 	double m_timestamp;
 	double m_time_diff;
+	uint64_t m_decimation = 1;
 };
 
 } // namespace mandeye

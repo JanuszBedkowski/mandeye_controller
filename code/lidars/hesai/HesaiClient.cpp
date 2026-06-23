@@ -3,11 +3,24 @@
 #include <chrono>
 #include <iostream>
 
-namespace mandeye
-{
-nlohmann::json HesaiClient::produceStatus()
-{
-	nlohmann::json data;
+namespace mandeye {
+	constexpr uint64_t HESAI_DECIMATION_STEP_1 = 2; // Decimation step for Hesai lidar data
+	constexpr uint64_t HESAI_DECIMATION_1_THRESHOLD = 20 * 1024 * 1024 / sizeof(LidarPoint);
+	// 20 MB threshold for decimation step 1
+
+	constexpr uint64_t HESAI_DECIMATION_STEP_2 = 5; // Decimation step for Hesai lidar data
+	constexpr uint64_t HESAI_DECIMATION_2_THRESHOLD = 30 * 1024 * 1024 / sizeof(LidarPoint);
+	// 20 MB threshold for decimation step 1
+
+	constexpr uint64_t HESAI_DECIMATION_STEP_3 = 32; // Decimation step for Hesai lidar data
+	constexpr uint64_t HESAI_DECIMATION_3_THRESHOLD = 50 * 1024 * 1024 / sizeof(LidarPoint);
+	// 20 MB threshold for decimation step 1
+
+	constexpr uint64_t HESAI_MAX_BUFFER_SIZE = 60 * 1024 * 1024 / sizeof(LidarPoint);
+	// 20 MB threshold for decimation step 1
+
+	nlohmann::json HesaiClient::produceStatus() {
+		nlohmann::json data;
 
 	nlohmann::json data_status;
 	data_status["init_success"] = true;
@@ -23,7 +36,10 @@ nlohmann::json HesaiClient::produceStatus()
 	data_status["laser_num"] = m_laser_num;
 	data_status["channel_num"] = m_channel_num;
 	data_status["timestamp_sec"] = m_timestamp;
-	data_status["time_diff"] = m_time_diff;
+	data_status["time_diff"] = m_time_diff; {
+		std::unique_lock<std::mutex> lock(m_bufferPointMutex);
+		data_status["mem_decimation"] = m_decimation;
+	}
 	nlohmann::json faults;
 	for(auto& fault : m_faults)
 	{
@@ -159,11 +175,24 @@ void HesaiClient::CallbackFrame(const LidarDecodedFrame<LidarPointXYZICRT>& data
 	}
 
 	std::lock_guard<std::mutex> lock(m_bufferPointMutex);
-	if(m_bufferLidarPtr)
-	{
-		for(size_t i = 0; i < dataFrame.points_num; ++i)
-		{
-			const auto& point = dataFrame.points[i];
+	if (m_bufferLidarPtr) {
+		const uint64_t bufferSize = m_bufferLidarPtr->size();
+
+		if (bufferSize >= HESAI_MAX_BUFFER_SIZE)
+			return;
+
+
+		if (bufferSize >= HESAI_DECIMATION_3_THRESHOLD)
+			m_decimation = HESAI_DECIMATION_STEP_3;
+		else if (bufferSize >= HESAI_DECIMATION_2_THRESHOLD)
+			m_decimation = HESAI_DECIMATION_STEP_2;
+		else if (bufferSize >= HESAI_DECIMATION_1_THRESHOLD)
+			m_decimation = HESAI_DECIMATION_STEP_1;
+
+		for (size_t i = 0; i < dataFrame.points_num; ++i) {
+			if (i % m_decimation != 0)
+				continue;
+			const auto &point = dataFrame.points[i];
 			LidarPoint data;
 			data.x = point.x;
 			data.y = point.y;
