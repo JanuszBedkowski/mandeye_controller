@@ -1,7 +1,18 @@
 #include "save_laz.h"
+#include <cstdlib>
 #include <iostream>
 #include <laszip/laszip_api.h>
 #include <tracy/Tracy.hpp>
+
+namespace {
+int getEnvInt(const char* name, int def)
+{
+	const char* v = std::getenv(name);
+	if(!v)
+		return def;
+	return std::stoi(v);
+}
+} // namespace
 
 nlohmann::json mandeye::LazStats::produceStatus() const
 {
@@ -72,10 +83,12 @@ std::optional<mandeye::LazStats> mandeye::saveLaz(const std::string& filename, L
 	// populate the header
 
 	// heuristically determine the decimation step
+	const int lazDecimationThreshold = getEnvInt("MANDEYE_LAZ_DECIMATION_THRESHOLD", 4000000);
+	const int lazDecimationTarget = getEnvInt("MANDEYE_LAZ_DECIMATION_TARGET", 2000000);
 	int step = 1;
-	if(buffer->size() > 4000000)
+	if((int)buffer->size() > lazDecimationThreshold)
 	{
-		step = ceil((double)buffer->size() / 2000000.0);
+		step = ceil((double)buffer->size() / lazDecimationTarget);
 	}
 	if(step < 1)
 	{

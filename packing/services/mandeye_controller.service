@@ -5,6 +5,8 @@ After=multi-user.target
 [Service]
 #Environment=MANDEYE_LIDAR_SDK=SICK
 #Environment=MANDEYE_DISABLE_BUZZER=0
+#Environment=MANDEYE_LAZ_DECIMATION_THRESHOLD=4000000
+#Environment=MANDEYE_LAZ_DECIMATION_TARGET=2000000
 
 User=pi
 ExecStartPre=/bin/sleep 35
