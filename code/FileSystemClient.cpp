@@ -288,8 +288,8 @@ double FileSystemClient::BenchmarkWriteSpeed(const std::string& filename, size_t
 		out.write(buffer.data(), bufferSize);
 	}
 	out.close();
-	auto end = std::chrono::high_resolution_clock::now();
 	system("sync");
+	auto end = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed = end - start;
 	double mbps = fileSizeMB / elapsed.count();
 

@@ -5,15 +5,15 @@
 
 namespace mandeye {
 	constexpr uint64_t HESAI_DECIMATION_STEP_1 = 2; // Decimation step for Hesai lidar data
-	constexpr uint64_t HESAI_DECIMATION_1_THRESHOLD = 5 * 1e6;
+	constexpr uint64_t HESAI_DECIMATION_1_THRESHOLD = 15 * 1e6;
 	// 20 MB threshold for decimation step 1
 
 	constexpr uint64_t HESAI_DECIMATION_STEP_2 = 5; // Decimation step for Hesai lidar data
-	constexpr uint64_t HESAI_DECIMATION_2_THRESHOLD = 10 * 1e6;
+	constexpr uint64_t HESAI_DECIMATION_2_THRESHOLD = 16 * 1e6;
 	// 20 MB threshold for decimation step 1
 
-	constexpr uint64_t HESAI_DECIMATION_STEP_3 = 32; // Decimation step for Hesai lidar data
-	constexpr uint64_t HESAI_DECIMATION_3_THRESHOLD = 20 * 1e6;
+	constexpr uint64_t HESAI_DECIMATION_STEP_3 = 10; // Decimation step for Hesai lidar data
+	constexpr uint64_t HESAI_DECIMATION_3_THRESHOLD = 18 * 1e6;
 	// 20 MB threshold for decimation step 1
 
 	constexpr uint64_t HESAI_MAX_BUFFER_SIZE = 25 * 1e6;
