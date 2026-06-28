@@ -11,13 +11,11 @@ struct LidarPoint
 	float x; //! X coordinate in meters
 	float y; //! Y coordinate in meters
 	float z; //! Z coordinate in meters
-	float intensity; //! Intensity of the point, usually 0-255
-	uint8_t tag;
 	uint64_t timestamp; //! Timestamp in nanoseconds, 0 if not set
-	uint8_t line_id; //! Line ID, used to identify the laser that produced this point
-	uint16_t laser_id; //! Laser ID, used to identify the laser that produced this point
+	uint16_t intensity; //! Intensity of the point, usually 0-255
+	uint8_t tag;
+	uint8_t laser_id; //! Laser ID, used to identify the laser that produced this point
 };
-
 struct LidarIMU
 {
 	float gyro_x;
