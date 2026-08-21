@@ -82,9 +82,10 @@ bool GeneralCommandHandler::Init(
           LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", dev_type);
           return false;
         }
-      } else if (dev_type == kLivoxLidarTypeMid360) {
+      } else if (dev_type == kLivoxLidarTypeMid360s || dev_type == kLivoxLidarTypeMid360) {
         std::shared_ptr<Mid360CommandHandler> mid360_command_handler_ptr(new Mid360CommandHandler(device_manager));
-        lidars_command_handler_[dev_type] = mid360_command_handler_ptr;        
+        lidars_command_handler_[kLivoxLidarTypeMid360] = mid360_command_handler_ptr;
+        lidars_command_handler_[kLivoxLidarTypeMid360s] = mid360_command_handler_ptr;
         if (!(lidars_command_handler_[dev_type]->Init(lidars_cfg_ptr, custom_lidars_cfg_ptr))) {
           LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", dev_type);
           return false;
@@ -110,9 +111,10 @@ bool GeneralCommandHandler::Init(
           LOG_ERROR("General command handler init failed, the custom lidar of type:{} command init failed.", dev_type);
           return false;
         }
-      } else if (dev_type == kLivoxLidarTypeMid360) {
+      } else if (dev_type == kLivoxLidarTypeMid360s || dev_type == kLivoxLidarTypeMid360) {
         std::shared_ptr<Mid360CommandHandler> mid360_command_handler_ptr(new Mid360CommandHandler(device_manager));
-        lidars_command_handler_[dev_type] = mid360_command_handler_ptr;        
+        lidars_command_handler_[kLivoxLidarTypeMid360] = mid360_command_handler_ptr;
+        lidars_command_handler_[kLivoxLidarTypeMid360s] = mid360_command_handler_ptr;
         if (!(lidars_command_handler_[dev_type]->Init(lidars_cfg_ptr, custom_lidars_cfg_ptr))) {
           LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", dev_type);
           return false;
@@ -314,9 +316,10 @@ void GeneralCommandHandler::CreateCommandHandle(const uint8_t dev_type) {
       if (!(lidars_command_handler_[dev_type]->Init(is_view_))) {
         LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", dev_type);
       }
-    } else if (dev_type == kLivoxLidarTypeMid360) {
+    } else if (dev_type == kLivoxLidarTypeMid360s || dev_type == kLivoxLidarTypeMid360) {
       std::shared_ptr<Mid360CommandHandler> mid360_command_handler_ptr(new Mid360CommandHandler(device_manager_));
-      lidars_command_handler_[dev_type] = mid360_command_handler_ptr;        
+      lidars_command_handler_[kLivoxLidarTypeMid360s] = mid360_command_handler_ptr;
+      lidars_command_handler_[kLivoxLidarTypeMid360] = mid360_command_handler_ptr;
       if (!(lidars_command_handler_[dev_type]->Init(is_view_))) {
         LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", dev_type);
       }
@@ -628,7 +631,7 @@ bool GeneralCommandHandler::GetQueryLidarInternalInfoKeys(const uint32_t handle,
       };
       key_sets.swap(tmp_key_sets);
       return true;
-    } else if (dev_type == kLivoxLidarTypeMid360) {
+    } else if (dev_type == kLivoxLidarTypeMid360s || dev_type == kLivoxLidarTypeMid360) {
       std::set<ParamKeyName> tmp_key_sets {
         kKeyPclDataType,
         kKeyPatternMode,

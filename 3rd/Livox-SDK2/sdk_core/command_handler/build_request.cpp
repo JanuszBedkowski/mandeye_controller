@@ -161,6 +161,8 @@ bool BuildRequest::BuildUpdateLidarCfgRequest(const LivoxLidarCfg& lidar_cfg,
     lidar_point_port = kHAPPointDataPort;
   } else if (lidar_cfg.device_type == kLivoxLidarTypeMid360) {
     lidar_point_port = kMid360LidarPointCloudPort;
+  } else if (lidar_cfg.device_type == kLivoxLidarTypeMid360s) {
+    lidar_point_port = kMid360LidarPointCloudPort;
   } else if (lidar_cfg.device_type == kLivoxLidarTypePA) {
     lidar_point_port = kPaLidarPointCloudPort;
   } else {
@@ -188,6 +190,8 @@ bool BuildRequest::BuildUpdateLidarCfgRequest(const LivoxLidarCfg& lidar_cfg,
   if (lidar_cfg.device_type == kLivoxLidarTypeIndustrialHAP) {
     lidar_imu_port = kHAPIMUPort;
   } else if (lidar_cfg.device_type == kLivoxLidarTypeMid360) {
+    lidar_imu_port = kMid360LidarImuDataPort;
+  } else if (lidar_cfg.device_type == kLivoxLidarTypeMid360s) {
     lidar_imu_port = kMid360LidarImuDataPort;
   } else {
     LOG_ERROR("Build update lidar cfg request failed, unknown the dev_type:{}", lidar_cfg.device_type);

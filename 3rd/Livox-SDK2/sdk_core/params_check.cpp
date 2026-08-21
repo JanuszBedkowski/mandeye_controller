@@ -101,7 +101,7 @@ void ParamsCheck::CheckLidarPort() {
 }
 
 void ParamsCheck::CheckPort(const uint8_t dev_type, LivoxLidarNetInfo& lidar_net_info) {
-  if (dev_type != kLivoxLidarTypeMid360) {
+  if (dev_type != kLivoxLidarTypeMid360 && dev_type != kLivoxLidarTypeMid360s) {
     return;
   }
 

@@ -118,6 +118,22 @@ bool ParseCfgFile::Parse(std::shared_ptr<std::vector<LivoxLidarCfg>>& lidars_cfg
     }
     lidars_cfg_ptr->push_back(std::move(lidar_cfg));
   }
+  if (doc.HasMember("MID360s") && doc["MID360s"].IsObject()) {
+    LivoxLidarCfg lidar_cfg;
+    if (!GetDevType("MID360s", lidar_cfg.device_type)) {
+      LOG_ERROR("Parse mid360 object failed, the device_type is error.");
+      return false;
+    }
+    const rapidjson::Value &hap_object = doc["MID360s"];
+    if (!ParseLidarCfg(hap_object, lidar_cfg, false)) {
+      if (raw_file) {
+        std::fclose(raw_file);
+      }
+      LOG_ERROR("Parse mid360s lidar cfg failed.");
+      return false;
+    }
+    lidars_cfg_ptr->push_back(std::move(lidar_cfg));
+  }
 
   if (doc.HasMember("PA") && doc["PA"].IsObject()) {
     LivoxLidarCfg pa_lidar_cfg;
@@ -197,6 +213,9 @@ bool ParseCfgFile::GetDevType(const std::string& type, uint8_t& device_type) {
     return true;
   } else if (type == "MID360") {
     device_type = kLivoxLidarTypeMid360;
+    return true;
+  } else if (type == "MID360s") {
+    device_type = kLivoxLidarTypeMid360s;
     return true;
   } else if (type == "PA") {
     device_type = kLivoxLidarTypePA;
