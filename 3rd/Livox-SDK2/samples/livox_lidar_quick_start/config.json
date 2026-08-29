@@ -12,7 +12,7 @@
 			"cmd_data_port": 56101,
 			"push_msg_ip": "192.168.1.5",
 			"push_msg_port": 56201,
-			"point_data_ip": "192.168.1.5",
+			"point_data_ip": "192.168.1.255",
 			"point_data_port": 56301,
 			"imu_data_ip" : "192.168.1.5",
 			"imu_data_port": 56401,

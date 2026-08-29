@@ -24,7 +24,7 @@
 #include "hardware_config/mandeye.h"
 #include <chrono>
 
-#define MANDEYE_LIVOX_LISTEN_IP "192.168.1.5"
+#define MANDEYE_LIVOX_LISTEN_IP "192.168.1.255"
 #define MANDEYE_LIDAR_SKD "LIVOX_SDK2"
 #define MANDEYE_REPO "/media/usb/"
 #define MANDEYE_GPIO_SIM false

@@ -280,7 +280,11 @@ bool DeviceManager::CreateDetectionChannel() {
 }
 
 bool DeviceManager::CreateDataChannel(const HostNetInfo& host_net_info) {
-  if (!CreateDataSocketAndAddDelegate(host_net_info.point_data_ip, host_net_info.point_data_port)) {
+  // Local mixed-mode patch: force wildcard bind for the point-data socket so a single SDK
+  // instance can receive both broadcast (192.168.1.255) and unicast (host IP) point streams
+  // in parallel; lidars are still told to send to host_net_info.point_data_ip via the init
+  // config, and can be redirected per-device with SetLivoxLidarPointDataHostIPCfg.
+  if (!CreateDataSocketAndAddDelegate("0.0.0.0", host_net_info.point_data_port)) {
     LOG_ERROR("Create socket and add delegate failed.");
     return false;
   }

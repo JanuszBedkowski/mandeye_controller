@@ -2,6 +2,7 @@
 #include "fstream"
 #include "livox_lidar_api.h"
 #include "livox_lidar_def.h"
+#include <cstring>
 #include <iostream>
 #include <thread>
 
@@ -30,6 +31,23 @@ std::string ReplaceAll(std::string str, const std::string& from, const std::stri
 		start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
 	}
 	return str;
+}
+
+void LivoxClient::Init(const nlohmann::json& config)
+{
+	if(!config.contains("point_data_ip_by_sn") || !config["point_data_ip_by_sn"].is_object())
+	{
+		return;
+	}
+	std::lock_guard<std::mutex> lcK(m_lidarInfoMutex);
+	m_pointDataIpBySn.clear();
+	for(auto it = config["point_data_ip_by_sn"].begin(); it != config["point_data_ip_by_sn"].end(); ++it)
+	{
+		if(!it.value().is_string()) continue;
+		m_pointDataIpBySn[it.key()] = it.value().get<std::string>();
+		std::cout << " **** LivoxClient: point_data_ip override registered SN=" << it.key()
+		          << " -> " << m_pointDataIpBySn[it.key()] << std::endl;
+	}
 }
 
 nlohmann::json LivoxClient::produceStatus()
@@ -412,6 +430,17 @@ void LivoxClient::SetIpInfoCallback(livox_status status, uint32_t handle, LivoxL
 	}
 }
 
+void LivoxClient::SetPointDataIpCallback(livox_status status, uint32_t handle, LivoxLidarAsyncControlResponse* response, void* client_data)
+{
+	if(response == nullptr)
+	{
+		printf("SetPointDataIpCallback: null response, status:%u, handle:%u\n", status, handle);
+		return;
+	}
+	printf("SetPointDataIpCallback, status:%u, handle:%u, ret_code:%u, error_key:%u\n",
+	       status, handle, response->ret_code, response->error_key);
+}
+
 void LivoxClient::QueryInternalInfoCallback(livox_status status, uint32_t handle, LivoxLidarDiagInternalInfoResponse* response, void* client_data)
 {
 	if(status != kLivoxLidarStatusSuccess)
@@ -504,15 +533,33 @@ void LivoxClient::LidarInfoChangeCallback(const uint32_t handle, const LivoxLida
 	LivoxClient* this_ptr = (LivoxClient*)(client_data);
 	if(this_ptr)
 	{
-		std::lock_guard<std::mutex> lcK(this_ptr->m_lidarInfoMutex);
-		this_ptr->m_LivoxLidarInfo[handle] = *info;
-		this_ptr->m_recivedImuMsgs[handle] = 0;
-		this_ptr->m_recivedPointMessages[handle] = 0;
-		this_ptr->m_handleToLastTimestamp[handle] = 0;
 		const std::string sn(info->sn);
-		this_ptr->m_handleToSerialNumber[handle] = sn;
-		this_ptr->m_serialNumbers.insert(sn);
-		std::cout << " **** Adding lidar " << sn << " handle " << handle << std::endl;
+		std::string overrideIp;
+		{
+			std::lock_guard<std::mutex> lcK(this_ptr->m_lidarInfoMutex);
+			this_ptr->m_LivoxLidarInfo[handle] = *info;
+			this_ptr->m_recivedImuMsgs[handle] = 0;
+			this_ptr->m_recivedPointMessages[handle] = 0;
+			this_ptr->m_handleToLastTimestamp[handle] = 0;
+			this_ptr->m_handleToSerialNumber[handle] = sn;
+			this_ptr->m_serialNumbers.insert(sn);
+			std::cout << " **** Adding lidar " << sn << " handle " << handle << std::endl;
+			if(auto it = this_ptr->m_pointDataIpBySn.find(sn); it != this_ptr->m_pointDataIpBySn.end())
+			{
+				overrideIp = it->second;
+			}
+		}
+		if(!overrideIp.empty())
+		{
+			HostPointIPInfo pointIp{};
+			std::snprintf(pointIp.host_ip_addr, sizeof(pointIp.host_ip_addr), "%s", overrideIp.c_str());
+			pointIp.host_point_data_port = 56301;
+			pointIp.lidar_point_data_port = 56300;
+			std::cout << " **** Overriding point_data_ip for SN " << sn
+			          << " -> " << overrideIp << " (handle=" << handle << ")" << std::endl;
+			SetLivoxLidarPointDataHostIPCfg(handle, &pointIp,
+			                                &LivoxClient::SetPointDataIpCallback, this_ptr);
+		}
 	}
 }
 double LivoxClient::getTimestamp()

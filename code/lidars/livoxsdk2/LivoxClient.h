@@ -15,6 +15,11 @@ namespace mandeye
 class LivoxClient : public BaseLidarClient
 {
 public:
+	//! Reads optional per-lidar overrides from the config JSON, e.g.:
+	//!   { "point_data_ip_by_sn": { "<SN1>": "192.168.1.255", "<SN2>": "192.168.1.5" } }
+	//! Any SN found here gets SetLivoxLidarPointDataHostIPCfg() applied at discovery time.
+	void Init(const nlohmann::json& config) override;
+
 	nlohmann::json produceStatus() override;
 
 	//! starts LivoxSDK2, interface is IP of listen interface (IP of network cards with Livox connected
@@ -67,6 +72,8 @@ private:
 
 	std::unordered_map<uint32_t, uint64_t> m_handleToLastTimestamp;
 	std::unordered_map<uint32_t, std::string> m_handleToSerialNumber;
+	//! Populated by Init() from config["point_data_ip_by_sn"]; consulted in LidarInfoChangeCallback.
+	std::unordered_map<std::string, std::string> m_pointDataIpBySn;
 	double m_time_diff;
 	//! This is a set of serial numbers that we have already seen, its used to find lidarId
 	std::set<std::string> m_serialNumbers;
@@ -156,6 +163,9 @@ private:
 	static void WorkModeCallback(livox_status status, uint32_t handle, LivoxLidarAsyncControlResponse* response, void* client_data);
 
 	static void SetIpInfoCallback(livox_status status, uint32_t handle, LivoxLidarAsyncControlResponse* response, void* client_data);
+
+	//! Response callback for SetLivoxLidarPointDataHostIPCfg() dispatched from LidarInfoChangeCallback; log-only, no reboot.
+	static void SetPointDataIpCallback(livox_status status, uint32_t handle, LivoxLidarAsyncControlResponse* response, void* client_data);
 
 	static void RebootCallback(livox_status status, uint32_t handle, LivoxLidarRebootResponse* response, void* client_data);
 
