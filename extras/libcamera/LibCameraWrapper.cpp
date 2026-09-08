@@ -3,6 +3,7 @@
 #include <bits/this_thread_sleep.h>
 using namespace libcamera;
 using namespace std::chrono_literals;
+#include <set>
 #include <sys/mman.h>
 
 namespace mandeye
@@ -291,11 +292,41 @@ bool LibCameraWrapper::start(int camNo, nlohmann::json config, StreamRole role)
 	m_camera = m_cm->get(cameraId);
 	std::cout << "Camera is " << m_camera->id() << std::endl;
 	m_camera->acquire();
+
+	// Capture the native sensor readout modes once, from a Raw-role configuration.
+	m_sensorModes.clear();
+	if(auto rawCfg = m_camera->generateConfiguration({StreamRole::Raw}); rawCfg && !rawCfg->empty())
+	{
+		const auto& rawStream = rawCfg->at(0);
+		for(const auto& s : rawStream.formats().sizes(rawStream.pixelFormat))
+		{
+			m_sensorModes.push_back(s);
+		}
+		std::cout << "Sensor modes: ";
+		for(const auto& s : m_sensorModes)
+			std::cout << s.width << "x" << s.height << " ";
+		std::cout << std::endl;
+	}
+
 	m_config = m_camera->generateConfiguration({role});
 
 	StreamConfiguration& streamConfig = m_config->at(0);
 
 	streamConfig.pixelFormat = libcamera::formats::RGB888;
+
+	// Optional resolution override from the config json ("width"/"height").
+	// validate() below snaps it to something the pipeline can actually deliver.
+	if(config.contains("width") && config.contains("height"))
+	{
+		const unsigned int w = config["width"].get<unsigned int>();
+		const unsigned int h = config["height"].get<unsigned int>();
+		if(w > 0 && h > 0)
+		{
+			std::cout << "Requesting resolution " << w << "x" << h << std::endl;
+			streamConfig.size = libcamera::Size(w, h);
+		}
+	}
+
 	m_config->validate();
 	std::cout << "Validated configuration is: " << streamConfig.toString() << std::endl;
 	m_camera->configure(m_config.get());
@@ -428,6 +459,20 @@ void LibCameraWrapper::requestComplete(Request* request)
 			{
 				name = std::to_string(id);
 			}
+			// libcamera reports these in microseconds; expose them in milliseconds
+			if(id == libcamera::controls::EXPOSURE_TIME || id == libcamera::controls::FRAME_DURATION)
+			{
+				if(f.second.type() == libcamera::ControlTypeInteger32)
+				{
+					metadataDump[name] = f.second.get<int32_t>() / 1000.0;
+					continue;
+				}
+				if(f.second.type() == libcamera::ControlTypeInteger64)
+				{
+					metadataDump[name] = f.second.get<int64_t>() / 1000.0;
+					continue;
+				}
+			}
 			metadataDump[name] = f.second.toString();
 		}
 
@@ -534,6 +579,29 @@ nlohmann::json LibCameraWrapper::getCameraConfig()
 	config["controls_info"] = {};
 	config["rateMs"] = m_rateMs;
 	config["picamera"]["_Note1"] = "Here User can adjust setting of their camera!";
+
+	// --- resolution: current size + the discrete list of selectable modes ---
+	if(m_config && !m_config->empty())
+	{
+		const auto& sc = m_config->at(0);
+		config["width"] = sc.size.width;
+		config["height"] = sc.size.height;
+
+		std::set<std::pair<unsigned int, unsigned int>> sizes;
+		for(const auto& s : sc.formats().sizes(sc.pixelFormat))
+		{
+			sizes.insert({s.width, s.height});
+		}
+		for(const auto& s : m_sensorModes)
+		{
+			sizes.insert({s.width, s.height});
+		}
+		sizes.insert({sc.size.width, sc.size.height}); // always include the active one
+		for(const auto& [w, h] : sizes)
+		{
+			config["resolutions"].push_back({w, h});
+		}
+	}
 	for(auto const& control : m_controlsInfo)
 	{
 		const unsigned int id = control.first->id();

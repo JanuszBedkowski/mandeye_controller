@@ -49,6 +49,8 @@ private:
 	void AdjustSystemClock();
 	uint32_t m_rateMs = 500;
 	std::thread m_captureThread;
+	//! Native sensor readout modes, captured once in start() from a Raw-role configuration
+	std::vector<libcamera::Size> m_sensorModes;
 
 public:
 	LibCameraWrapper() = default;

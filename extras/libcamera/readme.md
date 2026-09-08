@@ -62,8 +62,9 @@ sudo systemctl start mandeye_libcamera_cam0.service
 - `/photo` - Returns the current camera image (used for live stream).
 - `/photoFull` - Returns the latest full-resolution image for download.
 - `/photoMeta` - Returns JSON metadata for the current photo.
-- `/getConfig` - Returns the current camera configuration as JSON.
-- `/setConfig` - Accepts a JSON payload to update the camera configuration.
+- `/getConfig` - Returns the current camera configuration as JSON. Includes `width`/`height` (active resolution) and `resolutions` (discrete list of selectable modes: pipeline output sizes plus native sensor modes).
+- `/setConfig` - Accepts a JSON payload to update the running camera configuration.
+- `/saveConfig` - Accepts a JSON payload, writes it to the USB config file (`--config` path) and makes it the loaded config. Used by the web UI's "Save to USB" button.
 
 ## Usage
 

@@ -180,6 +180,44 @@ struct HelloHandler : public Http::Handler
 			writer.send(Http::Code::Method_Not_Allowed, "Use POST with JSON body");
 			return;
 		}
+		else if(request.resource() == "/saveConfig")
+		{
+			// Persist the posted config to the USB config file and make it the loaded config.
+			if(request.method() != Http::Method::Post)
+			{
+				setCors(writer);
+				writer.send(Http::Code::Method_Not_Allowed, "Use POST with JSON body");
+				return;
+			}
+			const auto body = request.body();
+			if(body.empty())
+			{
+				writer.send(Http::Code::Bad_Request, "Empty body");
+				return;
+			}
+			try
+			{
+				nlohmann::json config = nlohmann::json::parse(body);
+				std::ofstream file(global::configFileName);
+				if(!file)
+				{
+					writer.send(Http::Code::Internal_Server_Error, "Cannot open " + global::configFileName);
+					return;
+				}
+				file << config.dump(4);
+				file.close();
+				::sync();
+				global::loadedUSBConfig = config;
+				std::cout << "Saved config to " << global::configFileName << std::endl;
+				writer.send(Http::Code::Ok, "Saved to " + global::configFileName);
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << "Error saving config: " << e.what() << std::endl;
+				writer.send(Http::Code::Bad_Request, "Invalid JSON");
+			}
+			return;
+		}
 		else
 		{
 			writer.send(Http::Code::Ok, indexWebPageData.data(), MIME(Text, Html));
