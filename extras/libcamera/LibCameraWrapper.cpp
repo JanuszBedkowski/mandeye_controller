@@ -3,6 +3,7 @@
 #include <thread>
 using namespace libcamera;
 using namespace std::chrono_literals;
+#include <algorithm>
 #include <set>
 #include <sys/mman.h>
 
@@ -297,8 +298,29 @@ void LibCameraWrapper::AdjustSystemClock()
 	m_monoOffset = (realtime_ns > monotonic_ns) ? realtime_ns - monotonic_ns : 0;
 }
 
+std::vector<std::string> LibCameraWrapper::enumerateCameraIds()
+{
+	std::vector<std::string> ids;
+	CameraManager cm;
+	if(int ret = cm.start(); ret != 0)
+	{
+		std::cerr << "enumerateCameraIds: CameraManager::start() failed (" << ret << ")" << std::endl;
+		return ids;
+	}
+	for(auto const& camera : cm.cameras())
+		ids.push_back(camera->id());
+	cm.stop();
+	return ids;
+}
+
 bool LibCameraWrapper::start(int camNo, nlohmann::json config, StreamRole role)
 {
+	// Start from a clean slate: the control list is long-lived, so anything not set by
+	// *this* config (a pinned ExposureTime, a leftover AeEnable, ScalerCrop, ...) would
+	// otherwise leak in from a previous /setConfig and could not be cleared without a
+	// process restart. Each start() must reflect exactly the config it was handed.
+	m_controlList.clear();
+
 	AdjustSystemClock();
 	m_cm = std::make_unique<CameraManager>();
 	m_cm->start();
@@ -350,19 +372,33 @@ bool LibCameraWrapper::start(int camNo, nlohmann::json config, StreamRole role)
 
 	streamConfig.pixelFormat = libcamera::formats::RGB888;
 
-	// Optional resolution override from the config json ("width"/"height").
-	// validate() below snaps it to something the pipeline can actually deliver.
+	// Resolution: use the config json ("width"/"height") when given, otherwise fall back to
+	// the largest native sensor mode - the Viewfinder role we generate from defaults to a
+	// small preview size, which we never want here. validate() below snaps the chosen size
+	// to something the pipeline can actually deliver.
 	libcamera::Size requestedSize = streamConfig.size;
-	if(config.contains("width") && config.contains("height"))
+	const bool haveWH = config.contains("width") && config.contains("height") &&
+						config["width"].get<int>() > 0 && config["height"].get<int>() > 0;
+	if(haveWH)
 	{
-		const unsigned int w = config["width"].get<unsigned int>();
-		const unsigned int h = config["height"].get<unsigned int>();
-		if(w > 0 && h > 0)
-		{
-			requestedSize = libcamera::Size(w, h);
-			streamConfig.size = requestedSize;
-		}
+		requestedSize = libcamera::Size(config["width"].get<unsigned int>(), config["height"].get<unsigned int>());
 	}
+	else if(!m_sensorModes.empty())
+	{
+		requestedSize = *std::max_element(m_sensorModes.begin(), m_sensorModes.end(),
+										  [](const libcamera::Size& a, const libcamera::Size& b) {
+											  return static_cast<uint64_t>(a.width) * a.height <
+													 static_cast<uint64_t>(b.width) * b.height;
+										  });
+		std::cout << "No width/height in config - defaulting to largest sensor mode " << requestedSize.toString()
+				  << std::endl;
+	}
+	streamConfig.size = requestedSize;
+
+	// Note: an explicit SensorConfiguration (binning factor) does nothing on rpi/pisp -
+	// the pipeline picks the sensor mode from the requested width/height alone. So the
+	// readout mode is controlled purely by the resolution: e.g. on the IMX519, 2328x1748
+	// is the 2x2-binned full-array mode and 4656x3496 is the full-resolution mode.
 
 	const libcamera::CameraConfiguration::Status vst = m_config->validate();
 	const char* vstStr = (vst == libcamera::CameraConfiguration::Valid)      ? "Valid"
@@ -711,7 +747,9 @@ nlohmann::json LibCameraWrapper::getCameraConfig()
 		sizes.insert({sc.size.width, sc.size.height}); // always include the active one
 		for(const auto& [w, h] : sizes)
 		{
-			config["resolutions"].push_back({w, h});
+			std::stringstream ss;
+			ss << w << " " << h;
+			config["controls_info"]["resolutions"].push_back(ss.str());
 		}
 	}
 	for(auto const& control : m_controlsInfo)

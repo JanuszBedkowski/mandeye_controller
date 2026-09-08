@@ -53,7 +53,11 @@ private:
 public:
 	LibCameraWrapper() = default;
 	~LibCameraWrapper() = default;
-	bool start(int camNo, nlohmann::json config = {}, libcamera::StreamRole role = libcamera::StreamRole::StillCapture);
+	//! Enumerate the camera ids present on the system, in libcamera order, without opening
+	//! a camera or starting capture (spins up a short-lived CameraManager). Index matches
+	//! the camNo passed to start().
+	static std::vector<std::string> enumerateCameraIds();
+	bool start(int camNo, nlohmann::json config = {}, libcamera::StreamRole role = libcamera::StreamRole::Viewfinder);
 	void capture(bool oneFrame = false);
 	void stop();
 	void registerCallback(std::function<CaptureCallback>&& cb)

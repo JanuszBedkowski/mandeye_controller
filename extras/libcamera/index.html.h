@@ -7,6 +7,7 @@ std::string_view indexWebPageData = R"rawliteral(
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Camera Control</title>
     <style>
+        * { box-sizing: border-box; }
         body { font-family: sans-serif; margin: 0; display: flex; flex-wrap: wrap; align-items: flex-start; }
         #camera { flex: 1 1 360px; background: #000; padding: 10px; text-align: center; }
         #photo { width: 100%; max-width: 640px; background: #111; }
@@ -14,6 +15,8 @@ std::string_view indexWebPageData = R"rawliteral(
         #photoMeta { text-align: left; max-width: 640px; margin: 8px auto 0; padding: 8px;
             background: #111; color: #ccc; font: 12px/1.4 monospace; white-space: pre-wrap;
             max-height: 30vh; overflow: auto; }
+        #applyLog { margin: 8px 0; padding: 8px; background: #111; color: #ccc;
+            font: 12px/1.4 monospace; white-space: pre-wrap; max-height: 40vh; overflow: auto; }
         #controls { flex: 1 1 420px; padding: 16px; max-width: 720px; }
         h2 { margin: 0 0 12px; }
         .row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
@@ -21,13 +24,24 @@ std::string_view indexWebPageData = R"rawliteral(
         .row .hint { color: #888; font-size: 11px; }
         .row input[type=number], .row select { padding: 4px; font: inherit; }
         .row input[type=number] { width: 130px; }
-        .actions { margin: 14px 0; }
-        .actions button { padding: 6px 14px; font: inherit; }
+        .actions { margin: 14px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+        .actions button { padding: 8px 16px; font: inherit; min-height: 40px; }
+        .actions.sticky { position: sticky; top: 0; z-index: 10; margin: 0 0 8px;
+            padding: 8px 0; background: #fff; border-bottom: 1px solid #ddd; }
         #msg { font-size: 13px; margin: 8px 0; min-height: 1.2em; }
         .group { border: 1px solid #ccc; margin: 8px 0; padding: 0 10px; }
         .group > summary { cursor: pointer; padding: 8px 0; font-weight: bold; font-size: 14px; }
         details { margin-top: 16px; }
         textarea { width: 100%; min-height: 260px; font: 12px monospace; margin-top: 8px; }
+        @media (max-width: 640px) {
+            body { display: block; }
+            #camera, #controls { max-width: none; width: 100%; }
+            #controls { padding: 12px; }
+            .row { flex-wrap: wrap; }
+            .row label { flex-basis: 100%; }
+            .row input[type=number], .row select { flex: 1 1 120px; width: auto; font-size: 16px; }
+            .actions button { flex: 1 1 auto; }
+        }
     </style>
 </head>
 <body>
@@ -41,6 +55,21 @@ std::string_view indexWebPageData = R"rawliteral(
 <div id="controls">
     <h2>Camera Control</h2>
 
+    <div class="actions sticky">
+        <button id="btnReload">Reload</button>
+        <button id="btnApply">Apply</button>
+        <button id="btnSave">Save to USB</button>
+        <span id="msg"></span>
+    </div>
+    <pre id="applyLog" hidden></pre>
+
+    <div class="row" id="presetRow" style="display:none">
+        <label for="presetSel">Preset</label>
+        <select id="presetSel"></select>
+        <button id="btnLoadPreset" type="button">Load into form</button>
+        <span class="hint">IMX519 profiles - loads fields below; review, then Apply / Save</span>
+    </div>
+
     <div class="row">
         <label for="rateMs">rateMs</label>
         <input type="number" id="rateMs" min="0" step="10">
@@ -48,13 +77,6 @@ std::string_view indexWebPageData = R"rawliteral(
     </div>
 
     <div id="form"></div>
-
-    <div class="actions">
-        <button id="btnReload">Reload</button>
-        <button id="btnApply">Apply</button>
-        <button id="btnSave">Save to USB</button>
-    </div>
-    <div id="msg"></div>
 
     <details>
         <summary>Raw JSON</summary>
@@ -78,6 +100,7 @@ std::string_view indexWebPageData = R"rawliteral(
     let widgets = [];
     let resSelEl = null;
     let streamTimer = null;
+    let presets = [];
 
     // known libcamera enum controls -> option labels (index = value)
     const ENUMS = {
@@ -333,6 +356,7 @@ std::string_view indexWebPageData = R"rawliteral(
             cfg.width = parseInt(wh[0], 10);
             cfg.height = parseInt(wh[1], 10);
         }
+        delete cfg.sensor; // sensor readout mode follows width/height; no separate control
         for (const w of widgets) {
             if (w.wasUnset && !w.touched) { delete cfg.picamera[w.name]; continue; }
             const v = w.read();
@@ -358,6 +382,49 @@ std::string_view indexWebPageData = R"rawliteral(
         }
     }
 
+    // Embedded IMX519 profiles (empty for any other sensor); populates the Preset row.
+    async function loadPresets() {
+        const row = document.getElementById("presetRow");
+        try {
+            const res = await fetch("/presets", { cache: "no-store" });
+            presets = await res.json();
+        } catch (err) {
+            presets = [];
+        }
+        const sel = document.getElementById("presetSel");
+        sel.innerHTML = "";
+        if (!Array.isArray(presets) || !presets.length) { row.style.display = "none"; return; }
+        presets.forEach((p, i) => {
+            const o = document.createElement("option");
+            o.value = String(i);
+            o.textContent = p.name;
+            sel.appendChild(o);
+        });
+        row.style.display = "";
+    }
+
+    // Merge the chosen preset into fullConfig and rebuild the form (no camera restart yet).
+    function loadPreset() {
+        const p = presets[parseInt(document.getElementById("presetSel").value, 10)];
+        if (!p || !p.config || !fullConfig) return;
+        const c = p.config;
+        const cleanObj = o => {
+            const r = {};
+            for (const k of Object.keys(o || {})) if (!k.startsWith("_")) r[k] = o[k];
+            return r;
+        };
+        fullConfig.picamera = cleanObj(c.picamera);
+        if (Number.isFinite(c.width) && Number.isFinite(c.height)) {
+            fullConfig.width = c.width;
+            fullConfig.height = c.height;
+        }
+        if (Number.isFinite(c.rateMs)) fullConfig.rateMs = c.rateMs;
+        delete fullConfig.sensor;
+        build();
+        rawEl.value = JSON.stringify(readForm(), null, 2);
+        showMsg("Loaded preset '" + p.name + "' into the form - review, then Apply or Save to USB");
+    }
+
     async function post(url, obj) {
         const res = await fetch(url, {
             method: "POST",
@@ -369,14 +436,23 @@ std::string_view indexWebPageData = R"rawliteral(
         return text;
     }
 
+    function showApplyLog(text) {
+        const el = document.getElementById("applyLog");
+        el.textContent = text || "";
+        el.hidden = !text;
+    }
+
     async function apply() {
         try {
             showMsg("Applying…");
+            showApplyLog("");
             const resp = await post("/setConfig", readForm());
-            showMsg("Applied: " + resp);
+            showMsg("Applied");
+            showApplyLog(resp);
             setTimeout(loadConfig, 400);
         } catch (err) {
-            showMsg("Apply failed: " + err);
+            showMsg("Apply failed");
+            showApplyLog(String(err && err.message || err));
         }
     }
 
@@ -435,6 +511,7 @@ std::string_view indexWebPageData = R"rawliteral(
             });
     }
 
+    document.getElementById("btnLoadPreset").onclick = loadPreset;
     document.getElementById("btnReload").onclick = loadConfig;
     document.getElementById("btnApply").onclick = apply;
     document.getElementById("btnSave").onclick = save;
@@ -446,7 +523,7 @@ std::string_view indexWebPageData = R"rawliteral(
     document.getElementById("btnStream").onclick = () => streamTimer ? stopStream() : startStream();
     document.getElementById("btnDwnl").onclick = download;
 
-    window.addEventListener("load", () => { startStream(); loadConfig(); });
+    window.addEventListener("load", () => { startStream(); loadConfig(); loadPresets(); });
 </script>
 </body>
 </html>

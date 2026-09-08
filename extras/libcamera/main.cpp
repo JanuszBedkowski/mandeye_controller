@@ -12,8 +12,11 @@ using namespace libcamera;
 using namespace std::chrono_literals;
 #include "../utils/ExtrasUtils.h"
 #include "LibCameraWrapper.h"
+#include "embedded_configs.h" // mandeye::presets::kPresetsByCamera
 #include "index.html.h"
+#include <atomic>
 #include <chrono>
+#include <cstdio>
 #include <fcntl.h>
 #include <fstream>
 #include <future>
@@ -29,7 +32,15 @@ mandeye::LibCameraWrapper cam;
 cv::Mat lastPhoto;
 nlohmann::json photoMetadata;
 std::mutex photoMutex;
+// false between a camera (re)start and the first frame delivered after it: guards the
+// /photo* endpoints from handing back a frame that predates the current config.
+std::atomic<bool> photoFresh{false};
 nlohmann::json loadedUSBConfig;
+// The last config successfully applied to the camera. A partial /setConfig (picamera only)
+// inherits the structural keys (width/height/rateMs) from this instead of falling back to
+// libcamera's role defaults, which would silently change the resolution / sensor mode.
+nlohmann::json liveConfig;
+std::mutex liveConfigMutex;
 std::mutex stateMutex;
 std::string state;
 std::string continousScanTarget;
@@ -48,6 +59,93 @@ std::string getContinousScanTarget()
 }
 
 } // namespace global
+
+// Run `fn` with the process stdout+stderr redirected into a temp file, and return
+// everything it printed (also re-emitted to the real console so the journal still has it).
+// Used by /setConfig to hand the caller the camera's start-up log. The HTTP server runs
+// with threads(1), so nothing else logs during the call.
+template <typename Fn>
+std::string captureConsole(Fn&& fn)
+{
+	std::cout.flush();
+	std::cerr.flush();
+	std::fflush(stdout);
+	std::fflush(stderr);
+
+	FILE* tmp = std::tmpfile();
+	if(!tmp)
+	{
+		fn();
+		return {};
+	}
+	const int tfd = fileno(tmp);
+	const int savedOut = dup(1);
+	const int savedErr = dup(2);
+	dup2(tfd, 1);
+	dup2(tfd, 2);
+
+	auto restore = [&]() {
+		std::cout.flush();
+		std::cerr.flush();
+		std::fflush(stdout);
+		std::fflush(stderr);
+		dup2(savedOut, 1);
+		dup2(savedErr, 2);
+		close(savedOut);
+		close(savedErr);
+	};
+
+	try
+	{
+		fn();
+	}
+	catch(...)
+	{
+		restore();
+		std::fclose(tmp);
+		throw;
+	}
+	restore();
+
+	std::string out;
+	lseek(tfd, 0, SEEK_SET);
+	char buf[4096];
+	ssize_t n;
+	while((n = read(tfd, buf, sizeof(buf))) > 0)
+		out.append(buf, static_cast<size_t>(n));
+	std::fclose(tmp);
+
+	std::cout << out;
+	std::cout.flush();
+	return out;
+}
+
+// Look up a compiled-in preset by name for the given camera id (the map key is matched as
+// a substring of the id, e.g. ".../imx519@1a" matches "imx519"). Returns an empty json if
+// this sensor has no such preset.
+nlohmann::json findPresetForCamera(const std::string& camId, std::string_view presetName)
+{
+	for(const auto& [sensorKey, presetList] : mandeye::presets::kPresetsByCamera)
+	{
+		if(camId.find(sensorKey) == std::string::npos)
+			continue;
+		for(const auto& p : presetList)
+		{
+			if(p.name != presetName)
+				continue;
+			try
+			{
+				return nlohmann::json::parse(std::string(p.json));
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << "Bad embedded preset '" << std::string(p.name) << "': " << e.what() << std::endl;
+				return {};
+			}
+		}
+	}
+	return {};
+}
 
 template <typename T>
 std::optional<T> GetValue(const Http::Request& request, const std::string& key)
@@ -84,14 +182,15 @@ struct HelloHandler : public Http::Handler
 		if(request.resource() == "/photo")
 		{
 			std::lock_guard<std::mutex> lck(global::photoMutex);
-			if(global::lastPhoto.empty())
+			if(global::lastPhoto.empty() || !global::photoFresh.load())
 			{
 				writer.send(Http::Code::Not_Found, "No photo yet");
 				return;
 			}
 			cv::Mat img;
-			// scale down
-			cv::resize(global::lastPhoto, img, cv::Size(640, 480));
+			// scale down - INTER_AREA averages the full source area, so a ~3x reduction
+			// stays sharp instead of the aliased blur INTER_LINEAR (the default) produces.
+			cv::resize(global::lastPhoto, img, cv::Size(640, 480), 0, 0, cv::INTER_AREA);
 			std::vector<uchar> buf;
 			cv::imencode(".jpg", img, buf);
 			Http::Response response;
@@ -101,9 +200,10 @@ struct HelloHandler : public Http::Handler
 		if(request.resource() == "/photoMeta")
 		{
 			std::lock_guard<std::mutex> lck(global::photoMutex);
-			if(global::lastPhoto.empty())
+			if(global::lastPhoto.empty() || !global::photoFresh.load())
 			{
 				writer.send(Http::Code::Not_Found, "No photo yet");
+				return;
 			}
 			writer.send(Http::Code::Ok, global::photoMetadata.dump(4), MIME(Application, Json));
 			return;
@@ -111,7 +211,7 @@ struct HelloHandler : public Http::Handler
 		else if(request.resource() == "/photoFull")
 		{
 			std::lock_guard<std::mutex> lck(global::photoMutex);
-			if(global::lastPhoto.empty())
+			if(global::lastPhoto.empty() || !global::photoFresh.load())
 			{
 				writer.send(Http::Code::Not_Found, "No photo yet");
 				return;
@@ -125,6 +225,34 @@ struct HelloHandler : public Http::Handler
 		{
 			auto config = global::cam.getCameraConfig();
 			writer.send(Http::Code::Ok, config.dump(4), MIME(Application, Json));
+			return;
+		}
+		else if(request.resource() == "/presets")
+		{
+			// Ready-made profiles from embedded_configs.h, picked by sensor type: the map
+			// key is matched as a substring of the active camera id. Unknown sensor -> [].
+			nlohmann::json out = nlohmann::json::array();
+			const std::string camId = global::cam.getCameraConfig().value("id", std::string());
+			for(const auto& [sensorKey, presetList] : mandeye::presets::kPresetsByCamera)
+			{
+				if(camId.find(sensorKey) == std::string::npos)
+					continue;
+				for(const auto& p : presetList)
+				{
+					try
+					{
+						nlohmann::json entry;
+						entry["name"] = std::string(p.name);
+						entry["config"] = nlohmann::json::parse(std::string(p.json));
+						out.push_back(std::move(entry));
+					}
+					catch(const std::exception& e)
+					{
+						std::cerr << "Bad embedded preset " << std::string(p.name) << ": " << e.what() << std::endl;
+					}
+				}
+			}
+			writer.send(Http::Code::Ok, out.dump(), MIME(Application, Json));
 			return;
 		}
 		else if(request.resource() == "/setConfig")
@@ -158,21 +286,60 @@ struct HelloHandler : public Http::Handler
 					writer.send(Http::Code::Bad_Request, "Empty body");
 					return;
 				}
+				nlohmann::json config;
 				try
 				{
-					std::cout << "Parsing JSON" << std::endl;
-					std::cout << body << std::endl;
-					nlohmann::json config = nlohmann::json::parse(body);
-					global::cam.stop();
-					global::cam.start(global::cameraNo, config, libcamera::StreamRole::StillCapture);
-					global::cam.capture();
-					writer.send(Http::Code::Ok, "OK");
+					config = nlohmann::json::parse(body);
 				}
 				catch(const std::exception& e)
 				{
 					std::cerr << "Error parsing JSON: " << e.what() << std::endl;
-					writer.send(Http::Code::Bad_Request, "Invalid JSON");
+					writer.send(Http::Code::Bad_Request, std::string("Invalid JSON: ") + e.what());
+					return;
 				}
+
+				// Inherit structural keys from the last applied config so a picamera-only
+				// POST does not silently reset the resolution / sensor mode to a role default.
+				{
+					std::lock_guard<std::mutex> lck(global::liveConfigMutex);
+					for(const char* k : {"width", "height", "rateMs"})
+						if(!config.contains(k) && global::liveConfig.contains(k))
+							config[k] = global::liveConfig[k];
+				}
+				if(!config.contains("width") || !config.contains("height"))
+				{
+					writer.send(Http::Code::Bad_Request,
+								"width/height required (no previous config to inherit them from)");
+					return;
+				}
+
+				// Reapply the camera and hand the caller the start-up log (sensor modes,
+				// resolution validation, rejected controls, ...).
+				global::photoFresh.store(false); // stop serving the pre-restart frame
+				bool ok = false;
+				std::string applyLog;
+				try
+				{
+					applyLog = captureConsole([&]() {
+						global::cam.stop();
+						ok = global::cam.start(global::cameraNo, config, libcamera::StreamRole::Viewfinder);
+						if(ok)
+							global::cam.capture();
+					});
+				}
+				catch(const std::exception& e)
+				{
+					applyLog += "\nException while applying config: ";
+					applyLog += e.what();
+				}
+
+				if(ok)
+				{
+					std::lock_guard<std::mutex> lck(global::liveConfigMutex);
+					global::liveConfig = config;
+				}
+				const std::string prefix = ok ? "OK\n" : "FAILED to start camera\n";
+				writer.send(ok ? Http::Code::Ok : Http::Code::Internal_Server_Error, prefix + applyLog);
 				return;
 			}
 
@@ -334,6 +501,7 @@ int main(int argc, char** argv)
 			global::lastPhoto = std::move(img);
 			global::photoMetadata = std::move(metaDataDump);
 		}
+		global::photoFresh.store(true); // a frame under the current config has now landed
 
 		if(global::isContinousScanRunning())
 		{
@@ -393,14 +561,40 @@ int main(int argc, char** argv)
 	};
 
 	global::cam.registerCallback(printFrame);
-	const bool stated = global::cam.start(global::cameraNo, global::loadedUSBConfig, libcamera::StreamRole::StillCapture);
-	if(!stated)
-	{
-		std::cerr << "Failed to start camera" << std::endl;
-		return 1;
-	}
+
+	bool isCameraStarted = false;
 	if(!global::loadedUSBConfig.is_object())
 	{
+		// First boot without a USB config: seed from the compiled-in "default" preset for
+		// this sensor (if one exists), then persist the full effective config so the USB
+		// file is a complete, self-contained baseline the operator can edit.
+		// Ask libcamera directly for the camera id (sensor type) without opening the camera,
+		// so we can pick the matching compiled-in preset before the first start().
+		std::string camId = "unknown";
+		const auto camIds = mandeye::LibCameraWrapper::enumerateCameraIds();
+		if(global::cameraNo >= 0 && static_cast<size_t>(global::cameraNo) < camIds.size())
+			camId = camIds[global::cameraNo];
+		else
+			std::cerr << "Camera index " << global::cameraNo << " not present (" << camIds.size()
+					  << " cameras found) - cannot match a preset" << std::endl;
+
+		nlohmann::json seed = findPresetForCamera(camId, "default");
+		if(seed.is_object())
+		{
+			std::cout << "No USB config - applying compiled-in 'default' preset for " << camId << std::endl;
+			isCameraStarted = global::cam.start(global::cameraNo, seed, libcamera::StreamRole::Viewfinder);
+			if(!isCameraStarted)
+			{
+				std::cerr << "Failed to start camera" << std::endl;
+				return 1;
+			}
+			global::liveConfig = seed;
+		}
+		else
+		{
+			std::cout << "No USB config and no compiled-in preset for '" << camId
+					  << "' - using libcamera defaults" << std::endl;
+		}
 		std::cout << "No config loaded, saving default config to " << global::configFileName << std::endl;
 		try
 		{
@@ -410,9 +604,33 @@ int main(int argc, char** argv)
 		}
 		catch(const std::exception& e)
 		{
-			std::cerr << "Failed to save default config: " << e.what() << std::endl;
+			std::cerr << "Failed to save config: " << e.what() << std::endl;
 		}
 	}
+
+	if (!isCameraStarted) {
+		isCameraStarted = global::cam.start(global::cameraNo, global::loadedUSBConfig, libcamera::StreamRole::Viewfinder);
+		if(!isCameraStarted)
+		{
+			std::cerr << "Failed to start camera" << std::endl;
+			return 1;
+		}
+		if(global::loadedUSBConfig.is_object())
+			global::liveConfig = global::loadedUSBConfig;
+	}
+
+	// Fall back to the camera's own view (always carries width/height) if neither a USB
+	// config nor a preset seeded liveConfig, so a later partial /setConfig can still inherit.
+	if(!global::liveConfig.is_object() || !global::liveConfig.contains("width"))
+	{
+		nlohmann::json cur = global::cam.getCameraConfig();
+		nlohmann::json seed;
+		for(const char* k : {"width", "height", "rateMs"})
+			if(cur.contains(k))
+				seed[k] = cur[k];
+		global::liveConfig = seed;
+	}
+
 	global::cam.capture(false);
 
 	Address addr(Ipv4::any(), Port(portNo));

@@ -17,7 +17,7 @@ pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 pkg_check_modules(ZMQ REQUIRED libzmq)
 
-add_executable(mandeye_libcamera main.cpp LibCameraWrapper.cpp LibCameraWrapper.h)
+add_executable(mandeye_libcamera main.cpp LibCameraWrapper.cpp LibCameraWrapper.h embedded_configs.h)
 target_link_libraries(mandeye_libcamera PkgConfig::Pistache ${LIBCAMERA_LIBRARIES} ${OpenCV_LIBS} mandeye_extra_utils)
 
 install(TARGETS mandeye_libcamera
@@ -26,9 +26,8 @@ install(TARGETS mandeye_libcamera
 install(FILES services/mandeye_libcamera_cam0.service  DESTINATION /usr/lib/systemd/system)
 install(FILES services/mandeye_libcamera_cam1.service  DESTINATION /usr/lib/systemd/system)
 
-# Reference config templates (not auto-loaded; operator copies one to /media/usb/camN_config.json)
-install(FILES config_indoor.json config_indoor_flickerfree.json
-        DESTINATION /opt/mandeye/extras/libcamera/)
+# Camera profiles are compiled in from embedded_configs.h and served from /presets
+# (pick one in the web UI, then Save to USB) - there are no loose template files to install.
 
 
 # Packaging
