@@ -66,6 +66,44 @@ sudo systemctl start mandeye_libcamera_cam0.service
 - `/setConfig` - Accepts a JSON payload to update the running camera configuration.
 - `/saveConfig` - Accepts a JSON payload, writes it to the USB config file (`--config` path) and makes it the loaded config. Used by the web UI's "Save to USB" button.
 
+## Config file
+
+The service is started with `--config /media/usb/camN_config.json`. If the file is missing,
+a default is written from the live camera dump. Recognised top-level keys:
+
+- `disabled` (bool) - if true the process sleeps forever and does not open the camera.
+- `rateMs` (uint) - minimum ms between delivered frames.
+- `width` / `height` (uint) - requested stream resolution; `validate()` snaps it to a
+  deliverable size and the chosen size is logged (`Resolution: requested ... -> validated ...`).
+- `picamera` (object) - one entry per libcamera control. Scalars are plain numbers / bools.
+  Array / rectangle controls take a JSON array: `"ColourGains": [r, b]`,
+  `"FrameDurationLimits": [minUs, maxUs]` (microseconds), `"ScalerCrop": [x, y, w, h]`. Keys starting with
+  `_` and `null` values are ignored. `NoiseReductionMode` defaults to `1` (Fast) when the
+  file does not set it.
+
+Ready-made profiles live next to this readme and are installed to
+`/opt/mandeye/extras/libcamera/`:
+
+- `config_indoor.json` - AE on, mains flicker corrected via `AeFlickerMode 1` /
+  `AeFlickerPeriod 10000` (100 Hz light ripple).
+- `config_indoor_flickerfree.json` - fixed `ExposureTime 5000` us (< one mains half-cycle),
+  AE drives gain only.
+
+They are **mutually exclusive** (FlickerManual quantises exposure to `AeFlickerPeriod/2`
+steps, which conflicts with a pinned `ExposureTime`). Copy one to `/media/usb/cam0_config.json`
+(and `cam1_config.json`) and `sudo systemctl restart mandeye_libcamera_cam0`.
+
+## Resolution & FOV
+
+The IMX519 sensor modes have different analog crops (`rpicam-still --list-cameras`):
+`2328x1748` and `4656x3496` read the full array `(0,0)/4656x3496` (full field of view,
+2x2 bin for the smaller); `1920x1080`, `3840x2160`, `1280x720` are cropped
+(narrower FOV, non-zero crop origin). `SCALER_CROP` in `/photoMeta` reports the active
+crop in sensor-array pixels. **If it is not `(0,0)/<full array>`, the effective focal
+length and principal point differ from a full-array calibration** - any offline
+LiDAR<->camera intrinsics must be re-derived per resolution, or pin the resolution to a
+full-FOV mode.
+
 ## Usage
 
 1. Build and run the server (see your main project documentation for details).

@@ -26,6 +26,10 @@ install(TARGETS mandeye_libcamera
 install(FILES services/mandeye_libcamera_cam0.service  DESTINATION /usr/lib/systemd/system)
 install(FILES services/mandeye_libcamera_cam1.service  DESTINATION /usr/lib/systemd/system)
 
+# Reference config templates (not auto-loaded; operator copies one to /media/usb/camN_config.json)
+install(FILES config_indoor.json config_indoor_flickerfree.json
+        DESTINATION /opt/mandeye/extras/libcamera/)
+
 
 # Packaging
 set(CPACK_GENERATOR "DEB")

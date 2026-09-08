@@ -9,8 +9,6 @@
 namespace mandeye
 {
 
-uint64_t getCurrentTimestamp();
-
 const std::unordered_map<libcamera::ControlType, std::string> LibCameraControlTypeToString = {
 	{libcamera::ControlType::ControlTypeNone, "ControlTypeNone"},
 	{libcamera::ControlType::ControlTypeBool, "ControlTypeBool"},
@@ -69,6 +67,8 @@ public:
 	}
 	template <typename T>
 	bool setControlNumeric(const std::string& name, T value);
+	//! Set an array / rectangle control (ColourGains[2], FrameDurationLimits[2], ScalerCrop[4]) from a JSON array
+	bool setControlArray(const std::string& name, const nlohmann::json& arr);
 };
 
 } // namespace mandeye

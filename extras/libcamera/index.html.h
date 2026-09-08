@@ -99,7 +99,7 @@ std::string_view indexWebPageData = R"rawliteral(
 
     // controls grouped into collapsible sections; first matching group wins
     const GROUPS = [
-        ["Auto exposure", n => /^Ae/.test(n) || /^Exposure/.test(n) || /Gain/.test(n)],
+        ["Auto exposure", n => /^Ae/.test(n) || /^Exposure/.test(n) || /^AnalogueGain|^DigitalGain/.test(n) || n === "FrameDurationLimits"],
         ["White balance", n => /^Awb/.test(n) || /^Colour/.test(n)],
         ["Autofocus",     n => /^Af/.test(n) || n === "LensPosition"],
         ["HDR",           n => /^Hdr/.test(n)],
@@ -107,6 +107,16 @@ std::string_view indexWebPageData = R"rawliteral(
         ["Other",         () => true],
     ];
     const groupOf = n => (GROUPS.find(g => g[1](n)) || GROUPS[GROUPS.length - 1])[0];
+
+    // array / rectangle controls: element labels + count (count falls back to the current value's length)
+    const ARRAY_CTL = {
+        ColourGains:         { labels: ["red", "blue"], float: true },
+        FrameDurationLimits: { labels: ["min us", "max us"], float: false },
+        ScalerCrop:          { labels: ["x", "y", "w", "h"], float: false },
+    };
+    // only the controls we can actually set (ARRAY_CTL) plus ScalerCrop's rectangle
+    const isArrayCtl = (name, info) =>
+        !!ARRAY_CTL[name] || (name === "ScalerCrop" && info.type_str === "ControlTypeRectangle");
 
     /* ---------- helpers ---------- */
     function showMsg(t) { msgEl.textContent = t; }
@@ -142,7 +152,9 @@ std::string_view indexWebPageData = R"rawliteral(
         const names = Object.keys(info).sort().filter(name => {
             const i = info[name];
             if (!i || typeof i !== "object" || !i.type_str) return false;
-            return !name.startsWith("_") && i.isInput !== false && isRenderable(i);
+            if (name.startsWith("_") || i.isInput === false) return false;
+            if (i.isArray === true && !ARRAY_CTL[name]) return false; // unknown array control - not settable here
+            return isRenderable(i) || isArrayCtl(name, i);
         });
 
         for (const [title] of GROUPS) {
@@ -192,6 +204,8 @@ std::string_view indexWebPageData = R"rawliteral(
     }
 
     function makeRow(name, info, current) {
+        if (isArrayCtl(name, info)) return makeArrayRow(name, info, current);
+
         const row = document.createElement("div");
         row.className = "row";
         const label = document.createElement("label");
@@ -262,6 +276,52 @@ std::string_view indexWebPageData = R"rawliteral(
         return row;
     }
 
+    // array / rectangle control: one number input per element
+    function makeArrayRow(name, info, current) {
+        const spec = ARRAY_CTL[name] || { labels: ["x", "y", "w", "h"], float: false };
+        const cur = Array.isArray(current) ? current : [];
+        const n = spec.labels.length || cur.length || 2;
+        const wasUnset = !Array.isArray(current) || current.length === 0;
+
+        const row = document.createElement("div");
+        row.className = "row";
+        const label = document.createElement("label");
+        label.textContent = name;
+        row.appendChild(label);
+
+        const w = { name, wasUnset, touched: false, read: () => null };
+        const touch = () => { w.touched = true; };
+        const inputs = [];
+        for (let i = 0; i < n; i++) {
+            const inp = document.createElement("input");
+            inp.type = "number";
+            inp.step = spec.float ? "any" : 1;
+            inp.style.width = "88px";
+            if (spec.labels[i]) inp.title = spec.labels[i];
+            if (cur[i] !== undefined) inp.value = cur[i];
+            inp.addEventListener("input", touch);
+            row.appendChild(inp);
+            inputs.push(inp);
+        }
+        w.read = () => {
+            const vals = inputs.map(x => spec.float ? parseFloat(x.value) : parseInt(x.value, 10));
+            if (vals.some(v => !Number.isFinite(v))) return null;
+            return vals;
+        };
+
+        const bits = [];
+        if (spec.labels.length) bits.push("[" + spec.labels.join(", ") + "]");
+        if (wasUnset) bits.unshift("not set");
+        if (bits.length) {
+            const h = document.createElement("span");
+            h.className = "hint";
+            h.textContent = bits.join(" ");
+            row.appendChild(h);
+        }
+        widgets.push(w);
+        return row;
+    }
+
     /* ---------- read fields back into a config object ---------- */
     function readForm() {
         const cfg = JSON.parse(JSON.stringify(fullConfig || {}));
@@ -279,7 +339,8 @@ std::string_view indexWebPageData = R"rawliteral(
             if (v !== null && v !== undefined && !Number.isNaN(v)) cfg.picamera[w.name] = v;
         }
         for (const k of Object.keys(cfg.picamera)) {
-            if (cfg.picamera[k] === null) delete cfg.picamera[k];
+            const v = cfg.picamera[k];
+            if (v === null || (Array.isArray(v) && v.length === 0)) delete cfg.picamera[k];
         }
         return cfg;
     }

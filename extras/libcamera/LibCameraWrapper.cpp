@@ -1,6 +1,6 @@
 #include "LibCameraWrapper.h"
 
-#include <bits/this_thread_sleep.h>
+#include <thread>
 using namespace libcamera;
 using namespace std::chrono_literals;
 #include <set>
@@ -112,13 +112,6 @@ constexpr std::string_view controlToString(uint32_t id)
 	}
 }
 
-uint64_t getCurrentTimestamp()
-{
-	using namespace std::chrono;
-	auto ts = duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count();
-	return ts;
-}
-
 template <typename T>
 bool checkIfInRange(const libcamera::ControlInfo& control, const T& value)
 {
@@ -161,47 +154,52 @@ bool LibCameraWrapper::setControlNumeric(const std::string& name, T valueInput)
 			else if(type == libcamera::ControlTypeByte)
 			{
 				const auto value = static_cast<uint8_t>(valueInput);
-				if(checkIfInRange<uint8_t>(control.second, value))
-				{
-					m_controlList.set(id, value);
-				}
+				if(!checkIfInRange<uint8_t>(control.second, value))
+					return false;
+				m_controlList.set(id, value);
 			}
 			else if(type == libcamera::ControlTypeUnsigned16)
 			{
 				const auto value = static_cast<uint16_t>(valueInput);
-				if(checkIfInRange<uint16_t>(control.second, value))
-				{
-					m_controlList.set(id, value);
-				}
+				if(!checkIfInRange<uint16_t>(control.second, value))
+					return false;
+				m_controlList.set(id, value);
 			}
 			else if(type == libcamera::ControlTypeInteger32)
 			{
 				const auto value = static_cast<int32_t>(valueInput);
-				if(checkIfInRange<int32_t>(control.second, value))
-				{
-					m_controlList.set(id, value);
-				}
+				if(!checkIfInRange<int32_t>(control.second, value))
+					return false;
+				m_controlList.set(id, value);
 			}
 			else if(type == libcamera::ControlTypeInteger64)
 			{
 				const auto value = static_cast<int64_t>(valueInput);
-				if(checkIfInRange<int64_t>(control.second, value))
-				{
-					m_controlList.set(id, value);
-				}
+				if(!checkIfInRange<int64_t>(control.second, value))
+					return false;
+				m_controlList.set(id, value);
 			}
-			if(type == libcamera::ControlTypeFloat)
+			else if(type == libcamera::ControlTypeFloat)
 			{
 				const auto value = static_cast<float>(valueInput);
-				if(checkIfInRange<float>(control.second, value))
-				{
-					m_controlList.set(id, value);
-				}
+				if(!checkIfInRange<float>(control.second, value))
+					return false;
+				m_controlList.set(id, value);
 			}
 			else if(type == libcamera::ControlTypeString)
 			{
 				std::string value = std::to_string(valueInput);
 				m_controlList.set(id, ControlValue(value));
+			}
+			else if(type == libcamera::ControlTypeRectangle)
+			{
+				std::cerr << "Control " << name << " is a Rectangle; pass a [x,y,w,h] array" << std::endl;
+				return false;
+			}
+			else
+			{
+				std::cerr << "Control " << name << " has unhandled type " << type << std::endl;
+				return false;
 			}
 			return true;
 		}
@@ -214,6 +212,45 @@ bool LibCameraWrapper::setControlNumeric(const std::string& name, T valueInput)
 template bool LibCameraWrapper::setControlNumeric<bool>(const std::string& name, bool value);
 template bool LibCameraWrapper::setControlNumeric<int64_t>(const std::string& name, int64_t value);
 template bool LibCameraWrapper::setControlNumeric<float>(const std::string& name, float value);
+
+// Array / rectangle controls: libcamera exposes these as Span<>/Rectangle, which
+// setControlNumeric() cannot handle. Accepts a JSON array from the config "picamera" block.
+bool LibCameraWrapper::setControlArray(const std::string& name, const nlohmann::json& arr)
+{
+	if(!arr.is_array())
+	{
+		return false;
+	}
+	try
+	{
+		if(name == "ColourGains" && arr.size() == 2)
+		{
+			m_controlList.set(libcamera::controls::ColourGains, {arr.at(0).get<float>(), arr.at(1).get<float>()});
+			return true;
+		}
+		if(name == "FrameDurationLimits" && arr.size() == 2)
+		{
+			m_controlList.set(libcamera::controls::FrameDurationLimits,
+							  {arr.at(0).get<int64_t>(), arr.at(1).get<int64_t>()});
+			return true;
+		}
+		if(name == "ScalerCrop" && arr.size() == 4)
+		{
+			m_controlList.set(libcamera::controls::ScalerCrop,
+							  libcamera::Rectangle(arr.at(0).get<int>(), arr.at(1).get<int>(),
+												   arr.at(2).get<unsigned int>(), arr.at(3).get<unsigned int>()));
+			return true;
+		}
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "setControlArray(" << name << ") failed: " << e.what() << std::endl;
+		return false;
+	}
+	std::cerr << "Array control " << name << " not supported (expected ColourGains[2], FrameDurationLimits[2], ScalerCrop[4])"
+			  << std::endl;
+	return false;
+}
 
 std::vector<libcamera::Span<uint8_t>> LibCameraWrapper::Mmap(libcamera::FrameBuffer* buffer)
 {
@@ -257,8 +294,7 @@ void LibCameraWrapper::AdjustSystemClock()
 	// Convert to nanoseconds
 	uint64_t realtime_ns = uint64_t(ts_real.tv_sec) * 1'000'000'000ULL + ts_real.tv_nsec;
 	uint64_t monotonic_ns = uint64_t(ts_mono.tv_sec) * 1'000'000'000ULL + ts_mono.tv_nsec;
-	assert(realtime_ns > monotonic_ns);
-	m_monoOffset = uint64_t(realtime_ns) - uint64_t(monotonic_ns);
+	m_monoOffset = (realtime_ns > monotonic_ns) ? realtime_ns - monotonic_ns : 0;
 }
 
 bool LibCameraWrapper::start(int camNo, nlohmann::json config, StreamRole role)
@@ -280,7 +316,7 @@ bool LibCameraWrapper::start(int camNo, nlohmann::json config, StreamRole role)
 	{
 		std::cout << camera->id() << std::endl;
 	}
-	if(camNo > cameras.size())
+	if(camNo < 0 || static_cast<size_t>(camNo) >= cameras.size())
 	{
 		std::cout << "Camera number " << camNo << " is out of range." << std::endl;
 		m_cm->stop();
@@ -316,18 +352,25 @@ bool LibCameraWrapper::start(int camNo, nlohmann::json config, StreamRole role)
 
 	// Optional resolution override from the config json ("width"/"height").
 	// validate() below snaps it to something the pipeline can actually deliver.
+	libcamera::Size requestedSize = streamConfig.size;
 	if(config.contains("width") && config.contains("height"))
 	{
 		const unsigned int w = config["width"].get<unsigned int>();
 		const unsigned int h = config["height"].get<unsigned int>();
 		if(w > 0 && h > 0)
 		{
-			std::cout << "Requesting resolution " << w << "x" << h << std::endl;
-			streamConfig.size = libcamera::Size(w, h);
+			requestedSize = libcamera::Size(w, h);
+			streamConfig.size = requestedSize;
 		}
 	}
 
-	m_config->validate();
+	const libcamera::CameraConfiguration::Status vst = m_config->validate();
+	const char* vstStr = (vst == libcamera::CameraConfiguration::Valid)      ? "Valid"
+						 : (vst == libcamera::CameraConfiguration::Adjusted) ? "Adjusted"
+																			: "Invalid";
+	std::cout << "Resolution: requested " << requestedSize.toString() << " -> validated " << streamConfig.size.toString()
+			  << " (" << vstStr << ", " << streamConfig.pixelFormat.toString() << ", stride " << streamConfig.stride << ")"
+			  << std::endl;
 	std::cout << "Validated configuration is: " << streamConfig.toString() << std::endl;
 	m_camera->configure(m_config.get());
 
@@ -397,6 +440,10 @@ bool LibCameraWrapper::start(int camNo, nlohmann::json config, StreamRole role)
 				{
 					setControlNumeric(key, value.get<int32_t>());
 				}
+				else if(value.is_array())
+				{
+					setControlArray(key, value);
+				}
 				else
 				{
 					std::cout << "Skipping " << key << " - unsupported type" << std::endl;
@@ -408,41 +455,72 @@ bool LibCameraWrapper::start(int camNo, nlohmann::json config, StreamRole role)
 			}
 		}
 	}
+
+	// NoiseReductionMode: if the loaded config did not set it, apply Fast as a real default
+	// (previously getCameraConfig() faked this in the dump, which never took effect).
+	if(!m_controlList.contains(controls::draft::NOISE_REDUCTION_MODE))
+	{
+		setControlNumeric("NoiseReductionMode", static_cast<int64_t>(controls::draft::NoiseReductionModeFast));
+	}
+
 	if(config.contains("rateMs"))
 	{
 		m_rateMs = config["rateMs"].get<uint32_t>();
 		std::cout << "Setting rate to " << m_rateMs << std::endl;
 	}
+	m_running.store(true);
 	m_camera->start(&m_controlList);
 	return true;
 }
 
 void LibCameraWrapper::stop()
 {
+	// Stop delivering frames first: requestComplete() bails on !m_running, so once this is
+	// set no callback touches m_mapped_buffers / m_config / the camera again. The sleep lets
+	// an in-progress callback (a few ms) finish before we tear anything down.
 	m_running.store(false);
 	std::cout << "Stopping camera" << std::endl;
 	std::this_thread::sleep_for(100ms);
-	m_stream = nullptr;
 
 	if(m_camera)
 	{
 		m_camera->stop();
-		if(m_allocator)
-			m_allocator->free(m_stream);
+
+		// unmap the buffers mapped in start() before the allocator frees the underlying fds
+		for(auto& kv : m_mapped_buffers)
+		{
+			for(libcamera::Span<uint8_t>& s : kv.second)
+			{
+				if(s.data())
+					munmap(s.data(), s.size());
+			}
+		}
+		m_mapped_buffers.clear();
+
+		if(m_allocator && m_stream)
+			m_allocator->free(m_stream); // free BEFORE clearing m_stream
+		m_stream = nullptr;
 
 		requests.clear();
 		m_camera->release();
 		m_camera.reset();
 		m_allocator.reset();
 	}
-	m_cm->stop();
-	m_cm.reset();
+	if(m_cm)
+	{
+		m_cm->stop();
+		m_cm.reset();
+	}
 }
 
 void LibCameraWrapper::requestComplete(Request* request)
 {
-	AdjustSystemClock();
+	// m_monoOffset is sampled once in start(); re-sampling here made the delivered
+	// wall-clock timestamp jitter with NTP slew.
 	if(request->status() == Request::RequestCancelled)
+		return;
+	// stop() has begun tearing down - do not touch buffers / config / requeue.
+	if(!m_running.load())
 		return;
 
 	const auto now = std::chrono::steady_clock::now();
@@ -538,7 +616,6 @@ void LibCameraWrapper::capture(bool oneFrame)
 	m_oneFrame = oneFrame;
 	for(std::unique_ptr<Request>& request : requests)
 	{
-		m_requestTimestamp = getCurrentTimestamp();
 		m_camera->queueRequest(request.get());
 	}
 }
@@ -565,9 +642,44 @@ nlohmann::json reportValue(const libcamera::ControlValue& value, const libcamera
 		return nlohmann::json(value.get<float>());
 	case libcamera::ControlTypeString:
 		return nlohmann::json(value.get<std::string>());
+	case libcamera::ControlTypeRectangle:
+	{
+		const libcamera::Rectangle r = value.get<libcamera::Rectangle>();
+		return nlohmann::json::array({r.x, r.y, r.width, r.height});
+	}
 	default:
 		return nlohmann::json();
 	}
+}
+
+// Report an array (isArray) ControlValue as a JSON array of its element type.
+nlohmann::json reportArrayValue(const libcamera::ControlValue& value, const libcamera::ControlType type)
+{
+	nlohmann::json arr = nlohmann::json::array();
+	if(value.isNone() || !value.isArray())
+		return arr;
+	switch(type)
+	{
+	case libcamera::ControlTypeByte:
+		for(uint8_t x : value.get<libcamera::Span<const uint8_t>>())
+			arr.push_back(x);
+		break;
+	case libcamera::ControlTypeInteger32:
+		for(int32_t x : value.get<libcamera::Span<const int32_t>>())
+			arr.push_back(x);
+		break;
+	case libcamera::ControlTypeInteger64:
+		for(int64_t x : value.get<libcamera::Span<const int64_t>>())
+			arr.push_back(x);
+		break;
+	case libcamera::ControlTypeFloat:
+		for(float x : value.get<libcamera::Span<const float>>())
+			arr.push_back(x);
+		break;
+	default:
+		break;
+	}
+	return arr;
 }
 
 nlohmann::json LibCameraWrapper::getCameraConfig()
@@ -606,55 +718,53 @@ nlohmann::json LibCameraWrapper::getCameraConfig()
 	{
 		const unsigned int id = control.first->id();
 		auto name = control.first->name();
-
-		if(control.first->isArray())
+		if(name.empty())
 		{
 			continue;
 		}
-		if(!name.empty())
+
+		const bool isArray = control.first->isArray();
+		config["controls_info"][name]["name"] = control.first->name();
+		config["controls_info"][name]["id"] = id;
+		config["controls_info"]["vendor"] = control.first->vendor();
+		config["controls_info"][name]["isArray"] = isArray;
+		config["controls_info"][name]["isInput"] = control.first->isInput();
+		config["controls_info"][name]["isOutput"] = control.first->isOutput();
+		config["controls_info"][name]["type"] = control.first->type();
+
+		const auto type = control.first->type();
+		if(LibCameraControlTypeToString.find(type) != LibCameraControlTypeToString.end())
 		{
-			config["controls_info"][name]["name"] = control.first->name();
-			config["controls_info"][name]["id"] = id;
-			config["controls_info"]["vendor"] = control.first->vendor();
-			config["controls_info"][name]["isArray"] = control.first->isArray();
-			config["controls_info"][name]["isInput"] = control.first->isInput();
-			config["controls_info"][name]["isOutput"] = control.first->isOutput();
-			config["controls_info"][name]["type"] = control.first->type();
+			config["controls_info"][name]["type_str"] = LibCameraControlTypeToString.at(type);
+		}
+		else
+		{
+			config["controls_info"][name]["type_str"] = "Unknown";
+		}
 
-			const auto type = control.first->type();
-			if(LibCameraControlTypeToString.find(type) != LibCameraControlTypeToString.end())
-			{
-				config["controls_info"][name]["type_str"] = LibCameraControlTypeToString.at(type);
-			}
-			else
-			{
-				config["controls_info"][name]["type_str"] = "Unknown";
-			}
+		const auto& defValue = control.second.def();
+		const auto& minValue = control.second.min();
+		const auto& maxValue = control.second.max();
 
-			const auto& defValue = control.second.def();
-			const auto& minValue = control.second.min();
-			const auto& maxValue = control.second.max();
+		config["controls_info"][name]["min"] = minValue.toString();
+		config["controls_info"][name]["max"] = maxValue.toString();
+		config["controls_info"][name]["def"] = defValue.toString();
 
-			config["controls_info"][name]["min"] = minValue.toString();
-			config["controls_info"][name]["max"] = maxValue.toString();
-			config["controls_info"][name]["def"] = defValue.toString();
-			if(m_controlList.contains(id))
-			{
-				auto currentValue = m_controlList.get(id);
-				config["picamera"][name] = reportValue(currentValue, type);
-			}
-			else
-			{
-				// apply default
-				config["picamera"][name] = reportValue(defValue, type);
-
-				// change default for some controls
-				// 10002 - Noise reduction mode from disabled to fast
-				if(id == controls::draft::NOISE_REDUCTION_MODE)
-				{
-					config["picamera"][name] = controls::draft::NoiseReductionModeFast;
-				}
-			}
+		const bool applied = m_controlList.contains(id);
+		const libcamera::ControlValue& reported = applied ? m_controlList.get(id) : defValue;
+		if(isArray)
+		{
+			// arrays/rectangles: only report a value that was actually applied - the default
+			// is usually "full frame" and echoing it would force it back on every apply.
+			config["picamera"][name] = applied ? reportArrayValue(reported, type) : nlohmann::json();
+		}
+		else if(type == libcamera::ControlTypeRectangle)
+		{
+			config["picamera"][name] = applied ? reportValue(reported, type) : nlohmann::json();
+		}
+		else
+		{
+			config["picamera"][name] = reportValue(reported, type);
 		}
 	}
 
