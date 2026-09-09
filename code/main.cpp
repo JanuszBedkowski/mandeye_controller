@@ -289,6 +289,7 @@ void stateWatcher()
 	{
 		app_state = States::USB_IO_ERROR;
 	}
+
 	if(fileSystemClientPtr)
 	{
 #ifdef MANDEYE_BENCHMARK_WRITE_SPEED
@@ -889,6 +890,12 @@ int main(int argc, char** argv)
 		mandeye::gpioClientPtr->addButtonCallback(hardware::BUTTON::BUTTON_STOP_SCAN, "BUTTON_STOP_SCAN", [&]() { mandeye::TriggerStopScan(); });
 		mandeye::gpioClientPtr->addButtonCallback(
 			hardware::BUTTON::BUTTON_CONTINOUS_SCANNING, "BUTTON_CONTINOUS_SCANNING", [&]() { mandeye::TriggerContinousScanning(); });
+		mandeye::gpioClientPtr->addBuzzerOnCallback([](uint64_t timestampNs, uint32_t durationMs) {
+			if(mandeye::fileSystemClientPtr)
+			{
+				mandeye::fileSystemClientPtr->LogBuzzer(timestampNs, durationMs);
+			}
+		});
 	});
 
 	while(mandeye::isRunning)

@@ -1,4 +1,5 @@
 #include "FileSystemClient.h"
+#include "compilation_constants.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -27,6 +28,7 @@ nlohmann::json FileSystemClient::produceStatus()
 	{
 		data["FileSystemClient"]["error"] = e.what();
 	}
+	data["FileSystemClient"]["buzzer_csv"] = m_logBuzzerFilename.c_str();
 	data["FileSystemClient"]["free_megabytes"] = free_mb;
 	data["FileSystemClient"]["free_str"] = ConvertToText(free_mb);
 	data["FileSystemClient"]["benchmarkWriteSpeed"] = m_benchmarkWriteSpeed;
@@ -83,7 +85,8 @@ int32_t FileSystemClient::GetIdFromManifest()
 	std::filesystem::path versionfn = std::filesystem::path(m_repository) / std::filesystem::path(versionFilename);
 	std::ofstream versionOFstream;
 	versionOFstream.open(versionfn.c_str());
-	versionOFstream << "Version 0.6-dev" << std::endl;
+	versionOFstream << "Version " << MANDEYE_VERSION << std::endl;
+	versionOFstream << "Git hash " << GIT_HASH << std::endl;
 
 	std::filesystem::path manifest = std::filesystem::path(m_repository) / std::filesystem::path(manifestFilename);
 	std::unique_lock<std::mutex> lck(m_mutex);
@@ -125,81 +128,67 @@ int32_t FileSystemClient::GetNextIdFromManifest()
 	return id;
 }
 
-bool FileSystemClient::CreateDirectoryForContinousScanning(std::string& writable_dir, const int& id_manifest)
+bool FileSystemClient::CreateScanDirectory(const char* dirPrefix, int id, std::filesystem::path& createdDir)
 {
-	std::string ret;
-
-	if(GetIsWritable())
-	{
-		//auto id = GetNextIdFromManifest();
-		auto id = id_manifest;
-		char dirName[256];
-		snprintf(dirName, 256, "continousScanning_%04d", id);
-		std::filesystem::path newDirPath = std::filesystem::path(m_repository) / std::filesystem::path(dirName);
-		std::cout << "Creating directory " << newDirPath.string() << std::endl;
-		std::error_code ec;
-		std::filesystem::create_directories(newDirPath, ec);
-		m_error = ec.message();
-		if(ec.value() == 0)
-		{
-			if(!newDirPath.string().empty())
-			{
-				writable_dir = newDirPath.string();
-				m_currentContinousScanDirectory = writable_dir;
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else
-		{
-			return false;
-		}
-	}
-	else
+	if(!GetIsWritable())
 	{
 		return false;
 	}
+
+	char dirName[256];
+	snprintf(dirName, sizeof(dirName), "%s_%04d", dirPrefix, id);
+	createdDir = std::filesystem::path(m_repository) / std::filesystem::path(dirName);
+	std::cout << "Creating directory " << createdDir.string() << std::endl;
+
+	std::error_code ec;
+	std::filesystem::create_directories(createdDir, ec);
+
+	std::unique_lock<std::mutex> lck(m_mutex);
+	m_error = ec.message();
+	return ec.value() == 0;
+}
+
+bool FileSystemClient::CreateDirectoryForContinousScanning(std::string& writable_dir, const int& id_manifest)
+{
+	std::filesystem::path newDirPath;
+	if(!CreateScanDirectory("continousScanning", id_manifest, newDirPath))
+	{
+		return false;
+	}
+
+	// m_currentContinousScanDirectory is read under the same lock by GetDirectories(),
+	// which the status thread calls
+	std::unique_lock<std::mutex> lck(m_mutex);
+	writable_dir = newDirPath.string();
+	m_currentContinousScanDirectory = writable_dir;
+
+	// create logfile for buzzer timestamps
+	if(m_logBuzzer.is_open())
+	{
+		m_logBuzzer.close();
+	}
+	m_logBuzzer.clear();
+	m_logBuzzerFilename = newDirPath / buzzerTimestamps;
+
+	return true;
 }
 
 bool FileSystemClient::CreateDirectoryForStopScans(std::string& writable_dir, int& id_manifest)
 {
-	std::string ret;
+	// before the lock: GetNextIdFromManifest() takes m_mutex itself
+	id_manifest = GetNextIdFromManifest() - 1;
 
-	if(GetIsWritable())
-	{
-		id_manifest = GetNextIdFromManifest() - 1;
-		char dirName[256];
-		snprintf(dirName, 256, "stopScans_%04d", id_manifest);
-		std::filesystem::path newDirPath = std::filesystem::path(m_repository) / std::filesystem::path(dirName);
-		std::cout << "Creating directory " << newDirPath.string() << std::endl;
-		std::error_code ec;
-		std::filesystem::create_directories(newDirPath, ec);
-		m_error = ec.message();
-		if(ec.value() == 0)
-		{
-			if(!newDirPath.string().empty())
-			{
-				writable_dir = newDirPath.string();
-				m_currentStopScanDirectory = writable_dir;
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else
-		{
-			return false;
-		}
-	}
-	else
+	std::filesystem::path newDirPath;
+	if(!CreateScanDirectory("stopScans", id_manifest, newDirPath))
 	{
 		return false;
 	}
+
+	std::unique_lock<std::mutex> lck(m_mutex);
+	writable_dir = newDirPath.string();
+	m_currentStopScanDirectory = writable_dir;
+
+	return true;
 }
 
 std::vector<std::string> FileSystemClient::GetDirectories()
@@ -302,6 +291,34 @@ double FileSystemClient::BenchmarkWriteSpeed(const std::string& filename, size_t
 	//		std::cerr << "Failed to remove benchmark file: " << ec.message() << std::endl;
 	//	}
 	return mbps;
+}
+
+bool FileSystemClient::LogBuzzer(uint64_t timestampNs, uint32_t durationMs)
+{
+	std::unique_lock<std::mutex> lck(m_mutex);
+	if(m_logBuzzerFilename.empty())
+	{
+		// no continous scanning directory created yet, nowhere to log
+		return false;
+	}
+
+	if(!m_logBuzzer.is_open())
+	{
+		const bool needsHeader = !std::filesystem::exists(m_logBuzzerFilename);
+		m_logBuzzer.open(m_logBuzzerFilename.c_str(), std::ios::out | std::ios::app);
+		if(!m_logBuzzer.is_open())
+		{
+			std::cerr << "Failed to open buzzer log file at " << m_logBuzzerFilename.string() << std::endl;
+			return false;
+		}
+		if(needsHeader)
+		{
+			m_logBuzzer << "timestampNs,durationMs" << std::endl;
+		}
+	}
+
+	m_logBuzzer << timestampNs << "," << durationMs << std::endl;
+	return m_logBuzzer.good();
 }
 
 } // namespace mandeye

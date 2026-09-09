@@ -256,13 +256,36 @@ void GpioClient::beep(const std::vector<int>& durations)
 	{
 		bool isOn = false;
 		auto& buzzerGpio = m_ledGpio[LED::BUZZER];
+
+		// take a copy, so that the callback is not invoked under m_lock: setLed takes the very same
+		// lock, and the callback itself writes to the USB storage
+		OnBuzzerCallback buzzerOnCallback;
+		{
+			std::lock_guard<std::mutex> lck{m_lock};
+			buzzerOnCallback = m_buzzerOnCallback;
+		}
+
 		for(auto& duration : durations)
 		{
 			const auto sleepDuration = std::chrono::milliseconds(duration);
+
 			if(!isOn)
 			{
+				// system_clock, not high_resolution_clock: the latter is steady_clock on some
+				// standard libraries, which has no epoch to correlate with the lidar clock
+				const auto wallTime = std::chrono::system_clock::now().time_since_epoch();
+				const auto wallTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(wallTime);
+				const auto switchOffAt = std::chrono::steady_clock::now() + sleepDuration;
 				setLed(buzzerGpio, true);
-				std::this_thread::sleep_for(sleepDuration);
+
+				// log only after the pin is driven, so that the write latency does not land between the
+				// timestamp and the buzzer onset, and sleep to a deadline so that it does not stretch
+				// the beep either
+				if(buzzerOnCallback)
+				{
+					buzzerOnCallback(wallTimeNs.count(), static_cast<uint32_t>(sleepDuration.count()));
+				}
+				std::this_thread::sleep_until(switchOffAt);
 				isOn = true;
 			}
 			else
@@ -275,6 +298,11 @@ void GpioClient::beep(const std::vector<int>& durations)
 		// make sure that is off;
 		setLed(buzzerGpio, false);
 	}
+}
+
+void GpioClient::addBuzzerOnCallback(OnBuzzerCallback onBuzerOn) {
+	std::lock_guard<std::mutex> lck{m_lock};
+	m_buzzerOnCallback = onBuzerOn;
 }
 
 } // namespace mandeye

@@ -19,8 +19,12 @@ using namespace hardware;
 
 class GpioClient
 {
+public:
 	using Callbacks = std::unordered_map<std::string, std::function<void()>>;
-
+	//! called when the buzzer is switched on, with the wall-clock time of the switch and how long it will stay on.
+	//! duration is in milliseconds - in nanoseconds a uint32_t would overflow past 4.3 s, and beeps go up to 10 s.
+	using OnBuzzerCallback = std::function<void(uint64_t ts_ns, uint32_t duration_ms)>;
+private:
 	struct ButtonData
 	{
 		std::string m_name; //! button name
@@ -65,8 +69,11 @@ public:
 	//! addcalback
 	void addButtonCallback(hardware::BUTTON btn, const std::string& callbackName, const std::function<void()>& callback);
 
+	void addBuzzerOnCallback(OnBuzzerCallback onBuzerOn);
+
 	//! allow to beep the buzzer with a given duration
 	void beep(const std::vector<int>& durations);
+
 
 private:
 	std::thread m_gpioReadBackThread;
@@ -80,7 +87,7 @@ private:
 
 	//! available Buttons
 	std::unordered_map<hardware::BUTTON, ButtonData> m_buttons;
-
+	OnBuzzerCallback m_buzzerOnCallback;
 	//! useful translations
 	const std::unordered_map<LED, std::string> LedToName{
 		{LED::LED_GPIO_STOP_SCAN, "LED_GPIO_STOP_SCAN"},
