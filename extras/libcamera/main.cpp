@@ -495,6 +495,10 @@ int main(int argc, char** argv)
 
 	std::future<void> jpgSaveThread;
 
+	// Scan directory whose config snapshot has already been written, so the copy happens
+	// once per scan (the CAMERA_ dir only exists once a scan target is known).
+	std::filesystem::path configDumpedFor;
+
 	auto printFrame = [&](cv::Mat& img, uint64_t timestamp, nlohmann::json& metaDataDump) {
 		{
 			std::unique_lock<std::mutex> lck(global::photoMutex);
@@ -519,6 +523,33 @@ int main(int argc, char** argv)
 				const std::filesystem::path directory = continuousPath / ("CAMERA_" + std::to_string(global::cameraNo));
 				// mkdir -p
 				std::filesystem::create_directories(directory);
+
+				// Drop the config the camera is actually running with next to the frames, so a
+				// dataset is self-describing even if the USB config is edited afterwards.
+				if(configDumpedFor != directory)
+				{
+					const auto configCopy = directory / (global::prefix + "config.json");
+					try
+					{
+						nlohmann::json config;
+						{
+							std::lock_guard<std::mutex> lck(global::liveConfigMutex);
+							config = global::liveConfig;
+						}
+						if(!config.is_object())
+							config = global::cam.getCameraConfig();
+						std::ofstream file(configCopy);
+						file << config.dump(4);
+						file.close();
+						std::cout << "Wrote " << configCopy.string() << std::endl;
+					}
+					catch(const std::exception& e)
+					{
+						std::cerr << "Failed to copy config to " << configCopy.string() << ": " << e.what() << std::endl;
+					}
+					// Do not retry every frame if the write failed - the save path would drown in errors.
+					configDumpedFor = directory;
+				}
 
 				// delegate frame saving to std::future (separate thread).
 				jpgSaveThread = std::async(std::launch::async, [=]() {
