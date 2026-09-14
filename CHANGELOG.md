@@ -1,4 +1,8 @@
 # Changelog
+## [0.81] - 2026-09-14
+
+- ** Extra GNSS ** - hotfix service name.
+
 
 ## [0.8] - 2026-06-15
 
