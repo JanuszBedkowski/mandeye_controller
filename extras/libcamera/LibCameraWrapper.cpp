@@ -747,9 +747,7 @@ nlohmann::json LibCameraWrapper::getCameraConfig()
 		sizes.insert({sc.size.width, sc.size.height}); // always include the active one
 		for(const auto& [w, h] : sizes)
 		{
-			std::stringstream ss;
-			ss << w << " " << h;
-			config["controls_info"]["resolutions"].push_back(ss.str());
+			config["resolutions"].push_back({w, h});
 		}
 	}
 	for(auto const& control : m_controlsInfo)
