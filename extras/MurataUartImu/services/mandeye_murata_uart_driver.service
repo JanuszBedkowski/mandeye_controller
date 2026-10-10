@@ -10,6 +10,18 @@ ExecStartPre=/bin/sleep 20
 ExecStart=/opt/mandeye/extras/mandeye_murata_uart_driver
 Restart=always
 
+# Configuration via environment variables (overridden by the JSON config,
+# EXTRA_MURATA_CONFIG_PATH, default /media/usb/config_murata_imu.json):
+# EXTRA_MURATA_UART_PORT  - IMU UART                  (default: /dev/ttyAMA2)
+# EXTRA_MURATA_UART_BAUD  - 921600 or 460800          (default: 921600;
+#                           the STM32F103 AwesomeImu firmware uses 460800)
+# EXTRA_MURATA_SEND_PTIME - send the $PTIME second label for PPS sync (default: 1)
+#
+# Example override (/etc/systemd/system/mandeye_murata_uart_driver.service.d/override.conf):
+#   [Service]
+#   Environment="EXTRA_MURATA_UART_PORT=/dev/ttyUSB0"
+#   Environment="EXTRA_MURATA_UART_BAUD=460800"
+
 [Install]
 WantedBy=multi-user.target
 

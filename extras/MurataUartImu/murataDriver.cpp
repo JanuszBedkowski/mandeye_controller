@@ -23,9 +23,17 @@ struct ImuPacket
 	int32_t rate[3];
 	int32_t acc[3];
 	int32_t temp;
+	uint8_t gps_status; // GPS_* flags below
 	uint8_t crc;
 };
 #pragma pack(pop)
+static_assert(sizeof(ImuPacket) == 39, "ImuPacket must match the firmware's 39-byte imu_pkt_t");
+
+// gps_status bits
+static constexpr uint8_t GPS_TIME_VALID = 0x01; // locked to PPS at least once: timestamps are Unix time
+static constexpr uint8_t GPS_PPS_OK = 0x02; // last PPS < 1.1 s ago (otherwise holding over)
+static constexpr uint8_t GPS_NMEA_OK = 0x04; // time label (NMEA/$PTIME) < 1.1 s ago
+static constexpr uint8_t GPS_RATE_CAL = 0x08; // CPU clock measured against PPS
 
 static constexpr size_t PKT_SIZE = sizeof(ImuPacket);
 static constexpr uint8_t SYNC_BYTE = 0xAA;
@@ -63,7 +71,9 @@ namespace global
 {
 std::string directoryName = "MURATA_IMU";
 int fileLengthMs = 20000;
-std::string uartPort = "/dev/ttyUSB0";
+std::string uartPort = "/dev/ttyAMA2";
+int uartBaud = 921600;
+bool sendPtime = true; // send the $PTIME second label after each PPS (see sendPtime())
 } // namespace global
 
 // ── Mode state ───────────────────────────────────────────────────────────────
@@ -178,6 +188,42 @@ void saveToFile(std::deque<ImuRow> rows, std::string path)
 	std::cout << "Saved " << rows.size() << " rows to " << path << std::endl;
 }
 
+static LibSerial::BaudRate toBaudRate(int baud)
+{
+	switch(baud)
+	{
+	case 115200: return LibSerial::BaudRate::BAUD_115200;
+	case 230400: return LibSerial::BaudRate::BAUD_230400;
+	case 460800: return LibSerial::BaudRate::BAUD_460800;
+	case 921600: return LibSerial::BaudRate::BAUD_921600;
+	default:
+		std::cerr << "Unsupported baud " << baud << ", using 921600" << std::endl;
+		return LibSerial::BaudRate::BAUD_921600;
+	}
+}
+
+// The PPS edge (FakePPS, from this machine's clock) tells the firmware when a
+// second starts; this tells it which second: $PTIME,<unix seconds>*HH, with HH
+// the XOR of the characters between '$' and '*'. Sent once per second, well
+// after the edge, naming the second whose edge just happened.
+static void sendPtime(LibSerial::SerialPort& serial, int64_t& lastSent)
+{
+	const auto now = std::chrono::system_clock::now().time_since_epoch();
+	const int64_t ms = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+	const int64_t sec = ms / 1000;
+	const int64_t frac = ms % 1000;
+	if(sec == lastSent || frac < 200 || frac >= 900)
+		return;
+	lastSent = sec;
+	const std::string body = "PTIME," + std::to_string(sec);
+	uint8_t ck = 0;
+	for(char c : body)
+		ck ^= static_cast<uint8_t>(c);
+	char tail[8];
+	snprintf(tail, sizeof tail, "*%02X\r\n", ck);
+	serial.Write("$" + body + tail);
+}
+
 // ── IMU UART thread ──────────────────────────────────────────────────────────
 int murataThread()
 {
@@ -185,7 +231,7 @@ int murataThread()
 	try
 	{
 		serial.Open(global::uartPort);
-		serial.SetBaudRate(LibSerial::BaudRate::BAUD_460800);
+		serial.SetBaudRate(toBaudRate(global::uartBaud));
 		serial.SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
 		serial.SetParity(LibSerial::Parity::PARITY_NONE);
 		serial.SetStopBits(LibSerial::StopBits::STOP_BITS_1);
@@ -196,7 +242,8 @@ int murataThread()
 		std::cerr << "Failed to open " << global::uartPort << std::endl;
 		return -1;
 	}
-	std::cout << "Opened " << global::uartPort << " @ 460800" << std::endl;
+	std::cout << "Opened " << global::uartPort << " @ " << global::uartBaud << (global::sendPtime ? ", sending $PTIME" : "") << std::endl;
+	int64_t lastPtime = -1;
 
 	std::deque<ImuRow> buffer;
 	auto fileStartTime = std::chrono::steady_clock::now();
@@ -208,6 +255,9 @@ int murataThread()
 
 	for(;;)
 	{
+		if(global::sendPtime)
+			sendPtime(serial, lastPtime);
+
 		// ── Sync on 0xAA ──────────────────────────────────────────────────────
 		try
 		{
@@ -295,7 +345,10 @@ int murataThread()
 		{
 			double tp = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
 			double imu_ts = double(pkt.timestamp_us) / 1000000.0;
-			std::cout << "pkts/s: " << pktCount << "  errors: " << errCount << "  diff: " << (tp - imu_ts) << "  buffered: " << buffer.size()
+			char gps[8];
+			snprintf(gps, sizeof gps, "0x%02X", pkt.gps_status);
+			std::cout << "pkts/s: " << pktCount << "  errors: " << errCount << "  diff: " << (tp - imu_ts) << "  gps: " << gps
+					  << ((pkt.gps_status & GPS_TIME_VALID) ? "" : " (not synced: µs since boot)") << "  buffered: " << buffer.size()
 					  << std::endl;
 			pktCount = errCount = 0;
 			statsTime = now;
@@ -309,7 +362,9 @@ int main(int argc, char** argv)
 {
 	std::string configPath = getEnvString("EXTRA_MURATA_CONFIG_PATH", "/media/usb/config_murata_imu.json");
 	global::directoryName = getEnvString("EXTRA_MURATA_DIRECTORY_NAME", "MURATA_IMU");
-	global::uartPort = getEnvString("EXTRA_MURATA_UART_PORT", "/dev/ttyAMA0");
+	global::uartPort = getEnvString("EXTRA_MURATA_UART_PORT", "/dev/ttyAMA2");
+	global::uartBaud = std::stoi(getEnvString("EXTRA_MURATA_UART_BAUD", "921600"));
+	global::sendPtime = getEnvString("EXTRA_MURATA_SEND_PTIME", "1") != "0";
 
 	std::cout << "Config: " << configPath << std::endl;
 	auto configJson = getConfig(configPath);
@@ -320,16 +375,22 @@ int main(int argc, char** argv)
 			global::fileLengthMs = configJson["file_length_ms"].get<int>();
 		if(configJson.contains("uart_port"))
 			global::uartPort = configJson["uart_port"].get<std::string>();
+		if(configJson.contains("uart_baud"))
+			global::uartBaud = configJson["uart_baud"].get<int>();
+		if(configJson.contains("send_ptime"))
+			global::sendPtime = configJson["send_ptime"].get<bool>();
 	}
 	else
 	{
 		configJson["file_length_ms"] = global::fileLengthMs;
 		configJson["uart_port"] = global::uartPort;
+		configJson["uart_baud"] = global::uartBaud;
+		configJson["send_ptime"] = global::sendPtime;
 		std::ofstream f(configPath);
 		f << configJson.dump(4);
 		std::cout << "Created default config at " << configPath << std::endl;
 	}
-	std::cout << "UART: " << global::uartPort << std::endl;
+	std::cout << "UART: " << global::uartPort << " @ " << global::uartBaud << std::endl;
 
 	std::thread tzmq(clientThread);
 	std::thread timu(murataThread);
