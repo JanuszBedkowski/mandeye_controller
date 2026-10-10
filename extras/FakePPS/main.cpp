@@ -197,7 +197,9 @@ void oneSecondThread()
 			NMEA::timestamp ts = NMEA::GetTimestampFromSec(secs);
 
 			auto t = std::thread([&serialPorts, ts]() {
-				std::this_thread::sleep_for(std::chrono::milliseconds(5));
+				// Send the RMC after the 50 ms pulse has ended: a PPS edge during the
+				// sentence can couple into the NMEA line and corrupt it.
+				std::this_thread::sleep_for(std::chrono::milliseconds(60));
 				const std::string nmeaMessage = NMEA::produceNMEA(ts);
 				for(auto& serialPort : serialPorts)
 				{

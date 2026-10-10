@@ -10,6 +10,10 @@ ExecStartPre=/bin/sleep 5
 ExecStart=/opt/mandeye/extras/mandeye_fake_pps
 Restart=always
 RestartSec=5
+# Real-time priority: the pulse is skipped when the wake-up is >10 us late,
+# which happens regularly under normal scheduling.
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=80
 
 # Configuration via environment variables:
 # FAKE_PPS_SERIAL_PORTS - comma-separated UART devices  (default: /dev/ttyAMA2,/dev/ttyAMA5)

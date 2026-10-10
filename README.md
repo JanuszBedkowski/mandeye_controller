@@ -95,6 +95,7 @@ Note that, target hardware is defined during compilation time using `-MANDEYE_HA
 The `MANDEYE_HARDWARE_HEADER` is one of the headers in `code/hardware_config`:
 ```bash
 $ ls ./code/hardware_config/mandeye-*.h
+./code/hardware_config/mandeye-januszpalkapro.h
 ./code/hardware_config/mandeye-pro-cm4-bookworm.h
 ./code/hardware_config/mandeye-pro-cm4-bullseye.h
 ./code/hardware_config/mandeye-standard-rpi4.h
@@ -108,6 +109,7 @@ $ ls ./code/hardware_config/mandeye-*.h
 | mandeye-standard-rpi5.h    | Raspberry Pi 5                                   |
 | mandeye-pro-cm4-bookworm.h | Raspberry Pi Compute module 4 plus carrier board |
 | mandeye-direct-cm5.h       | Raspberry Pi Compute module 5 plus carrier board |
+| mandeye-januszpalkapro.h   | JanuszPalkaPro board (CM5 + STM32H7 timing MCU)  |
 |mandeye-pro-cm4-bullseye.h  | Deprecated                                       |
 
 
