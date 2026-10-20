@@ -2,9 +2,11 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <Eigen/Geometry>
 #include <deque>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <libserial/SerialPort.h>
 #include <mutex>
@@ -37,8 +39,17 @@ static constexpr uint8_t GPS_RATE_CAL = 0x08; // CPU clock measured against PPS
 
 static constexpr size_t PKT_SIZE = sizeof(ImuPacket);
 static constexpr uint8_t SYNC_BYTE = 0xAA;
-static constexpr double SENSITIVITY_RATE = 1600.0;
-static constexpr double SENSITIVITY_ACC = 3200.0;
+// Must match the firmware config.h (SENSITIVITY_RATE2/ACC2, DECIMATION_RATE).
+// The decimated Rate_XYZ2 output comes out DECIMATION_RATE times smaller than the
+// nominal 1600 LSB/dps (verified against lidar ICP: factor 16.0); Acc_XYZ2 does not.
+static constexpr double DECIMATION_RATE = 16.0;
+static constexpr double SENSITIVITY_RATE = 1600.0 / DECIMATION_RATE; // LSB / dps
+static constexpr double SENSITIVITY_ACC = 3200.0; // LSB / m/s2
+static constexpr double GRAVITY = 9.81; // HDMapping expects acceleration in g
+
+// IMU mounting rotation; measurements are rotated by its inverse to bring them
+// into the lidar frame. (w=0, x=-1, y=0, z=0) = 180 deg about X.
+static const Eigen::Matrix3d IMU_TO_LIDAR = Eigen::Quaterniond(0.0, -1.0, 0.0, 0.0).inverse().toRotationMatrix();
 
 static uint8_t crc8(const uint8_t* data, size_t len)
 {
@@ -182,6 +193,7 @@ void saveToFile(std::deque<ImuRow> rows, std::string path)
 		std::cerr << "Failed to open " << path << std::endl;
 		return;
 	}
+	f << std::setprecision(9);
 	f << "timestamp gyroX gyroY gyroZ accX accY accZ timestampUnix\n";
 	for(const auto& r : rows)
 		f << r.ts_ns << ' ' << r.gx << ' ' << r.gy << ' ' << r.gz << ' ' << r.ax << ' ' << r.ay << ' ' << r.az << ' ' << r.ts_ns << '\n';
@@ -290,12 +302,14 @@ int murataThread()
 		// ── Decode into row ───────────────────────────────────────────────────
 		ImuRow row;
 		row.ts_ns = pkt.timestamp_us * 1000ULL;
-		row.gx = deg2rad(pkt.rate[0] / SENSITIVITY_RATE);
-		row.gy = deg2rad(pkt.rate[1] / SENSITIVITY_RATE);
-		row.gz = deg2rad(pkt.rate[2] / SENSITIVITY_RATE);
-		row.ax = pkt.acc[0] / SENSITIVITY_ACC;
-		row.ay = pkt.acc[1] / SENSITIVITY_ACC;
-		row.az = pkt.acc[2] / SENSITIVITY_ACC;
+		const Eigen::Vector3d gyr = IMU_TO_LIDAR * Eigen::Vector3d(pkt.rate[0], pkt.rate[1], pkt.rate[2]) * deg2rad(1.0 / SENSITIVITY_RATE);
+		const Eigen::Vector3d acc = IMU_TO_LIDAR * Eigen::Vector3d(pkt.acc[0], pkt.acc[1], pkt.acc[2]) / (SENSITIVITY_ACC * GRAVITY);
+		row.gx = gyr.x();
+		row.gy = gyr.y();
+		row.gz = gyr.z();
+		row.ax = acc.x();
+		row.ay = acc.y();
+		row.az = acc.z();
 
 		// ── Read mode ─────────────────────────────────────────────────────────
 		size_t state_id;
@@ -321,7 +335,9 @@ int murataThread()
 		const bool timeUp =
 			collecting &&
 			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - fileStartTime).count() > global::fileLengthMs;
-		const bool stopping = collecting && (state_id == MODES::STOPPING_ID);
+		// Flush on any mode other than SCANNING: with conflate=1 the STOPPING message
+		// can be overwritten by the next mode before we see it, losing the last buffer.
+		const bool stopping = collecting && (state_id != MODES::SCANNING_ID);
 
 		if(timeUp || stopping)
 		{
