@@ -37,6 +37,7 @@ nlohmann::json LivoxClient::produceStatus()
 	nlohmann::json data;
 	data["init_success"] = init_succes;
 	data["is_synced"] = isSynced();
+	data["data_flowing"] = isDataFlowing();
 	if(!m_LivoxLidarInfo.empty())
 	{
 		data["LivoxLidarInfo"]["dev_type"] = m_LivoxLidarInfo.begin()->second.dev_type;
@@ -264,6 +265,8 @@ void LivoxClient::PointCloudCallback(uint32_t handle, const uint8_t dev_type, Li
 
 	LivoxClient* this_ptr = (LivoxClient*)client_data;
 
+	this_ptr->m_lastPointPacketSteadyNs.store(
+		std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
 	this_ptr->m_recivedPointMessages[handle]++;
 	const auto laser_id = this_ptr->handleToLidarId(handle);
 	//  printf("point cloud handle: %u, data_num: %d, data_type: %d, length: %d, frame_counter: %d\n",
@@ -331,6 +334,17 @@ bool LivoxClient::isSynced()
 		}
 	}
 	return true;
+}
+
+bool LivoxClient::isDataFlowing() const
+{
+	const int64_t last = m_lastPointPacketSteadyNs.load();
+	if(last == 0)
+	{
+		return false;
+	}
+	const int64_t now = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+	return std::chrono::nanoseconds(now - last) < kDataFlowTimeout;
 }
 
 void LivoxClient::ImuDataCallback(uint32_t handle, const uint8_t dev_type, LivoxLidarEthernetPacket* data, void* client_data)
