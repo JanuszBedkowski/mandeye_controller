@@ -8,14 +8,14 @@ namespace mandeye
 {
 struct LidarPoint
 {
-	float x; //! X coordinate in meters
-	float y; //! Y coordinate in meters
-	float z; //! Z coordinate in meters
-	float intensity; //! Intensity of the point, usually 0-255
-	uint8_t tag;
-	uint64_t timestamp; //! Timestamp in nanoseconds, 0 if not set
-	uint8_t line_id; //! Line ID, used to identify the laser that produced this point
-	uint16_t laser_id; //! Laser ID, used to identify the laser that produced this point
+	float x{0}; //! X coordinate in meters
+	float y{0}; //! Y coordinate in meters
+	float z{0}; //! Z coordinate in meters
+	float intensity{0}; //! Intensity of the point, usually 0-255
+	uint8_t tag{0}; //! Lidar-specific point tag (e.g. Livox tag), saved as LAZ classification
+	uint64_t timestamp{0}; //! Timestamp in nanoseconds, 0 if not set
+	uint8_t line_id{0}; //! Line ID, used to identify the laser that produced this point
+	uint16_t laser_id{0}; //! Laser ID, used to identify the laser that produced this point
 };
 
 struct LidarIMU

@@ -297,6 +297,7 @@ void LivoxClient::PointCloudCallback(uint32_t handle, const uint8_t dev_type, Li
 			point.y = 0.001 * p_point_data[i].y;
 			point.z = 0.001 * p_point_data[i].z;
 			point.intensity = p_point_data[i].reflectivity;
+			point.tag = p_point_data[i].tag;
 			point.laser_id = laser_id;
 			point.timestamp =
 				toUint64.data + static_cast<uint64_t>(i) * (double(data->time_interval * 100) / data->dot_num); //unit for interval is 0.1 us = 100 ns
