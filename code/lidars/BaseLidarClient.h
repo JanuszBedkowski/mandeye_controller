@@ -84,6 +84,13 @@ public:
 	{
 		return false;
 	}
+
+	//! Check if the lidar has delivered data recently.
+	//! Default is true so lidar clients without this check are not blocked.
+	virtual bool isDataFlowing() const
+	{
+		return true;
+	}
 };
 
 } // namespace mandeye

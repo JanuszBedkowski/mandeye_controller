@@ -358,9 +358,25 @@ void stateWatcher()
 				mandeye::gpioClientPtr->beep({10}); // One very short beep to show that we are alive
 			}
 			std::this_thread::sleep_for(100ms);
-			std::lock_guard<std::mutex> l1(lidarClientPtrLock);
+
 			std::lock_guard<std::mutex> l2(gpioClientPtrLock);
 
+			// check for data flow
+			bool isLidarDatFlow = false;
+			for(int i = 0; i < 60; i++) {
+				std::this_thread::sleep_for(1000ms);
+				std::lock_guard<std::mutex> l1(lidarClientPtrLock);
+				if(lidarClientPtr && lidarClientPtr->isDataFlowing())
+				{
+					isLidarDatFlow = true;
+					break;
+				}
+			}
+			if(!isLidarDatFlow)
+			{
+				std::cout << "Lidar data is not flowing, even after wait, going into failed mode" << std::endl;
+				isLidarError.store(true);
+			}
 			// check if lidar
 			if(hardware::WaitForLidarSync)
 			{
@@ -368,6 +384,7 @@ void stateWatcher()
 				for(int i = 0; i < 60; i++)
 				{
 					std::this_thread::sleep_for(1000ms);
+					std::lock_guard<std::mutex> l(lidarClientPtrLock);
 					if(lidarClientPtr && lidarClientPtr->isSynced())
 					{
 						isLidarSynced = true;

@@ -3,6 +3,8 @@
 #include "lidars/BaseLidarClient.h"
 #include "livox_lidar_def.h"
 #include "utils/TimeStampProvider.h"
+#include <atomic>
+#include <chrono>
 #include <deque>
 #include <mutex>
 #include <nlohmann/json.hpp>
@@ -34,6 +36,9 @@ public:
 	//! Returns if Lidar is synced (PPS or PTP)
 	bool isSynced() override;
 
+	//! Returns true if a point cloud packet arrived within the last kDataFlowTimeout
+	bool isDataFlowing() const override;
+
 	// mandeye_utils::TimeStampProvider overrides ...
 	double getTimestamp() override;
 	double getSessionDuration() override;
@@ -52,8 +57,12 @@ private:
 	LidarIMUBufferPtr m_bufferIMUPtr{nullptr};
 
 	std::mutex m_timestampMutex;
-	uint64_t m_timestamp;
-	uint64_t m_elapsed;
+	uint64_t m_timestamp{0};
+	uint64_t m_elapsed{0};
+
+	//! steady_clock time (ns since its epoch) of the last point cloud packet, 0 if none yet
+	std::atomic<int64_t> m_lastPointPacketSteadyNs{0};
+	static constexpr std::chrono::seconds kDataFlowTimeout{2};
 	std::optional<uint64_t> m_sessionStart;
 
 	static void saveTimeStamp(LivoxClient* client, uint64_t timestamp);
