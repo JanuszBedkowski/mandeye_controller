@@ -167,6 +167,13 @@ void DeviceManager::GenerateDevTypeTable() {
     lidars_data_port_[lidar_cfg.device_type].insert(lidar_cfg.lidar_net_info.imu_data_port);
   }
 
+  // Local addition: a Mid-360L (dev_type 41) is driven by the "MID360" config section,
+  // so its packets must be routed with the MID360 port table.
+  if (lidars_cmd_port_.count(kLivoxLidarTypeMid360)) {
+    lidars_cmd_port_[kLivoxLidarTypeMid360L] = lidars_cmd_port_[kLivoxLidarTypeMid360];
+    lidars_data_port_[kLivoxLidarTypeMid360L] = lidars_data_port_[kLivoxLidarTypeMid360];
+  }
+
   for (auto it = custom_lidars_cfg_ptr_->begin(); it != custom_lidars_cfg_ptr_->end(); ++it) {
     const LivoxLidarCfg& lidar_cfg = *it;
     uint32_t lidar_ip = inet_addr(lidar_cfg.lidar_net_info.lidar_ipaddr.c_str());
@@ -313,7 +320,7 @@ bool DeviceManager::CreateCommandChannel(const uint8_t dev_type, const HostNetIn
 
 #ifdef WIN32
 #else
-  if (dev_type == kLivoxLidarTypeMid360 || dev_type == kLivoxLidarTypeMid360s) {
+  if (dev_type == kLivoxLidarTypeMid360 || dev_type == kLivoxLidarTypeMid360s || dev_type == kLivoxLidarTypeMid360L) {
     socket_t broadcast_socket = util::CreateSocket(host_net_info.push_msg_port, true, true, true, "255.255.255.255");
     if (broadcast_socket < 0) {
       LOG_ERROR("Create broadcast socket failed.");
@@ -679,7 +686,7 @@ void DeviceManager::AddViewLidar(const uint32_t handle, LivoxLidarDiagInternalIn
     off += kv->length;
   }
 
-  if (view_lidar_info_ptr->dev_type == kLivoxLidarTypeMid360 || view_lidar_info_ptr->dev_type == kLivoxLidarTypeMid360s ) {
+  if (view_lidar_info_ptr->dev_type == kLivoxLidarTypeMid360 || view_lidar_info_ptr->dev_type == kLivoxLidarTypeMid360s || view_lidar_info_ptr->dev_type == kLivoxLidarTypeMid360L) {
     view_lidar_info_ptr->lidar_point_port = kMid360LidarPointCloudPort;
     view_lidar_info_ptr->lidar_imu_data_port = kMid360LidarImuDataPort;
   }
