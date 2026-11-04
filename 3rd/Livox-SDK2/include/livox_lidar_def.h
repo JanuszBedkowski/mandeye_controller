@@ -64,6 +64,7 @@ typedef enum {
   kLivoxLidarTypeAvia = 7,
   kLivoxLidarTypeMid360 = 9,
   kLivoxLidarTypeMid360s = 35,
+  kLivoxLidarTypeMid360L = 41,  // local addition: Mid-360L reports dev_type 41, speaks the Mid-360 protocol
 
   kLivoxLidarTypeIndustrialHAP = 10,
   kLivoxLidarTypeHAP = 15,
