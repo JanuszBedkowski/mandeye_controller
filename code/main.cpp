@@ -363,7 +363,8 @@ void stateWatcher()
 
 			// check for data flow
 			bool isLidarDatFlow = false;
-			for(int i = 0; i < 60; i++) {
+			for(int i = 0; i < 60; i++)
+			{
 				std::this_thread::sleep_for(1000ms);
 				std::lock_guard<std::mutex> l1(lidarClientPtrLock);
 				if(lidarClientPtr && lidarClientPtr->isDataFlowing())
