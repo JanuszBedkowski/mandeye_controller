@@ -1,4 +1,15 @@
 # Changelog
+## [0.82] - 2026-11-07
+
+### New features
+- **Livox Mid-360L support** — Livox SDK2 patched to accept `dev_type` 41 and drive it with the Mid-360 protocol and `MID360` config section
+- **Lidar data-flow check at startup** — the controller waits up to 60 s for point data and enters `LIDAR_ERROR` if none arrives; `data_flowing` added to the Livox status in `/json/status`
+- **Livox point tag saved to LAZ** — the per-point Livox tag is written to the LAZ classification field (point format 1, 5 bits). Tools that interpret ASPRS classes may read these values as classes
+
+### Fixes
+- LAZ classification no longer contains uninitialized data (`LidarPoint` fields are now zero-initialized)
+- Startup lidar wait no longer holds the lidar client lock for the whole wait
+
 ## [0.81] - 2026-09-14
 
 - ** Extra GNSS ** - hotfix service name.
