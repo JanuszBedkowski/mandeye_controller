@@ -3,6 +3,12 @@
 #include <gpiod.h>
 #include <gpios.h>
 #include <iostream>
+
+#ifndef MANDEYE_BUZZER_TONE_HZ
+// 0 -> active buzzer (driven with DC), otherwise frequency of software generated tone for passive buzzer
+#	define MANDEYE_BUZZER_TONE_HZ 0
+#endif
+
 namespace mandeye
 {
 using namespace hardware;
@@ -136,6 +142,12 @@ GpioClient::GpioClient(bool sim)
 		}
 	};
 
+	if(!sim && MANDEYE_BUZZER_TONE_HZ > 0 && m_ledGpio[LED::BUZZER].m_line)
+	{
+		std::cout << "Passive buzzer, tone " << MANDEYE_BUZZER_TONE_HZ << " Hz" << std::endl;
+		m_toneThread = std::thread(&GpioClient::toneThreadFunction, this, MANDEYE_BUZZER_TONE_HZ);
+	}
+
 	m_gpioReadBackThread = std::thread([this]() {
 		while(m_running)
 		{
@@ -162,9 +174,17 @@ GpioClient::GpioClient(bool sim)
 }
 GpioClient::~GpioClient()
 {
+	{
+		std::lock_guard<std::mutex> lck{m_toneLock};
+		m_running.store(false);
+	}
+	m_toneCv.notify_all();
+	if(m_toneThread.joinable())
+	{
+		m_toneThread.join();
+	}
 	if(m_gpioReadBackThread.joinable())
 	{
-		m_running.store(false);
 		m_gpioReadBackThread.join();
 	}
 	if(m_chip)
@@ -227,6 +247,16 @@ void GpioClient::setLed(LED led, bool state)
 
 void GpioClient::setLed(LedData& led, bool state)
 {
+	if(m_toneThread.joinable() && &led == &m_ledGpio[LED::BUZZER])
+	{
+		{
+			std::lock_guard<std::mutex> lck{m_toneLock};
+			m_toneOn = state;
+			led.m_state = state;
+		}
+		m_toneCv.notify_all();
+		return;
+	}
 	std::lock_guard<std::mutex> lck{m_lock};
 	led.m_state = state;
 	if(!m_useSimulatedGPIO && led.m_line)
@@ -246,6 +276,36 @@ void GpioClient::addButtonCallback(hardware::BUTTON btn, const std::string& call
 		return;
 	}
 	it->second.m_callbacks[callbackName] = callback;
+}
+
+void GpioClient::toneThreadFunction(int frequencyHz)
+{
+	gpiod_line* line = m_ledGpio[LED::BUZZER].m_line;
+	const auto halfPeriod = std::chrono::microseconds(500000 / frequencyHz);
+	while(m_running)
+	{
+		{
+			std::unique_lock<std::mutex> lck{m_toneLock};
+			m_toneCv.wait(lck, [this]() { return m_toneOn || !m_running; });
+		}
+		bool level = false;
+		auto next = std::chrono::steady_clock::now();
+		while(m_running)
+		{
+			{
+				std::lock_guard<std::mutex> lck{m_toneLock};
+				if(!m_toneOn)
+				{
+					break;
+				}
+			}
+			level = !level;
+			gpiod_line_set_value(line, level ? 1 : 0);
+			next += halfPeriod;
+			std::this_thread::sleep_until(next);
+		}
+		gpiod_line_set_value(line, 0);
+	}
 }
 
 void GpioClient::beep(const std::vector<int>& durations)

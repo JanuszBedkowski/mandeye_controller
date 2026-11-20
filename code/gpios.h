@@ -2,6 +2,7 @@
 
 #include "hardware_config/hardware_common.h"
 #include <atomic>
+#include <condition_variable>
 #include <mutex>
 #include <nlohmann/json.hpp>
 #include <thread>
@@ -108,6 +109,13 @@ private:
 
 	std::mutex m_lock;
 	std::atomic<bool> m_running{true};
+
+	//! passive buzzer support: square wave generated in software while buzzer is on
+	void toneThreadFunction(int frequencyHz);
+	std::thread m_toneThread;
+	std::mutex m_toneLock;
+	std::condition_variable m_toneCv;
+	bool m_toneOn{false};
 };
 
 inline std::mutex gpioClientPtrLock;

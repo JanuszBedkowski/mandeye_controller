@@ -23,6 +23,8 @@ namespace hardware
 #define PISTACHE_SERVER
 #define MANDEYE_BENCHMARK_WRITE_SPEED
 #define MANDEYE_COUNTINOUS_SCANNING_STOP_1_CLICK
+// Q1 drives a passive buzzer: it needs a square wave, DC only clicks
+#define MANDEYE_BUZZER_TONE_HZ 2000
 
 constexpr int Offset = 0;
 constexpr bool Autostart = false;
