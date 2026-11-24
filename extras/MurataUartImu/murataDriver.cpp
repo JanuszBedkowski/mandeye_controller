@@ -47,9 +47,12 @@ static constexpr double SENSITIVITY_RATE = 1600.0 / DECIMATION_RATE; // LSB / dp
 static constexpr double SENSITIVITY_ACC = 3200.0; // LSB / m/s2
 static constexpr double GRAVITY = 9.81; // HDMapping expects acceleration in g
 
+// IMU -> lidar rotation (v_lidar = R * v_imu): 180 deg about (1, 1, 0),
+// then +90 deg yaw, then an extra 180 deg yaw (net -90 deg yaw).
 static const Eigen::Matrix3d IMU_TO_LIDAR =
-Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitZ()).toRotationMatrix() *
-Eigen::Quaterniond(0.0, M_SQRT1_2, M_SQRT1_2, 0.0).toRotationMatrix();
+	Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ()).toRotationMatrix() *
+	Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitZ()).toRotationMatrix() *
+	Eigen::Quaterniond(0.0, M_SQRT1_2, M_SQRT1_2, 0.0).toRotationMatrix();
 
 
 static uint8_t crc8(const uint8_t* data, size_t len)
