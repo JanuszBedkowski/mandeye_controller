@@ -27,7 +27,7 @@ namespace hardware
 #define MANDEYE_BUZZER_TONE_HZ 2000
 
 constexpr int Offset = 0;
-constexpr bool Autostart = false;
+constexpr bool Autostart = true;
 constexpr bool WaitForLidarSync = true;
 
 constexpr const char* mandeyeHarwareType()
