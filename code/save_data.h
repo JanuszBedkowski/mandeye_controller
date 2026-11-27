@@ -13,4 +13,6 @@ void saveLidarList(const std::unordered_map<uint32_t, std::string>& lidars, cons
 void saveImuData(LidarIMUBufferPtr buffer, const std::string& directory, int chunk);
 void saveGnssData(std::deque<std::string>& buffer, const std::string& directory, int chunk);
 void saveGnssRawData(std::deque<std::string>& buffer, const std::string& directory, int chunk);
+//! Path of the raw lidar UDP capture of a chunk, next to lidarNNNN.laz
+std::string getPcapFilePath(const std::string& directory, int chunk);
 } // namespace mandeye

@@ -216,6 +216,9 @@ The software supports different SDKs for the Lidar:
 | Livox SDK | `LIVOX_SDK2` | Livox SDK version 2 tested with Mid360 and HAP                                   |
 | Ouster SDK | `OUSTER` | Ouster SDK tested with OS-0-64 (ousteros-image-prod-aries-v2.5.3+20240111055903) |
 | Butter Lidar | `BUTTER_LIDAR` | Dummy SDK for documentation and testing purposes                                 |
+| SICK SDK | `SICK` | SICK scan_xd SDK (Multiscan MRS1000)                                             |
+| Hesai SDK | `HESAI` | Hesai SDK 2.0 (PandarXT / XT32M2X), points decoded on the device                 |
+| Hesai pcap | `HESAI_PCAP` | Built in, no SDK: records the raw PandarXT UDP stream to `lidarNNNN.pcap` instead of LAZ; points are decoded offline |
 
 Those are shared libraries that are loaded at runtime.
 You can set the SDK to use in two ways:

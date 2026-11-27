@@ -84,6 +84,7 @@ include_directories(${CMAKE_BINARY_DIR})
 #executable
 set(LIDAR_SOURCES
     code/lidars/dummy/ButterLidar.cpp
+    code/lidars/hesai_pcap/HesaiPcapClient.cpp
     code/lidars/LidarImplementation.cpp
 )
 set(LIDAR_LIBRARIES )
@@ -161,7 +162,7 @@ add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h
         ${LIDAR_SOURCES}
         ${LIDAR_SOURCES}
         code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp code/save_data.cpp
-        code/utils/TimeStampReceiver.cpp code/publisher.cpp)
+        code/utils/TimeStampReceiver.cpp code/utils/PcapUdpRecorder.cpp code/publisher.cpp)
 
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic " )
 
@@ -187,8 +188,11 @@ add_executable(button_demo code/button_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
 target_link_libraries(button_demo gpiod pthread)
 
+add_executable(pcap_udp_recorder code/pcap_udp_recorder.cpp code/utils/PcapUdpRecorder.cpp)
+target_link_libraries(pcap_udp_recorder pthread)
+
 # Define install directories
-install(TARGETS control_program led_demo button_demo
+install(TARGETS control_program led_demo button_demo pcap_udp_recorder
         RUNTIME DESTINATION /opt/mandeye/)
 
 set(MANDEYE_USE_LIBCAMERA ON CACHE BOOL "Build libcamera extra")

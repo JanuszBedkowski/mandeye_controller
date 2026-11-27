@@ -1,5 +1,6 @@
 #include "LidarImplementations.h"
 #include "lidars/dummy/ButterLidar.h"
+#include "lidars/hesai_pcap/HesaiPcapClient.h"
 
 #include <dlfcn.h>
 #include <iostream>
@@ -105,6 +106,12 @@ BaseLidarClientPtr createLidarClient(const std::string& lidarType, const nlohman
 	else if(lidarType == "BUTTER_LIDAR")
 	{
 		return std::make_shared<ButterLidar>();
+	}
+
+	else if(lidarType == "HESAI_PCAP")
+	{
+		// built in, no SDK: records the raw Hesai UDP stream to pcap instead of decoding points
+		return std::make_shared<HesaiPcapClient>();
 	}
 
 	else if(lidarType == "OUSTER")

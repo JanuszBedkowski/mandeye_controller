@@ -37,6 +37,13 @@ std::pair<std::string, std::optional<LazStats>> savePointcloudData(LidarPointsBu
 	return {lidarFilePath.string(), saveStatus};
 }
 
+std::string getPcapFilePath(const std::string& directory, int chunk)
+{
+	char pcapName[256];
+	snprintf(pcapName, 256, "lidar%04d.pcap", chunk);
+	return (std::filesystem::path(directory) / std::filesystem::path(pcapName)).string();
+}
+
 void saveLidarList(const std::unordered_map<uint32_t, std::string>& lidars, const std::string& directory, int chunk)
 {
 	using namespace std::chrono_literals;
