@@ -188,11 +188,8 @@ add_executable(button_demo code/button_demo.cpp code/gpios.cpp)
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
 target_link_libraries(button_demo gpiod pthread)
 
-add_executable(pcap_udp_recorder code/pcap_udp_recorder.cpp code/utils/PcapUdpRecorder.cpp)
-target_link_libraries(pcap_udp_recorder pthread)
-
 # Define install directories
-install(TARGETS control_program led_demo button_demo pcap_udp_recorder
+install(TARGETS control_program led_demo button_demo
         RUNTIME DESTINATION /opt/mandeye/)
 
 set(MANDEYE_USE_LIBCAMERA ON CACHE BOOL "Build libcamera extra")
