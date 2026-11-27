@@ -1,7 +1,6 @@
 #pragma once
 
 #include "lidars/BaseLidarClient.h"
-#include "lidars/RawDataRecorder.h"
 #include "utils/PcapUdpRecorder.h"
 
 #include <array>
@@ -24,7 +23,7 @@ namespace mandeye
 //! The lidar's own angle correction (PTC command 0x05, CSV "Laser id,Elevation,Azimuth") is saved as correction.dat
 //! into every scan directory, so the pcap files can be decoded without the lidar. Lidar IP: MANDEYE_HESAI_LIDAR_IP
 //! (default 192.168.1.201, as HesaiClient).
-class HesaiPcapClient : public BaseLidarClient, public RawDataRecorder
+class HesaiPcapClient : public BaseLidarClient
 {
 public:
 	HesaiPcapClient();
@@ -43,6 +42,10 @@ public:
 	//! Always empty buffers: the data is in the pcap files
 	std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> retrieveData() override;
 
+	bool savesRawData() const override
+	{
+		return true;
+	}
 	void startRawChunk(const std::string& directory, int chunk) override;
 	void stopRawChunks() override;
 
