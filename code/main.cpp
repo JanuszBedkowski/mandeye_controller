@@ -504,6 +504,11 @@ void stateWatcher()
 						if(saveStats)
 							lastFileSaveStats = *saveStats;
 					}
+					else
+					{
+						// same per-chunk feedback (beep) as after a saved LAZ; the recorder's writer thread finishes the pcap file
+						hardware::OnSavedLaz(getPcapFilePath(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS));
+					}
 					if(lidarClientPtr->savesImuData())
 					{
 						saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
@@ -607,6 +612,11 @@ void stateWatcher()
 					auto [fn, saveStats] = savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					if(saveStats)
 						lastFileSaveStats = *saveStats;
+				}
+				else
+				{
+					// same per-chunk feedback (beep) as after a saved LAZ; the recorder's writer thread finishes the pcap file
+					hardware::OnSavedLaz(getPcapFilePath(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS));
 				}
 				if(lidarClientPtr->savesImuData())
 				{
@@ -713,6 +723,11 @@ void stateWatcher()
 					auto [fn, saveStats] = savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					if(saveStats)
 						lastFileSaveStats = *saveStats;
+				}
+				else
+				{
+					// same per-chunk feedback (beep) as after a saved LAZ; the recorder's writer thread finishes the pcap file
+					hardware::OnSavedLaz(getPcapFilePath(stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS));
 				}
 				if(lidarClientPtr->savesImuData())
 				{
