@@ -19,7 +19,7 @@ std::pair<std::string, std::optional<LazStats>> savePointcloudData(LidarPointsBu
 	const auto start = std::chrono::steady_clock::now();
 	snprintf(lidarName, 256, "lidar%04d.laz", chunk);
 	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig lidar buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
+	std::cout << "Saving lidar buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
 	auto saveStatus = saveLaz(lidarFilePath.string(), buffer);
 
 	system("sync");
@@ -50,7 +50,7 @@ void saveLidarList(const std::unordered_map<uint32_t, std::string>& lidars, cons
 	char lidarName[256];
 	snprintf(lidarName, 256, "lidar%04d.sn", chunk);
 	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig lidar list of size " << lidars.size() << " to " << lidarFilePath << std::endl;
+	std::cout << "Saving lidar list of size " << lidars.size() << " to " << lidarFilePath << std::endl;
 
 	std::ofstream lidarStream(lidarFilePath);
 	for(const auto& [id, sn] : lidars)
@@ -67,7 +67,7 @@ void saveImuData(LidarIMUBufferPtr buffer, const std::string& directory, int chu
 	char lidarName[256];
 	snprintf(lidarName, 256, "imu%04d.csv", chunk);
 	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig imu buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
+	std::cout << "Saving imu buffer of size " << buffer->size() << " to " << lidarFilePath << std::endl;
 	std::ofstream lidarStream(lidarFilePath.c_str());
 	lidarStream << "timestamp gyroX gyroY gyroZ accX accY accZ imuId timestampUnix\n";
 	std::stringstream ss;
@@ -93,7 +93,7 @@ void saveGnssData(std::deque<std::string>& buffer, const std::string& directory,
 	char lidarName[256];
 	snprintf(lidarName, 256, "gnss%04d.gnss", chunk);
 	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig gnss buffer of size " << buffer.size() << " to " << lidarFilePath << std::endl;
+	std::cout << "Saving gnss buffer of size " << buffer.size() << " to " << lidarFilePath << std::endl;
 	std::ofstream lidarStream(lidarFilePath.c_str());
 	std::stringstream ss;
 
@@ -114,7 +114,7 @@ void saveGnssRawData(std::deque<std::string>& buffer, const std::string& directo
 	char lidarName[256];
 	snprintf(lidarName, 256, "gnss%04d.nmea", chunk);
 	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(lidarName);
-	std::cout << "Savig gnss raw buffer of size " << buffer.size() << " to " << lidarFilePath << std::endl;
+	std::cout << "Saving gnss raw buffer of size " << buffer.size() << " to " << lidarFilePath << std::endl;
 	std::ofstream lidarStream(lidarFilePath.c_str());
 	std::stringstream ss;
 

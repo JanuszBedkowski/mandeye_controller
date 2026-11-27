@@ -254,7 +254,7 @@ void saveStatusData(const std::string& directory, int chunk)
 	char statusName[256];
 	snprintf(statusName, 256, "status%04d.json", chunk);
 	std::filesystem::path lidarFilePath = std::filesystem::path(directory) / std::filesystem::path(statusName);
-	std::cout << "Savig status to " << lidarFilePath << std::endl;
+	std::cout << "Saving status to " << lidarFilePath << std::endl;
 	std::ofstream lidarStream(lidarFilePath);
 	lidarStream << produceReport(false);
 	system("sync");
@@ -504,7 +504,10 @@ void stateWatcher()
 						if(saveStats)
 							lastFileSaveStats = *saveStats;
 					}
-					saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+					if(lidarClientPtr->savesImuData())
+					{
+						saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+					}
 					saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					auto lidarList = lidarClientPtr->getSerialNumberToLidarIdMapping();
 					saveLidarList(lidarList, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
@@ -605,7 +608,10 @@ void stateWatcher()
 					if(saveStats)
 						lastFileSaveStats = *saveStats;
 				}
-				saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				if(lidarClientPtr->savesImuData())
+				{
+					saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				}
 				saveStatusData(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				auto lidarList = lidarClientPtr->getSerialNumberToLidarIdMapping();
 				saveLidarList(lidarList, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
@@ -708,7 +714,10 @@ void stateWatcher()
 					if(saveStats)
 						lastFileSaveStats = *saveStats;
 				}
-				saveImuData(imuBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				if(lidarClientPtr->savesImuData())
+				{
+					saveImuData(imuBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+				}
 				saveStatusData(stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 
 				auto lidarList = lidarClientPtr->getSerialNumberToLidarIdMapping();

@@ -94,8 +94,13 @@ public:
 		return false;
 	}
 
-	//! True if lidar resports IMU
-	virtual bool saveImuData() const {return true;}
+	//! True if imuNNNN.csv is written for every chunk, also when the client delivered no IMU samples (header-only file).
+	//! Keep it true for clients that produce lidarNNNN.laz: HDMapping pairs every LAZ chunk with an imuNNNN.csv and only
+	//! then falls back to MURATA_IMU. Raw-recording clients (HESAI_PCAP) return false.
+	virtual bool savesImuData() const
+	{
+		return true;
+	}
 
 	//! Raw recording: start writing the files of a chunk. Called when a scan starts and at every chunk cut.
 	virtual void startRawChunk([[maybe_unused]] const std::string& directory, [[maybe_unused]] int chunk) { }

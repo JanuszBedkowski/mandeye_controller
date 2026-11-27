@@ -46,6 +46,11 @@ public:
 	{
 		return true;
 	}
+	bool savesImuData() const override
+	{
+		return false;
+	}
+
 	void startRawChunk(const std::string& directory, int chunk) override;
 	void stopRawChunks() override;
 
