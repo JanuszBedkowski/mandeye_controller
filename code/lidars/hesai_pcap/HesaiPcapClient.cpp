@@ -2,15 +2,32 @@
 #include "save_data.h"
 
 #include <algorithm>
+#include <arpa/inet.h>
+#include <cerrno>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 namespace mandeye
 {
 namespace
 {
 constexpr uint16_t kHesaiUdpPort = 2368; // same as HesaiClient
+constexpr const char* kDefaultLidarIp = "192.168.1.201"; // same as HesaiClient
+
+// PTC 1.0 (hesai_sdk libhesai/PtcParser/include/ptc_1_0_parser.h): header 0x47 0x74, command, return code,
+// big-endian payload length, then the payload
+constexpr uint16_t kPtcPort = 9347;
+constexpr uint8_t kPtcGetLidarCalibration = 0x05; // PtcClient kPTCGetLidarCalibration
+constexpr uint32_t kPtcMaxPayload = 1u << 20;
+constexpr const char* kCorrectionFileName = "correction.dat";
 
 // PandarXT UDP protocol 6.1 (hesai_sdk libhesai/UdpProtocol/udp_protocol_v6_1.h)
 constexpr size_t kPreHeaderSize = 6; // 0xEE 0xFF, version major, minor, status info version, reserved
@@ -44,24 +61,165 @@ int64_t steadyNowNs()
 {
 	return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
+
+//! One PTC 1.0 query without request payload; the response payload goes to `payload`
+bool ptcQuery(const std::string& lidarIp, uint8_t command, std::vector<uint8_t>& payload, std::string& error)
+{
+	const int fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
+	if(fd < 0)
+	{
+		error = std::string("socket: ") + std::strerror(errno);
+		return false;
+	}
+	const timeval timeout{3, 0}; // SO_SNDTIMEO also bounds connect() on Linux
+	setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+	setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+	auto receiveExactly = [&](uint8_t* out, size_t size) {
+		while(size > 0)
+		{
+			const ssize_t received = recv(fd, out, size, 0);
+			if(received <= 0)
+			{
+				error = received == 0 ? std::string("connection closed by lidar") : std::string("recv: ") + std::strerror(errno);
+				return false;
+			}
+			out += received;
+			size -= static_cast<size_t>(received);
+		}
+		return true;
+	};
+
+	sockaddr_in address{};
+	address.sin_family = AF_INET;
+	address.sin_port = htons(kPtcPort);
+	bool ok = inet_pton(AF_INET, lidarIp.c_str(), &address.sin_addr) == 1;
+	if(!ok)
+	{
+		error = "invalid lidar IP '" + lidarIp + "'";
+	}
+	if(ok && connect(fd, reinterpret_cast<const sockaddr*>(&address), sizeof(address)) != 0)
+	{
+		error = "connect " + lidarIp + ":" + std::to_string(kPtcPort) + ": " + std::strerror(errno);
+		ok = false;
+	}
+	const uint8_t request[8] = {0x47, 0x74, command, 0, 0, 0, 0, 0};
+	if(ok && send(fd, request, sizeof(request), MSG_NOSIGNAL) != static_cast<ssize_t>(sizeof(request)))
+	{
+		error = std::string("send: ") + std::strerror(errno);
+		ok = false;
+	}
+	uint8_t header[8];
+	ok = ok && receiveExactly(header, sizeof(header));
+	if(ok && (header[0] != 0x47 || header[1] != 0x74 || header[2] != command || header[3] != 0))
+	{
+		error = "PTC command " + std::to_string(command) + " refused, return code " + std::to_string(header[3]);
+		ok = false;
+	}
+	if(ok)
+	{
+		const uint32_t length = (uint32_t(header[4]) << 24) | (uint32_t(header[5]) << 16) | (uint32_t(header[6]) << 8) | uint32_t(header[7]);
+		if(length == 0 || length > kPtcMaxPayload)
+		{
+			error = "PTC payload length " + std::to_string(length);
+			ok = false;
+		}
+		else
+		{
+			payload.resize(length);
+			ok = receiveExactly(payload.data(), length);
+		}
+	}
+	::close(fd);
+	return ok;
+}
 } // namespace
 
 HesaiPcapClient::HesaiPcapClient()
 	: m_recorder(kHesaiUdpPort)
 {
+	const char* lidarIp = std::getenv("MANDEYE_HESAI_LIDAR_IP");
+	m_lidarIp = lidarIp != nullptr ? lidarIp : kDefaultLidarIp;
 	m_recorder.setPacketCallback([this](const uint8_t* data, size_t size, const timespec& receiveTime) { onPacket(data, size, receiveTime); });
 }
 
 HesaiPcapClient::~HesaiPcapClient()
 {
 	m_recorder.stop();
+	if(m_correctionThread.joinable())
+	{
+		m_correctionThread.join();
+	}
 }
 
 bool HesaiPcapClient::startListener(const std::string& interfaceIp)
 {
 	std::cout << "HesaiPcapClient: recording raw UDP from port " << kHesaiUdpPort << " (interface " << interfaceIp << " not used, listening on all)"
-			  << std::endl;
+			  << ", lidar " << m_lidarIp << std::endl;
+	saveCorrectionAsync(""); // cache a copy early, in case the lidar does not answer at scan start
 	return m_recorder.start();
+}
+
+void HesaiPcapClient::saveCorrectionAsync(const std::string& directory)
+{
+	if(m_correctionThread.joinable())
+	{
+		m_correctionThread.join(); // a previous query ends within its socket timeouts
+	}
+	m_correctionThread = std::thread([this, directory]() {
+		std::vector<uint8_t> correction;
+		std::string error;
+		const bool fetched = ptcQuery(m_lidarIp, kPtcGetLidarCalibration, correction, error);
+		{
+			std::lock_guard<std::mutex> lock(m_correctionMutex);
+			if(fetched)
+			{
+				m_correctionCache = correction;
+				m_correctionError.clear();
+			}
+			else
+			{
+				correction = m_correctionCache; // last good copy, may be empty
+				m_correctionError = error;
+			}
+		}
+		if(!fetched)
+		{
+			std::cerr << "HesaiPcapClient: reading the correction from the lidar failed: " << error
+					  << (correction.empty() ? "" : ", using the last good copy") << std::endl;
+		}
+		if(directory.empty() || correction.empty())
+		{
+			return;
+		}
+		// write next to the chunks; a temporary name first, so a reader never sees a partial file
+		const std::filesystem::path path = std::filesystem::path(directory) / kCorrectionFileName;
+		const std::string temporary = path.string() + ".tmp";
+		std::error_code renameError;
+		{
+			std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
+			out.write(reinterpret_cast<const char*>(correction.data()), static_cast<std::streamsize>(correction.size()));
+			out.close();
+			if(!out)
+			{
+				renameError = std::make_error_code(std::errc::io_error);
+			}
+		}
+		if(!renameError)
+		{
+			std::filesystem::rename(temporary, path, renameError);
+		}
+		std::lock_guard<std::mutex> lock(m_correctionMutex);
+		if(renameError)
+		{
+			m_correctionError = "write " + path.string() + ": " + renameError.message();
+			std::cerr << "HesaiPcapClient: " << m_correctionError << std::endl;
+			return;
+		}
+		m_correctionFile = path.string();
+		m_correctionSource = fetched ? "lidar" : "cache";
+		m_correctionBytes = correction.size();
+		std::cout << "HesaiPcapClient: saved " << path << " (" << correction.size() << " B from the " << m_correctionSource << ")" << std::endl;
+	});
 }
 
 void HesaiPcapClient::stopListener()
@@ -76,7 +234,12 @@ std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> HesaiPcapClient::retrieveData
 
 void HesaiPcapClient::startRawChunk(const std::string& directory, int chunk)
 {
-	m_recorder.startFile(getPcapFilePath(directory, chunk));
+	m_recorder.startFile(getPcapFilePath(directory, chunk)); // first: the call time is the file boundary
+	if(directory != m_correctionDirectory)
+	{
+		m_correctionDirectory = directory; // once per scan directory (continuous or stop scans)
+		saveCorrectionAsync(directory);
+	}
 }
 
 void HesaiPcapClient::stopRawChunks()
@@ -193,6 +356,17 @@ nlohmann::json HesaiPcapClient::produceStatus()
 	data["is_synced"] = isSynced();
 	data["HesaiPcapClient"]["status"] = status;
 	data["HesaiPcapClient"]["recorder"] = m_recorder.produceStatus();
+	{
+		std::lock_guard<std::mutex> lock(m_correctionMutex);
+		nlohmann::json correction;
+		correction["lidar_ip"] = m_lidarIp;
+		correction["file"] = m_correctionFile;
+		correction["bytes"] = m_correctionBytes;
+		correction["source"] = m_correctionSource;
+		correction["cached_bytes"] = m_correctionCache.size();
+		correction["error"] = m_correctionError;
+		data["HesaiPcapClient"]["correction"] = correction;
+	}
 	data["counters"]["lidar"] = m_packetsValid.load();
 	data["counters"]["imu"] = 0;
 	return data;

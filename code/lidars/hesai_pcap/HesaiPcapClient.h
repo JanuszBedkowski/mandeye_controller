@@ -8,6 +8,10 @@
 #include <atomic>
 #include <cstdint>
 #include <ctime>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
 
 namespace mandeye
 {
@@ -16,6 +20,10 @@ namespace mandeye
 //!
 //! Each packet is only inspected, not decoded: its tail gives the lidar time (for isSynced() and the timestamp provider)
 //! and the UDP sequence number (for counting packets lost before they reached the recorder).
+//!
+//! The lidar's own angle correction (PTC command 0x05, CSV "Laser id,Elevation,Azimuth") is saved as correction.dat
+//! into every scan directory, so the pcap files can be decoded without the lidar. Lidar IP: MANDEYE_HESAI_LIDAR_IP
+//! (default 192.168.1.201, as HesaiClient).
 class HesaiPcapClient : public BaseLidarClient, public RawDataRecorder
 {
 public:
@@ -61,8 +69,22 @@ private:
 	void onPacket(const uint8_t* data, size_t size, const timespec& receiveTime);
 	//! Lidar time of a packet [s] from the tail's UTC date and microsecond timestamp
 	double packetTime(const uint8_t* tail);
+	//! Fetches the correction from the lidar on a worker thread and writes it to directory/correction.dat (empty
+	//! directory: only refresh the cached copy). If the lidar does not answer, the last good copy is written.
+	void saveCorrectionAsync(const std::string& directory);
 
 	PcapUdpRecorder m_recorder;
+	std::string m_lidarIp;
+
+	// correction.dat: m_correctionDirectory is used by the state machine thread only, the rest under m_correctionMutex
+	std::string m_correctionDirectory;
+	std::thread m_correctionThread;
+	mutable std::mutex m_correctionMutex;
+	std::vector<uint8_t> m_correctionCache;
+	std::string m_correctionFile;
+	std::string m_correctionSource;
+	std::string m_correctionError;
+	size_t m_correctionBytes{0};
 
 	// receiver thread only
 	std::array<uint8_t, 6> m_lastUtc{};
