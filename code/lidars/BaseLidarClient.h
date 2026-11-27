@@ -4,8 +4,6 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <stdint.h>
-#include <string>
-#include <unordered_map>
 namespace mandeye
 {
 struct LidarPoint
@@ -86,19 +84,6 @@ public:
 	{
 		return false;
 	}
-
-	//! True for clients that record the raw sensor stream themselves (e.g. HESAI_PCAP) instead of returning points:
-	//! retrieveData() then returns no points and no LAZ file is written.
-	virtual bool savesRawData() const
-	{
-		return false;
-	}
-
-	//! Raw recording: start writing the files of a chunk. Called when a scan starts and at every chunk cut.
-	virtual void startRawChunk([[maybe_unused]] const std::string& directory, [[maybe_unused]] int chunk) { }
-
-	//! Raw recording: finish the current chunk. Called when a scan stops.
-	virtual void stopRawChunks() { }
 };
 
 } // namespace mandeye

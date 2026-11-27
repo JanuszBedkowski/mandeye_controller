@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <thread>
 
+#include "lidars/RawDataRecorder.h"
 #include "save_data.h"
 #include "save_laz.h"
 #include "state.h"
@@ -47,6 +48,31 @@ std::shared_ptr<GNSSClient> gnssClientPtr;
 
 std::shared_ptr<FileSystemClient> fileSystemClientPtr;
 std::shared_ptr<Publisher> publisherPtr;
+//! Raw-recording lidar clients (HESAI_PCAP) implement RawDataRecorder. Found with dynamic_cast, so lidar plugins built
+//! against an older BaseLidarClient keep working (see RawDataRecorder.h).
+RawDataRecorder* rawRecorder()
+{
+	return dynamic_cast<RawDataRecorder*>(lidarClientPtr.get());
+}
+bool savesRawData()
+{
+	return rawRecorder() != nullptr;
+}
+void startRawChunk(const std::string& directory, int chunk)
+{
+	if(auto* raw = rawRecorder())
+	{
+		raw->startRawChunk(directory, chunk);
+	}
+}
+void stopRawChunks()
+{
+	if(auto* raw = rawRecorder())
+	{
+		raw->stopRawChunks();
+	}
+}
+
 mandeye::LazStats lastFileSaveStats; // updated by savePointcloudData return value
 double usbWriteSpeed10Mb = 0.0;
 double usbWriteSpeed1Mb = 0.0;
@@ -435,7 +461,7 @@ void stateWatcher()
 				lidarClientPtr->startLog();
 				if(!continousScanDirectory.empty())
 				{
-					lidarClientPtr->startRawChunk(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+					startRawChunk(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 				}
 				if(gnssClientPtr)
 				{
@@ -497,8 +523,8 @@ void stateWatcher()
 				else
 				{
 					// raw-recording clients go on without a gap in the file of the next chunk
-					lidarClientPtr->startRawChunk(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS + 1);
-					if(!lidarClientPtr->savesRawData())
+					startRawChunk(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS + 1);
+					if(!savesRawData())
 					{
 						auto [fn, saveStats] = savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 						if(saveStats)
@@ -575,7 +601,7 @@ void stateWatcher()
 			auto [lidarBuffer, imuBuffer] = lidarClientPtr->retrieveData();
 			std::deque<std::string> gnssData;
 			lidarClientPtr->stopLog();
-			lidarClientPtr->stopRawChunks();
+			stopRawChunks();
 			if(gnssClientPtr)
 			{
 				gnssData = gnssClientPtr->retrieveData();
@@ -599,7 +625,7 @@ void stateWatcher()
 			}
 			else
 			{
-				if(!lidarClientPtr->savesRawData())
+				if(!savesRawData())
 				{
 					auto [fn, saveStats] = savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					if(saveStats)
@@ -663,7 +689,7 @@ void stateWatcher()
 					lidarClientPtr->startLog();
 					if(!stopScanDirectory.empty())
 					{
-						lidarClientPtr->startRawChunk(stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
+						startRawChunk(stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					}
 				}
 				if(gnssClientPtr)
@@ -690,7 +716,7 @@ void stateWatcher()
 			auto [lidarBuffer, imuBuffer] = lidarClientPtr->retrieveData();
 			std::deque<std::string> gnssData;
 			lidarClientPtr->stopLog();
-			lidarClientPtr->stopRawChunks();
+			stopRawChunks();
 			if(gnssClientPtr)
 			{
 				gnssData = gnssClientPtr->retrieveData();
@@ -702,7 +728,7 @@ void stateWatcher()
 			}
 			else
 			{
-				if(!lidarClientPtr->savesRawData())
+				if(!savesRawData())
 				{
 					auto [fn, saveStats] = savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					if(saveStats)

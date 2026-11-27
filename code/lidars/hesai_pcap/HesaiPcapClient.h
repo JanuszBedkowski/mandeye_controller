@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lidars/BaseLidarClient.h"
+#include "lidars/RawDataRecorder.h"
 #include "utils/PcapUdpRecorder.h"
 
 #include <array>
@@ -15,7 +16,7 @@ namespace mandeye
 //!
 //! Each packet is only inspected, not decoded: its tail gives the lidar time (for isSynced() and the timestamp provider)
 //! and the UDP sequence number (for counting packets lost before they reached the recorder).
-class HesaiPcapClient : public BaseLidarClient
+class HesaiPcapClient : public BaseLidarClient, public RawDataRecorder
 {
 public:
 	HesaiPcapClient();
@@ -34,10 +35,6 @@ public:
 	//! Always empty buffers: the data is in the pcap files
 	std::pair<LidarPointsBufferPtr, LidarIMUBufferPtr> retrieveData() override;
 
-	bool savesRawData() const override
-	{
-		return true;
-	}
 	void startRawChunk(const std::string& directory, int chunk) override;
 	void stopRawChunks() override;
 
