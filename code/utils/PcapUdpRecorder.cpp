@@ -171,6 +171,11 @@ void PcapUdpRecorder::setPacketCallback(PacketCallback callback)
 	m_packetCallback = std::move(callback);
 }
 
+void PcapUdpRecorder::setFileFinishedCallback(FileFinishedCallback callback)
+{
+	m_fileFinishedCallback = std::move(callback);
+}
+
 PcapUdpRecorder::~PcapUdpRecorder()
 {
 	stop();
@@ -487,29 +492,50 @@ void PcapUdpRecorder::receiverLoop()
 void PcapUdpRecorder::writerLoop()
 {
 	int fd = -1;
+	std::string filePath; // the file being written, for the finished callback
+	uint64_t filePackets = 0;
+	auto notifyFinished = [&](const std::string& path, bool ok, uint64_t packets) {
+		if(m_fileFinishedCallback)
+		{
+			m_fileFinishedCallback(path, ok, packets);
+		}
+	};
 	auto finishFile = [&]() {
 		if(fd < 0)
 		{
 			return;
 		}
+		bool ok = true;
 		if(fdatasync(fd) != 0)
 		{
 			m_writeErrors++;
 			reportError("fdatasync");
+			ok = false;
 		}
-		::close(fd);
+		if(::close(fd) != 0)
+		{
+			m_writeErrors++;
+			reportError("close " + filePath);
+			ok = false;
+		}
 		fd = -1;
 		m_filesWritten++;
-		std::lock_guard<std::mutex> lock(m_statusMutex);
-		m_currentFile.clear();
+		{
+			std::lock_guard<std::mutex> lock(m_statusMutex);
+			m_currentFile.clear();
+		}
+		notifyFinished(filePath, ok && filePackets > 0, filePackets);
 	};
 	auto abandonFile = [&](const std::string& what) {
 		m_writeErrors++;
 		reportError(what);
 		::close(fd);
 		fd = -1;
-		std::lock_guard<std::mutex> lock(m_statusMutex);
-		m_currentFile.clear();
+		{
+			std::lock_guard<std::mutex> lock(m_statusMutex);
+			m_currentFile.clear();
+		}
+		notifyFinished(filePath, false, filePackets);
 	};
 
 	while(true)
@@ -533,11 +559,14 @@ void PcapUdpRecorder::writerLoop()
 		if(item.kind == WriterItem::Kind::Open)
 		{
 			finishFile();
+			filePath = item.path;
+			filePackets = 0;
 			fd = ::open(item.path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);
 			if(fd < 0)
 			{
 				m_writeErrors++;
 				reportError("open " + item.path);
+				notifyFinished(item.path, false, 0);
 				continue;
 			}
 			const PcapGlobalHeader header{kPcapMagicNanoseconds, 2, 4, 0, 0, 65535, kLinkTypeEthernet};
@@ -564,6 +593,7 @@ void PcapUdpRecorder::writerLoop()
 			}
 			m_packetsWritten += item.packets;
 			m_bytesWritten += item.data.size();
+			filePackets += item.packets;
 		}
 		else
 		{

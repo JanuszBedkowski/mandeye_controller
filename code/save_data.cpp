@@ -1,4 +1,5 @@
 #include "save_data.h"
+#include "chunk_feedback.h"
 #include "hardware_config/mandeye.h"
 #include "save_laz.h"
 #include <chrono>
@@ -28,7 +29,7 @@ std::pair<std::string, std::optional<LazStats>> savePointcloudData(LidarPointsBu
 	if(saveStatus)
 	{
 		saveStatus->m_saveDurationSec2 = elapsed_seconds.count();
-		hardware::OnSavedLaz(lidarFilePath);
+		onChunkSaved(lidarFilePath.string(), true); // beeps if all extras are healthy
 	}
 	else
 	{

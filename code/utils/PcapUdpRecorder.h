@@ -38,6 +38,12 @@ public:
 	//! Set before start().
 	void setPacketCallback(PacketCallback callback);
 
+	//! Called on the writer thread when a file is finished: ok is true when the file was opened, every write and the final
+	//! fdatasync succeeded, and it holds at least one datagram. Also called with ok == false when a file can't be opened or a
+	//! write fails. Must be quick (it holds up the writer). Set before start().
+	using FileFinishedCallback = std::function<void(const std::string& path, bool ok, uint64_t packets)>;
+	void setFileFinishedCallback(FileFinishedCallback callback);
+
 	//! Opens the socket and starts the threads. Datagrams are discarded until startFile() is called.
 	bool start();
 	//! Stops the threads, writes out everything received so far and closes the current file.
@@ -83,6 +89,7 @@ private:
 	const size_t m_maxQueuedBytes;
 	int m_socket{-1};
 	PacketCallback m_packetCallback;
+	FileFinishedCallback m_fileFinishedCallback;
 	std::atomic<bool> m_running{false};
 	std::thread m_receiverThread;
 	std::thread m_writerThread;

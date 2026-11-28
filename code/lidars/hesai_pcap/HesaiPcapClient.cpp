@@ -1,4 +1,5 @@
 #include "lidars/hesai_pcap/HesaiPcapClient.h"
+#include "chunk_feedback.h"
 #include "save_data.h"
 
 #include <algorithm>
@@ -140,6 +141,11 @@ HesaiPcapClient::HesaiPcapClient()
 	const char* lidarIp = std::getenv("MANDEYE_HESAI_LIDAR_IP");
 	m_lidarIp = lidarIp != nullptr ? lidarIp : kDefaultLidarIp;
 	m_recorder.setPacketCallback([this](const uint8_t* data, size_t size, const timespec& receiveTime) { onPacket(data, size, receiveTime); });
+	m_recorder.setFileFinishedCallback([](const std::string& path, bool ok, uint64_t packets) {
+		std::cout << "HesaiPcapClient: " << (ok ? "saved " : "FAILED to save ") << path << " (" << packets << " packets)" << std::endl;
+		// per-chunk beep once the pcap is on disk; on its own thread, the beep blocks and must not hold up the writer
+		std::thread([path, ok]() { onChunkSaved(path, ok); }).detach();
+	});
 }
 
 HesaiPcapClient::~HesaiPcapClient()

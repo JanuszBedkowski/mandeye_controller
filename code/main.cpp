@@ -48,7 +48,6 @@ std::shared_ptr<GNSSClient> gnssClientPtr;
 
 std::shared_ptr<FileSystemClient> fileSystemClientPtr;
 std::shared_ptr<Publisher> publisherPtr;
-std::shared_ptr<ExtrasMonitor> extrasMonitorPtr;
 mandeye::LazStats lastFileSaveStats; // updated by savePointcloudData return value
 double usbWriteSpeed10Mb = 0.0;
 double usbWriteSpeed1Mb = 0.0;
@@ -150,14 +149,7 @@ std::string produceReport(bool reportUSB = true)
 		j["gnss"] = {};
 	}
 
-	if(extrasMonitorPtr)
-	{
-		j["extras"] = extrasMonitorPtr->produceStatus();
-	}
-	else
-	{
-		j["extras"] = {};
-	}
+	j["extras"] = ExtrasMonitor::instance().produceStatus();
 
 	j["lastLazStatus"] = lastFileSaveStats.produceStatus();
 
@@ -515,11 +507,6 @@ void stateWatcher()
 						if(saveStats)
 							lastFileSaveStats = *saveStats;
 					}
-					else
-					{
-						// same per-chunk feedback (beep) as after a saved LAZ; the recorder's writer thread finishes the pcap file
-						hardware::OnSavedLaz(getPcapFilePath(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS));
-					}
 					if(lidarClientPtr->savesImuData())
 					{
 						saveImuData(imuBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
@@ -623,11 +610,6 @@ void stateWatcher()
 					auto [fn, saveStats] = savePointcloudData(lidarBuffer, continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					if(saveStats)
 						lastFileSaveStats = *saveStats;
-				}
-				else
-				{
-					// same per-chunk feedback (beep) as after a saved LAZ; the recorder's writer thread finishes the pcap file
-					hardware::OnSavedLaz(getPcapFilePath(continousScanDirectory, chunksInExperimentCS + chunksInExperimentSS));
 				}
 				if(lidarClientPtr->savesImuData())
 				{
@@ -734,11 +716,6 @@ void stateWatcher()
 					auto [fn, saveStats] = savePointcloudData(lidarBuffer, stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS);
 					if(saveStats)
 						lastFileSaveStats = *saveStats;
-				}
-				else
-				{
-					// same per-chunk feedback (beep) as after a saved LAZ; the recorder's writer thread finishes the pcap file
-					hardware::OnSavedLaz(getPcapFilePath(stopScanDirectory, chunksInExperimentCS + chunksInExperimentSS));
 				}
 				if(lidarClientPtr->savesImuData())
 				{
@@ -857,7 +834,7 @@ int main(int argc, char** argv)
 	std::cout << "Buzzer is " << (mandeye::disableBuzzer ? "disabled" : "enabled") << std::endl;
 	std::cout << "Lidar SDK to use (from  MANDEYE_LIDAR_SDK env): " << mandeye::lidarSDKToUse << std::endl;
 
-	mandeye::extrasMonitorPtr = std::make_shared<mandeye::ExtrasMonitor>();
+	mandeye::ExtrasMonitor::instance(); // bind :5557 now, so extras can report from the start
 
 	auto server = std::make_shared<Http::Endpoint>(addr);
 	std::thread http_thread1([&]() {
@@ -986,7 +963,6 @@ int main(int argc, char** argv)
 
 	std::cout << "joining thGpio" << std::endl;
 	thGpio.join();
-	mandeye::extrasMonitorPtr.reset();
 	std::cout << "Done" << std::endl;
 	return 0;
 }

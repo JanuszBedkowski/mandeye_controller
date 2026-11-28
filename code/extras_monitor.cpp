@@ -4,6 +4,12 @@
 
 namespace mandeye
 {
+ExtrasMonitor& ExtrasMonitor::instance()
+{
+	static ExtrasMonitor monitor;
+	return monitor;
+}
+
 ExtrasMonitor::ExtrasMonitor()
 	: m_context(1)
 	, m_socket(m_context, zmq::socket_type::pull)

@@ -162,7 +162,7 @@ add_executable(control_program code/main.cpp code/gnss.cpp code/web_page.h
         ${LIDAR_SOURCES}
         ${LIDAR_SOURCES}
         code/gpios.cpp code/FileSystemClient.cpp code/save_laz.cpp code/save_data.cpp
-        code/utils/TimeStampReceiver.cpp code/utils/PcapUdpRecorder.cpp code/publisher.cpp code/extras_monitor.cpp)
+        code/utils/TimeStampReceiver.cpp code/utils/PcapUdpRecorder.cpp code/publisher.cpp code/extras_monitor.cpp code/chunk_feedback.cpp)
 
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic " )
 

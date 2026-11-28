@@ -15,13 +15,15 @@ namespace mandeye
 //!   {"service": "murata_imu", "ok": false, "message": "Failed to open /dev/ttyAMA2", "timeout_s": 5.0, "data": {...}}
 //! "service" and "ok" are required; "message", "timeout_s" and "data" (free-form detail, passed through) are optional.
 //! A service that stops sending for longer than its timeout is reported as failed (stale).
+//! Singleton: one socket bound per process; created (and bound) on the first instance() call.
 class ExtrasMonitor
 {
 public:
 	static constexpr const char* BIND_ENDPOINT = "tcp://*:5557";
 	static constexpr double DEFAULT_TIMEOUT_S = 5.0;
 
-	ExtrasMonitor();
+	static ExtrasMonitor& instance();
+
 	~ExtrasMonitor();
 	ExtrasMonitor(const ExtrasMonitor&) = delete;
 	ExtrasMonitor& operator=(const ExtrasMonitor&) = delete;
@@ -33,6 +35,8 @@ public:
 	bool hasFailure() const;
 
 private:
+	ExtrasMonitor();
+
 	struct ServiceState
 	{
 		bool ok = false;
