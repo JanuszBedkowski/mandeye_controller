@@ -170,7 +170,16 @@ void clientThread()
 				continue;
 
 			std::lock_guard<std::mutex> lk(state::stateMutex);
-			state::lastMessage = std::chrono::steady_clock::now();
+			const auto now = std::chrono::steady_clock::now();
+			if(now - state::lastMessage > CONTROLLER_SILENCE_TIMEOUT)
+			{
+				// A (re)started controller sends mode and directory only in its once-a-second long report:
+				// forget the previous controller's ones, or its stale SCANNING would collect into the old scan.
+				state::modeName = MODES::UNKNOWN;
+				state::hashCode = MODES::UNKNOWN_ID;
+				state::continuousScanTarget.clear();
+			}
+			state::lastMessage = now;
 			if(j.contains("time"))
 				state::timestamp = j["time"].get<uint64_t>();
 			if(j.contains("mode"))
