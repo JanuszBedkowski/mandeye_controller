@@ -14,6 +14,8 @@
 #include <thread>
 #include <zmq.hpp>
 
+#include "ExtrasUtils.h"
+
 namespace fs = std::filesystem;
 
 // ── Packet definition (must match firmware imu_pkt_t) ────────────────────────
@@ -89,6 +91,7 @@ int fileLengthMs = 20000;
 std::string uartPort = "/dev/ttyAMA2";
 int uartBaud = 921600;
 bool sendPtime = true; // send the $PTIME second label after each PPS (see sendPtime())
+mandeye::extras::StatusReporter* status = nullptr; // health reports to the controller, owned by main()
 } // namespace global
 
 // ── Mode state ───────────────────────────────────────────────────────────────
@@ -256,6 +259,8 @@ int murataThread()
 	catch(const LibSerial::OpenFailed&)
 	{
 		std::cerr << "Failed to open " << global::uartPort << std::endl;
+		if(global::status)
+			global::status->reportFailure("Failed to open " + global::uartPort);
 		return -1;
 	}
 	std::cout << "Opened " << global::uartPort << " @ " << global::uartBaud << (global::sendPtime ? ", sending $PTIME" : "") << std::endl;
@@ -370,6 +375,35 @@ int murataThread()
 			std::cout << "pkts/s: " << pktCount << "  errors: " << errCount << "  diff: " << (tp - imu_ts) << "  gps: " << gps
 					  << ((pkt.gps_status & GPS_TIME_VALID) ? "" : " (not synced: µs since boot)") << "  buffered: " << buffer.size()
 					  << std::endl;
+
+			if(global::status)
+			{
+				const bool timeValid = pkt.gps_status & GPS_TIME_VALID;
+				nlohmann::json data;
+				data["pkts_per_s"] = pktCount;
+				data["errors_per_s"] = errCount;
+				data["imu_timestamp_s"] = imu_ts;
+				data["system_timestamp_s"] = tp;
+				data["diff_s"] = tp - imu_ts;
+				data["gps_status"] = pkt.gps_status;
+				data["gps_time_valid"] = timeValid;
+				data["gps_pps_ok"] = bool(pkt.gps_status & GPS_PPS_OK);
+				data["gps_nmea_ok"] = bool(pkt.gps_status & GPS_NMEA_OK);
+				data["gps_rate_cal"] = bool(pkt.gps_status & GPS_RATE_CAL);
+				data["buffered"] = buffer.size();
+
+				char msg[160];
+				snprintf(msg,
+						 sizeof msg,
+						 "%d pkts/s, %d errors, diff %.6f s, gps %s%s",
+						 pktCount,
+						 errCount,
+						 tp - imu_ts,
+						 gps,
+						 timeValid ? "" : " (not synced: timestamps are us since boot)");
+				// unsynced IMU timestamps can't be matched to the lidar, so that counts as a failure
+				global::status->report(timeValid, msg, data);
+			}
 			pktCount = errCount = 0;
 			statsTime = now;
 		}
@@ -411,6 +445,10 @@ int main(int argc, char** argv)
 		std::cout << "Created default config at " << configPath << std::endl;
 	}
 	std::cout << "UART: " << global::uartPort << " @ " << global::uartBaud << std::endl;
+
+	mandeye::extras::StatusReporter status("murata_imu");
+	global::status = &status;
+	status.reportOk("UART " + global::uartPort + " @ " + std::to_string(global::uartBaud) + ", waiting for packets");
 
 	std::thread tzmq(clientThread);
 	std::thread timu(murataThread);

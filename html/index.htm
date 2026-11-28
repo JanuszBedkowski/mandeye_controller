@@ -55,6 +55,22 @@
                 $('.msgs_imu').text( obj.lidar.counters.imu);
                 $('.state').text( obj.state);
 
+                if (obj.hasOwnProperty('extras') && obj.extras && obj.extras.services)
+                {
+                    var failed = [];
+                    for (const [name, svc] of Object.entries(obj.extras.services))
+                    {
+                        if (!svc.ok) failed.push(name + ": " + svc.message);
+                    }
+                    var names = Object.keys(obj.extras.services);
+                    $('.extras').text(names.length == 0 ? "N/A" : (failed.length == 0 ? "OK (" + names.join(", ") + ")" : failed.join("; ")));
+                    $('.extras').css('color', failed.length == 0 ? '' : 'red');
+                }
+                else
+                {
+                    $('.extras').text("N/A");
+                }
+
                 if (obj.hasOwnProperty('gnss'))
                 {
                     $('.gnss').text( obj.gnss.gga.satellites_tracked);
@@ -201,6 +217,7 @@
             <th>State</th>
             <th>GNSS</th>
             <th>Filesystem</th>
+            <th>Extras</th>
 
         </tr>
         <tr>
@@ -210,6 +227,7 @@
             <td class="state">-1</td>
             <td class="gnss">-1</td>
             <td class="filesystem"></td>
+            <td class="extras">N/A</td>
         </tr>
     </table>
     <ul id="dirs">

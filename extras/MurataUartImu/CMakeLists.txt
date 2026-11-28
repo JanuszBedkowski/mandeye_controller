@@ -11,7 +11,7 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 add_executable(mandeye_murata_uart_driver murataDriver.cpp)
 target_include_directories(mandeye_murata_uart_driver PRIVATE ${ZMQ_INCLUDE_DIRS} ${SERIAL_INCLUDE_DIRS})
-target_link_libraries(mandeye_murata_uart_driver ${ZMQ_LIBRARIES} ${SERIAL_LIBRARIES} Eigen3::Eigen)
+target_link_libraries(mandeye_murata_uart_driver ${ZMQ_LIBRARIES} ${SERIAL_LIBRARIES} Eigen3::Eigen mandeye_extra_utils)
 
 install(TARGETS mandeye_murata_uart_driver
         RUNTIME DESTINATION /opt/mandeye/extras/)
