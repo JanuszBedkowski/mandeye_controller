@@ -113,7 +113,12 @@ std::string modeName = MODES::UNKNOWN;
 auto hashCode = MODES::UNKNOWN_ID;
 std::string continuousScanTarget;
 uint64_t timestamp;
+std::chrono::steady_clock::time_point lastMessage{}; // last message from the controller
 } // namespace state
+
+// The controller publishes every ~125 ms; this long without a message means it stopped or crashed
+// (no STOPPING was sent), so the current scan is over.
+constexpr auto CONTROLLER_SILENCE_TIMEOUT = std::chrono::seconds(2);
 
 // ── Config ───────────────────────────────────────────────────────────────────
 nlohmann::json getConfig(const std::string& configPath)
@@ -165,6 +170,7 @@ void clientThread()
 				continue;
 
 			std::lock_guard<std::mutex> lk(state::stateMutex);
+			state::lastMessage = std::chrono::steady_clock::now();
 			if(j.contains("time"))
 				state::timestamp = j["time"].get<uint64_t>();
 			if(j.contains("mode"))
@@ -271,6 +277,8 @@ int murataThread()
 	auto statsTime = std::chrono::steady_clock::now();
 	int pktCount = 0, errCount = 0;
 	bool collecting = false;
+	std::string collectTarget; // scan directory of the data in `buffer`, kept from while that scan was running
+	uint64_t droppedRows = 0; // rows that could not be saved (no scan directory / directory not creatable)
 
 	uint8_t buf[PKT_SIZE];
 
@@ -323,20 +331,26 @@ int murataThread()
 		// ── Read mode ─────────────────────────────────────────────────────────
 		size_t state_id;
 		std::string scanTarget;
+		bool controllerAlive;
 		{
 			std::lock_guard<std::mutex> lk(state::stateMutex);
 			state_id = state::hashCode;
 			scanTarget = state::continuousScanTarget;
+			controllerAlive = state::lastMessage != std::chrono::steady_clock::time_point{} &&
+							  std::chrono::steady_clock::now() - state::lastMessage < CONTROLLER_SILENCE_TIMEOUT;
 		}
+		const bool scanning = state_id == MODES::SCANNING_ID && controllerAlive;
 
 		// ── Accumulate to memory ──────────────────────────────────────────────
-		if(state_id == MODES::SCANNING_ID)
+		if(scanning)
 		{
 			if(!collecting)
 			{
 				collecting = true;
 				fileStartTime = std::chrono::steady_clock::now();
 			}
+			if(!scanTarget.empty())
+				collectTarget = scanTarget;
 			buffer.push_back(row);
 		}
 
@@ -346,20 +360,40 @@ int murataThread()
 			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - fileStartTime).count() > global::fileLengthMs;
 		// Flush on any mode other than SCANNING: with conflate=1 the STOPPING message
 		// can be overwritten by the next mode before we see it, losing the last buffer.
-		const bool stopping = collecting && (state_id != MODES::SCANNING_ID);
+		// Also flush when the controller went silent: it stopped or crashed without sending STOPPING.
+		const bool stopping = collecting && !scanning;
 
 		if(timeUp || stopping)
 		{
-			const fs::path dir = fs::path(scanTarget) / global::directoryName;
-			fs::create_directories(dir);
-			std::string path = (dir / ("murata_imu_" + std::to_string(pkt.timestamp_us) + ".csv")).string();
-
-			// Move buffer ownership to a detached thread — no disk I/O on this thread
-			std::thread(saveToFile, std::move(buffer), std::move(path)).detach();
+			// Into the directory of the scan the rows belong to: after a controller restart the published
+			// directory is already the next scan's (or still empty). Never a relative path.
+			std::error_code ec;
+			const fs::path dir = fs::path(collectTarget) / global::directoryName;
+			if(collectTarget.empty())
+			{
+				std::cerr << "No scan directory known, dropping " << buffer.size() << " IMU rows" << std::endl;
+				droppedRows += buffer.size();
+			}
+			else if(!fs::create_directories(dir, ec) && ec)
+			{
+				std::cerr << "Cannot create " << dir << ": " << ec.message() << ", dropping " << buffer.size() << " IMU rows" << std::endl;
+				droppedRows += buffer.size();
+			}
+			else
+			{
+				std::string path = (dir / ("murata_imu_" + std::to_string(pkt.timestamp_us) + ".csv")).string();
+				// Move buffer ownership to a detached thread — no disk I/O on this thread
+				std::thread(saveToFile, std::move(buffer), std::move(path)).detach();
+			}
 			buffer = {};
 
 			if(stopping)
+			{
+				if(!controllerAlive)
+					std::cerr << "Controller silent, scan ended: flushed IMU data to " << collectTarget << std::endl;
 				collecting = false;
+				collectTarget.clear();
+			}
 			else
 				fileStartTime = std::chrono::steady_clock::now();
 		}
@@ -391,6 +425,7 @@ int murataThread()
 				data["gps_nmea_ok"] = bool(pkt.gps_status & GPS_NMEA_OK);
 				data["gps_rate_cal"] = bool(pkt.gps_status & GPS_RATE_CAL);
 				data["buffered"] = buffer.size();
+				data["dropped_rows"] = droppedRows;
 
 				char msg[160];
 				snprintf(msg,
